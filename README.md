@@ -5,6 +5,6 @@
 |---------------------|----------------|
 | Projektleiter       | Mohi           |
 | Produktmanager      | Luka Pavic     |
-| Testmanager         | Selvana        |
+| Testmanager         | Selvana Ayunda |
 | Systemarchitekt     | Jonas Graubner |
 | Tech. Dokumentation | Paul Brenner   |
