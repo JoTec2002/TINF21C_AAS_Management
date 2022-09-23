@@ -3,7 +3,7 @@
 ## Rollen
 | Rolle               | Name           |
 |---------------------|----------------|
-| Projektleiter       | Mohi           |
+| Projektleiter       | Mohaddeseh Tibashi|
 | Produktmanager      | Luka Pavic     |
 | Testmanager         | Selvana Ayunda |
 | Systemarchitekt     | Jonas Graubner |
