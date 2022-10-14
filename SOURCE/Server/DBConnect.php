@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/vendor/autoload.php';
+
 use MongoDB\Client as Mongo;
 
 $client = new Mongo('mongodb://192.168.0.40:27017/');
