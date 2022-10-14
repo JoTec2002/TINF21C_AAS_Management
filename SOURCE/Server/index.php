@@ -1,3 +1,4 @@
 <?php
+	print("Test");
 	phpinfo();
 ?>
