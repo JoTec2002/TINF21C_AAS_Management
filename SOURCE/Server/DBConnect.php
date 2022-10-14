@@ -1,9 +1,7 @@
 <?php
-use MongoDB\Client;
+use MongoDB\Client as Mongo;
 
-$client = new MongoDB\Client(
-    'mongodb://192.168.0.40:27017/'
-);
+$client = new Mongo('mongodb://192.168.0.40:27017/');
 
 $collection = $client->test->test;
 
