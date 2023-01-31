@@ -1,0 +1,15 @@
+RewriteEngine On
+
+# Exception - Reached the document root then stop
+# (Prevents rewrite loop if index.php is missing - 404 instead)
+RewriteRule ^index\.php$ - [L]
+
+# Exception - Any request for a valid file stop here
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# If already requesting "index.php" then step up a directory
+RewriteRule ^(.*/)?[^/]+/index\.php$ /$1index.php [L]
+
+# Otherwise try "index.php" in the current path segment
+RewriteRule ^(.*/)?[^/]*$ /$1index.php [L]

@@ -1,5 +1,6 @@
 <?php
-require_once '/var/www/html/vendor/autoload.php';
+//require_once '/var/www/html/vendor/autoload.php';       //Server
+require_once 'vendor/autoload.php'; //xampp
 
 use MongoDB\Client as Mongo;
 
@@ -13,3 +14,4 @@ foreach ($result as $entry) {
     print_r($entry);
     print("<br>");
 }
+print_r("finish");
