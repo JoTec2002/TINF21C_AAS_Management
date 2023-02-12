@@ -1,5 +1,5 @@
 <?php
-
+require_once '../vendor/autoload.php';
 //AASX FileServerApi
 //Detect Request method
 switch ($_SERVER['REQUEST_METHOD']){
@@ -27,23 +27,24 @@ switch ($_SERVER['REQUEST_METHOD']){
             http_response_code(400);
         }
 
-        // move uploaded file to tmp directory
-        /*$target_file = "tmp/" . basename($_FILES["fileName"]["name"]);
-        if (!(move_uploaded_file($_FILES["fileName"]["tmp_name"], $target_file))) {
-            echo json_encode(["error" => "File could not be moved to tmp directory"], JSON_NUMERIC_CHECK);
-            http_response_code(500);
-            exit();
-        }
-        print ($target_file);*/
         //unpack aasx file
         $zip = new ZipArchive;
-        if ($zip->open($_FILES['fileName']['tmp_name']) === TRUE) {
-            $zip->extractTo('/tmp/');
+        if ($zip->open($_FILES['file']['tmp_name']) === TRUE) {
+            $zip->extractTo('tmp/');
             $zip->close();
         } else {
             echo json_encode(["error" => "File could not be decompressed"], JSON_NUMERIC_CHECK);
             http_response_code(500);
         }
+
+        //generate filename of xml
+        $aasID = preg_replace("/[^a-z 1-9]/", "_", $_POST['aasIds']);
+
+        //read xml file
+        $filepath = "tmp/aasx/".$aasID."/".$aasID.".aas.xml";
+        $file = Mtownsend\XmlToArray\XmlToArray::convert(file_get_contents($filepath));
+
+        print_r($file);
 
         //print ("file moved to tmp directory");
         break;

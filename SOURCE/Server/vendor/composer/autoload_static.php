@@ -9,6 +9,7 @@ class ComposerStaticInit5a3e06d261fbad29bd27562c896cfb9b
     public static $files = array (
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
         '3a37ebac017bc098e9a86b35401e7a68' => __DIR__ . '/..' . '/mongodb/mongodb/src/functions.php',
+        '029bffbd721800038bcfaf4916fa491c' => __DIR__ . '/..' . '/mtownsend/xml-to-array/src/helpers.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -18,6 +19,7 @@ class ComposerStaticInit5a3e06d261fbad29bd27562c896cfb9b
         ),
         'M' => 
         array (
+            'Mtownsend\\XmlToArray\\' => 21,
             'MongoDB\\' => 8,
         ),
         'J' => 
@@ -30,6 +32,10 @@ class ComposerStaticInit5a3e06d261fbad29bd27562c896cfb9b
         'Symfony\\Polyfill\\Php80\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php80',
+        ),
+        'Mtownsend\\XmlToArray\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/mtownsend/xml-to-array/src',
         ),
         'MongoDB\\' => 
         array (
