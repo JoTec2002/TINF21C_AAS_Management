@@ -1,5 +1,5 @@
 <?php
-require_once '../vendor/autoload.php';
+require_once '../DBController.php';
 //AASX FileServerApi
 //Detect Request method
 switch ($_SERVER['REQUEST_METHOD']){
@@ -20,7 +20,6 @@ switch ($_SERVER['REQUEST_METHOD']){
 
     case "POST":
         // TODO POST request
-        print ("POST request \n");
         //Check if request is ok
         if ($_FILES == array()){
             print json_encode(["error" => "No aasx file given"], JSON_NUMERIC_CHECK);
@@ -44,9 +43,26 @@ switch ($_SERVER['REQUEST_METHOD']){
         $filepath = "tmp/aasx/".$aasID."/".$aasID.".aas.xml";
         $file = Mtownsend\XmlToArray\XmlToArray::convert(file_get_contents($filepath));
 
-        print_r($file);
 
-        //print ("file moved to tmp directory");
+        //write file to db
+        //shells
+        $shells = $file['aas:assetAdministrationShells']['aas:assetAdministrationShell'];
+        $shellIds = writeDB("Shells", $shells);
+
+        $assets = $file['aas:assets']['aas:asset'];
+        $assetIds = writeDB("Assets", $assets);
+
+        $submodels = $file['aas:submodels']['aas:submodel'];
+        $submodelIds = array();
+        foreach ($submodels as $submodel){
+            $submodelIds[] = writeDB("Submodels", $submodel);
+        }
+
+        $conceptDescriptions = $file['aas:conceptDescriptions']['aas:conceptDescription'];
+        $conceptDescriptionIds = array();
+        foreach ($conceptDescriptions as $conceptDescription){
+            $conceptDescriptionIds[] = writeDB("Concept Description", $conceptDescription);
+        }
         break;
 
     default:
