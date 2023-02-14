@@ -17,3 +17,16 @@ function writeDB($collection, $content){
         exit;
     }
 }
+function readDB($collection, $filter, $options){
+    global $client;
+    $collection = $client ->selectCollection($collection);
+    $cursor = $collection->find($filter, $options);
+    $cursor->setTypeMap(['root' => 'array', 'document' => 'array', 'array' => 'array']);
+    $result = $cursor->toArray();
+    array_walk($result, "extractIDfromResult");
+    return $result;
+}
+
+function extractIDfromResult(&$item, $key){
+    $item['_id'] = $item['_id']->jsonSerialize()['$oid'];
+}
