@@ -1,4 +1,8 @@
 <?php
+require_once "packages/functions.php";
+require_once "shells/functions.php";
+require_once "submodels/functions.php";
+
 function rrmdir($dir) {
     if (is_dir($dir)) {
         $objects = scandir($dir);

@@ -5,10 +5,18 @@ require_once '../globalFunktions.php';
 //Detect Request method
 switch ($_SERVER['REQUEST_METHOD']){
     case "DELETE":
-        // TODO Delete request
-        http_response_code(501);
+        $requestId = basename($_SERVER['REQUEST_URI']);
+        $requestId = base64url_decode($requestId);          //Asset _id
+        //get asset identification
+        $assetIdent = getAssetIdentification($requestId);
+
+        //get Shell ID from AssetRef
+        $ShellID = getShellIdentFromAsset($assetIdent);
+
+        //delete Shell and all Dependencies
+        deleteshell($ShellID);
+        http_response_code(200);
         exit;
-        break;
 
     case "GET":
         $request = basename($_SERVER['REQUEST_URI']);
@@ -28,7 +36,7 @@ switch ($_SERVER['REQUEST_METHOD']){
             $DBresult = readDB("Shells", ['_id' => new MongoDB\BSON\ObjectId('63eb54a0f7553852f90e927f')], array());
 
             //TODO generate .assx file
-            
+
         }
         break;
 
