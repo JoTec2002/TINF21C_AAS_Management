@@ -1,6 +1,6 @@
 {
     "require": {
-        "mongodb/mongodb": "^1.15",
-        "mtownsend/xml-to-array": "^2.0"
+        "mtownsend/xml-to-array": "^2.0",
+        "mongodb/mongodb": "^1.15"
     }
 }
