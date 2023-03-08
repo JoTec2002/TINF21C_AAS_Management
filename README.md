@@ -1,5 +1,7 @@
 # TINF21C_AAS_Management
-
+AAS_ Management is a project as part of the "Software Engineering" course at DHBW Stuttgart under the supervision of Markus Rentschler and Christian Holder
+#Task 
++
 ## Rollen
 | Rolle               | Name           |
 |---------------------|----------------|
