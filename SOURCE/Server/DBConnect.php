@@ -4,7 +4,8 @@ require_once 'vendor/autoload.php'; //xampp
 
 use MongoDB\Client as Mongo;
 
-$client = new Mongo('mongodb://192.168.0.40:27017/');
+//$client = new Mongo('mongodb://192.168.0.40:27017/');
+$client = new Mongo('mongodb://localhost:27017/');
 
 $collection = $client->test->test;
 
