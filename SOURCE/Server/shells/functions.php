@@ -15,4 +15,5 @@ function deleteshell($identification){
         deleteSubmodel($submodel["aas:keys"]["aas:key"]["@content"]);
     }
     //TODO further testing when delete Submodel fully implemented
+    //TODO @Jonas Graubner
 }

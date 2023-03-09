@@ -27,6 +27,20 @@ function readDB($collection, $filter, $options){
     return $result;
 }
 
+function deleteDB($collection, $filter, $options){
+    global $client;
+    $collection = $client->selectCollection($collection);
+    $cursor = $collection->deleteOne($filter, $options);
+    return $cursor->isAcknowledged();
+}
+
+function updateDB($collection, $filter, $content, $options){
+    global $client;
+    $collection = $client->selectCollection($collection);
+    $UpdateResult = $collection->updateOne($filter, $content, $options);
+    return $UpdateResult->isAcknowledged();
+}
+
 function extractIDfromResult(&$item, $key){
     $item['_id'] = $item['_id']->jsonSerialize()['$oid'];
 }
