@@ -11,7 +11,7 @@ switch ($_SERVER['REQUEST_METHOD']){
         $assetIdent = getAssetIdentification($requestId);
 
         //get Shell ID from AssetRef
-        $ShellID = getShellIdentFromAsset($assetIdent);
+        $ShellID = getShellIdFromAsset($assetIdent);
 
         //delete Shell and all Dependencies
         deleteshell($ShellID);
@@ -72,7 +72,7 @@ switch ($_SERVER['REQUEST_METHOD']){
         }
 
         //generate filename of xml
-        $aasID = preg_replace("/[^a-z 1-9]/", "_", $_POST['aasIds']);
+        $aasID = preg_replace("/[^a-z 0-9]/", "_", $_POST['aasIds']);
 
         //read xml file
         $filepath = "tmp/aasx/".$aasID."/".$aasID.".aas.xml";

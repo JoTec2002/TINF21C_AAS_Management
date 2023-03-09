@@ -1,7 +1,6 @@
 <?php
 require_once '../DBController.php';
 require_once '../globalFunktions.php';
-//AASX FileServerApi
 //Detect Request method
 $request = basename($_SERVER['REQUEST_URI']);
 switch ($_SERVER['REQUEST_METHOD']){

@@ -1,10 +1,32 @@
 <?php
-function getShellIdentFromAsset($assetRef){
-    $DBresults = readDB("Shells",
+function getShellIdFromAsset($assetRef){
+    $DBresult = readDB("Shells",
         ['aas:assetRef.aas:keys.aas:key.@content' => $assetRef],
         ["projection" => ["aas:identification"=>["@content"=>1]]]);
-    return $DBresults[0]["aas:identification"]["@content"];
+    return $DBresult[0]["aas:identification"]["@content"];
 }
+function GetAllShells(){
+    $DBresult = readDB("Shells", array(), array());
+    array_walk($DBresult, "removeIDfromResult");
+    return $DBresult;
+}
+function GetAllShellsById($Id){
+    $DBresult = readDB("Shells", ['aas:identification.@content' => $Id],
+        array());
+    array_walk($DBresult, "removeIDfromResult");
+    return $DBresult;
+}
+function GetAllShellsByAssetId($aId){
+    http_response_code(501);
+    exit();
+}
+function GetAllShellsByIdShort ($IdShort){
+    $DBresult = readDB("Shells", ['aas:idShort' => $IdShort], array());
+    array_walk($DBresult, "removeIDfromResult");
+    return $DBresult;
+}
+
+
 function deleteshell($identification){
     //get all dependent submodells
     $DBresults = readDB("Shells", array(),
