@@ -14,7 +14,7 @@ switch ($_SERVER['REQUEST_METHOD']){
         $ShellID = getShellIdFromAsset($assetIdent);
 
         //delete Shell and all Dependencies
-        deleteshell($ShellID);
+        deleteShell($ShellID);
         http_response_code(200);
         exit;
 

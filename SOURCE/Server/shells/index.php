@@ -22,8 +22,8 @@ switch ($_SERVER['REQUEST_METHOD']){
                 $idShort = $_GET["idShort"];
                 print json_encode(GetAllShellsByIdShort($idShort), JSON_NUMERIC_CHECK|JSON_UNESCAPED_SLASHES);
                 http_response_code(200);
-            }elseif (isset($_GET["AssetId"])){
-                $isCaseOf = $_GET['AssetId'];
+            }elseif (isset($_GET["assetIds"])){
+                $isCaseOf = $_GET['assetIds'];
                 print json_encode(GetAllShellsByAssetId($isCaseOf), JSON_NUMERIC_CHECK|JSON_UNESCAPED_SLASHES);
                 http_response_code(200);
             }elseif (in_array("/".$request, array_keys($_GET))){
@@ -38,18 +38,28 @@ switch ($_SERVER['REQUEST_METHOD']){
         break;
 
     case "POST":
-        http_response_code(501);
-        exit();
+        $Data = json_decode($_POST['aas']);
+        createShell($Data);
+        http_response_code(201);
         break;
 
     case "PUT":
-        http_response_code(501);
-        exit();
+        $requestBody = explode("=", urldecode(file_get_contents( 'php://input', 'r' )));
+        if(count($requestBody) != 2){       //Error catching
+            echo json_encode(["error" => "Unrecognized Request Body"], JSON_NUMERIC_CHECK);
+            http_response_code(400);
+            exit();
+        }
+        $requestData = json_decode($requestBody[1]);
+        $requestId = base64url_decode($request);
+        updateShell($requestId, $requestData);
+        http_response_code(204);
         break;
 
     case "DELETE":
-        http_response_code(501);
-        exit();
+        $id = base64url_decode($request);
+        deleteShell($id);
+        http_response_code(200);
         break;
 
     default:
