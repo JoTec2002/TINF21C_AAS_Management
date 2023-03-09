@@ -103,6 +103,6 @@ switch ($_SERVER['REQUEST_METHOD']){
         exit;
 
     default:
-        http_response_code(400);        //TODO alternativ 501 'Not implemented'
+        http_response_code(400);
         print ("Unsupported HTML Request Method");
 }
