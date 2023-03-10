@@ -31,8 +31,21 @@ switch ($_SERVER['REQUEST_METHOD']){
                 print json_encode(GetAllShellsById($id), JSON_NUMERIC_CHECK|JSON_UNESCAPED_SLASHES);
                 http_response_code(200);
             }else{
-                echo json_encode(["error" => "Specific Get Request not recognized"], JSON_NUMERIC_CHECK);
-                http_response_code(400);
+                //longer url request start specific request
+                $longRequest = explode("/",$_SERVER['REQUEST_URI']);
+                print_r($longRequest);
+                if($longRequest[3] == "asset-information"){
+                    print json_encode(GetAllShellsById(base64url_decode($longRequest[2])), JSON_NUMERIC_CHECK|JSON_UNESCAPED_SLASHES);
+                    http_response_code(200);
+                }
+
+
+
+
+
+
+                /*echo json_encode(["error" => "Specific Get Request not recognized"], JSON_NUMERIC_CHECK);
+                http_response_code(400);*/
             }
         }
         break;
