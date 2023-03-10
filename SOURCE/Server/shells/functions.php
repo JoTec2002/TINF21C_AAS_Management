@@ -21,6 +21,11 @@ function GetShellsAssetInfById($Id){
     array_walk($DBresult, "removeIDfromResult");
     return $DBresult;
 }
+function GetShellsSubmodelsById($Id){
+    $DBresult = readDB("Shells", ['aas:identification.@content' => $Id], ["projection"=>["aas:submodelRefs"=>1]]);
+    array_walk($DBresult, "removeIDfromResult");
+    return $DBresult;
+}
 function GetAllShellsByAssetId($aId){
     $DBresult = readDB("Shells", ['aas:assetRef.aas:keys.aas:key.@content' => $aId],
         array());

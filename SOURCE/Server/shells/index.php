@@ -33,13 +33,22 @@ switch ($_SERVER['REQUEST_METHOD']){
             }else{
                 //longer url request start specific request
                 $longRequest = explode("/",$_SERVER['REQUEST_URI']);
-                print_r($longRequest);
                 if($longRequest[3] == "asset-information"){
-                    print json_encode(GetAllShellsById(base64url_decode($longRequest[2])), JSON_NUMERIC_CHECK|JSON_UNESCAPED_SLASHES);
+                    // /shells/{assetid}/asset-information
+                    print json_encode(GetShellsAssetInfById(base64url_decode($longRequest[2])), JSON_NUMERIC_CHECK|JSON_UNESCAPED_SLASHES);
                     http_response_code(200);
+                }elseif ($longRequest[3] == "submodels"){
+                    if(!isset($longRequest[4])){
+                        // /shells/{aasIdentifier}/submodels
+                        print json_encode(GetShellsSubmodelsById(base64url_decode($longRequest[2])), JSON_NUMERIC_CHECK|JSON_UNESCAPED_SLASHES);
+                        http_response_code(200);
+                    }elseif (!isset($longRequest[6])){
+                        // /shells/{aasIdentifier}/submodels/{submodelIdentifier}/submodel
+                        //TODO continue when submodel funktions are present
+                    }
                 }
 
-
+                print_r($longRequest);
 
 
 
