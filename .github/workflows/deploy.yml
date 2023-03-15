@@ -1,5 +1,5 @@
 # Sample workflow for building and deploying a Jekyll site to GitHub Pages
-name: Deploy Jekyll with GitHub Pages dependencies preinstalled
+name: Deploy Frontnd with GitHub Pages dependencies preinstalled
 
 on:
   # Runs on pushes targeting the default branch
@@ -28,15 +28,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
+      - name: Use Node.js
+        uses: actions/setup-node@v2
         with:
-          source: ./
-          destination: ./_site
+          node-version: "18"
+      - name: ⚙️ Setup ci environment
+        working-directory: ./SOURCE/frontend
+        run: npm ci
+      - name: 🏗️ Build app
+        run: npm run build
+        working-directory: ./SOURCE/frontend
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v1    
 
   # Deployment job
   deploy:
