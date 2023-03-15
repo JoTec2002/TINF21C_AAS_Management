@@ -23,8 +23,8 @@ switch ($_SERVER['REQUEST_METHOD']){
                 print json_encode(GetAllShellsByIdShort($idShort), JSON_NUMERIC_CHECK|JSON_UNESCAPED_SLASHES);
                 http_response_code(200);
             }elseif (isset($_GET["assetIds"])){
-                $isCaseOf = $_GET['assetIds'];
-                print json_encode(GetAllShellsByAssetId($isCaseOf), JSON_NUMERIC_CHECK|JSON_UNESCAPED_SLASHES);
+                $assetIds = $_GET['assetIds'];
+                print json_encode(GetAllShellsByAssetId($assetIds), JSON_NUMERIC_CHECK|JSON_UNESCAPED_SLASHES);
                 http_response_code(200);
             }elseif (in_array("/".$request, array_keys($_GET))){
                 $id = base64url_decode($request);

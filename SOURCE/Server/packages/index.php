@@ -1,4 +1,8 @@
 <?php
+//Disable API
+http_response_code(501);
+exit;
+
 require_once '../DBController.php';
 require_once '../globalFunktions.php';
 //AASX FileServerApi
@@ -23,7 +27,7 @@ switch ($_SERVER['REQUEST_METHOD']){
         //select between general and specific Get request
         if($request == "packages"){
             //general request
-            $DBresults = readDB("Shells", array(), ["projection" => ["aas:identification"=>["@content"=>1]]]);
+            $DBresults = readDB("Shells", array(), ["projection" => ["id"=>1]]);
             $result = array();
             foreach ($DBresults as $DBresult){
                 $result[] = array("aasIds"=>array($DBresult['aas:identification']['@content']), "packageId"=>$DBresult['_id']);
@@ -53,6 +57,7 @@ switch ($_SERVER['REQUEST_METHOD']){
         break;
 
     case "POST":
+        require_once "templates.php";
         //Check if request is ok
         if ($_FILES == array()){
             print json_encode(["error" => "No aasx file given"], JSON_NUMERIC_CHECK);
@@ -81,24 +86,26 @@ switch ($_SERVER['REQUEST_METHOD']){
         //write file to db
         //shells
         $shells = $file['aas:assetAdministrationShells']['aas:assetAdministrationShell'];
-        $shellIds = writeDB("Shells", $shells);
+        $shells = convertJsonAssetShell($shells);
+        //print_r($shells);
+        //$shellIds = writeDB("Shells", $shells);
 
         $assets = $file['aas:assets']['aas:asset'];
-        $assetIds = writeDB("Assets", $assets);
+        //$assetIds = writeDB("Assets", $assets);
 
         $submodels = $file['aas:submodels']['aas:submodel'];
         $submodelIds = array();
-        foreach ($submodels as $submodel){
+        /*foreach ($submodels as $submodel){
             $submodelIds[] = writeDB("Submodels", $submodel);
-        }
+        }*/
 
         $conceptDescriptions = $file['aas:conceptDescriptions']['aas:conceptDescription'];
         $conceptDescriptionIds = array();
-        foreach ($conceptDescriptions as $conceptDescription){
+        /*foreach ($conceptDescriptions as $conceptDescription){
             $conceptDescriptionIds[] = writeDB("Concept Description", $conceptDescription);
-        }
+        }*/
         //cleanup + status code
-        rrmdir("tmp");
+        //rrmdir("tmp");
         http_response_code(200);
         exit;
 
