@@ -22,9 +22,9 @@ function GetShellsAssetInfById($Id){
     return $DBresult[0]['assetInformation'];
 }
 function GetShellsSubmodelsById($Id){
-    $DBresult = readDB("Shells", ['id' => $Id], ["projection"=>["aas:submodelRefs"=>1]]);
+    $DBresult = readDB("Shells", ['id' => $Id], ["projection"=>["submodels"=>1]]);
     array_walk($DBresult, "removeIDfromResult");
-    return $DBresult;
+    return $DBresult[0]["submodels"];
 }
 function GetAllShellsByAssetId($aId){
     $DBresult = readDB("Shells", ['assetInformation.globalAssetId.keys.value' => $aId],
