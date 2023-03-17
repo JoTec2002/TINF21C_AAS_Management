@@ -1,7 +1,5 @@
 <?php
-require_once 'vendor/autoload.php'; //xampp
 use MongoDB\Client as Mongo;
-
 //$client = new Mongo('mongodb://192.168.0.40:27017/');
 $client = new Mongo('mongodb://192.168.0.40:27017/');
 $client = $client->selectDatabase("AAS");
@@ -13,9 +11,11 @@ function writeDB($collection, $content){
         $result = $collection -> insertOne($content);
         return $result->getInsertedId();
     }catch (MongoDB\Driver\Exception\BulkWriteException $e){
-        echo($e);
-        http_response_code(409);
-        exit;
+        if($e->getCode() != 11000){
+            echo($e->getCode());
+            http_response_code(409);
+            exit;
+        }
     }
 }
 function readDB($collection, $filter, $options){

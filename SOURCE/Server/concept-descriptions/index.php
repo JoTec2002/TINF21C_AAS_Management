@@ -1,5 +1,4 @@
 <?php
-require_once '../DBController.php';
 require_once '../globalFunktions.php';
 //Detect Request method
 $request = basename($_SERVER['REQUEST_URI']);

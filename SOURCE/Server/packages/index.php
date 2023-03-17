@@ -1,9 +1,5 @@
 <?php
-//Disable API
-http_response_code(501);
-exit;
 
-require_once '../DBController.php';
 require_once '../globalFunktions.php';
 //AASX FileServerApi
 //Detect Request method
@@ -58,6 +54,7 @@ switch ($_SERVER['REQUEST_METHOD']){
 
     case "POST":
         require_once "templates.php";
+        require_once "convertAasxImportJson.php";
         //Check if request is ok
         if ($_FILES == array()){
             print json_encode(["error" => "No aasx file given"], JSON_NUMERIC_CHECK);
@@ -82,24 +79,28 @@ switch ($_SERVER['REQUEST_METHOD']){
         //read xml file
         $filepath = "tmp/aasx/".$aasID."/".$aasID.".aas.xml";
         $file = Mtownsend\XmlToArray\XmlToArray::convert(file_get_contents($filepath));
+        $file = renameAasArrayKeys($file);
+        $file = slimArray($file);
 
         //write file to db
         //shells
-        $shells = $file['aas:assetAdministrationShells']['aas:assetAdministrationShell'];
-        $shells = convertJsonAssetShell($shells);
-        //print_r($shells);
-        //$shellIds = writeDB("Shells", $shells);
+        $shells = $file['assetAdministrationShells'];
+        $shells = ExtractIdlocation($shells);
+        $shells = ExtractSubmodelsLocation($shells);
+        $shells = ExtractAssetRefLocation($shells);
+        $shells["modelType"] = "AssetAdministrationShell";
+        $shellIds = writeDB("Shells", $shells);
 
-        $assets = $file['aas:assets']['aas:asset'];
+        //$assets = $file['aas:assets']['aas:asset'];
         //$assetIds = writeDB("Assets", $assets);
 
-        $submodels = $file['aas:submodels']['aas:submodel'];
+        //$submodels = $file['aas:submodels']['aas:submodel'];
         $submodelIds = array();
         /*foreach ($submodels as $submodel){
             $submodelIds[] = writeDB("Submodels", $submodel);
         }*/
 
-        $conceptDescriptions = $file['aas:conceptDescriptions']['aas:conceptDescription'];
+        //$conceptDescriptions = $file['aas:conceptDescriptions']['aas:conceptDescription'];
         $conceptDescriptionIds = array();
         /*foreach ($conceptDescriptions as $conceptDescription){
             $conceptDescriptionIds[] = writeDB("Concept Description", $conceptDescription);

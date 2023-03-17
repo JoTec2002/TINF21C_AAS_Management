@@ -1,4 +1,6 @@
 <?php
+require_once 'vendor/autoload.php'; //xampp
+require_once 'DBController.php';
 require_once "packages/functions.php";
 require_once "shells/functions.php";
 require_once "submodels/functions.php";
@@ -27,3 +29,4 @@ function base64url_decode($data, $strict = false)
 function removeIDfromResult(&$item, $key){
     unset($item['_id']);
 }
+
