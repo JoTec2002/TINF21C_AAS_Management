@@ -1,10 +1,30 @@
 import React from "react"
-import { Col, Card } from "react-bootstrap";
+import { Col, Card ,Row , Button} from "react-bootstrap";
 
-const Products = ({product,docs}) => {
+const Products = ({shells}) => {
     return (
-        <Col md={4} xs={6} className="mb-4">
-            <Card className="shadow" onClick={()=>docs(product)} style={{cursor: 'pointer'}}>
+        <div>
+
+            <Row className="mb-4">
+                <Card className="shadow">
+                    <Card.Img variant="top" src="holder.js/100px180" />
+                    <Card.Body>
+                        <Card.Title>{shells.idShort}</Card.Title>
+
+                        <Card.Text>
+                            <Row>id : {shells.id}</Row>
+                            <Row>modelType: {shells.modelType}</Row>
+                        </Card.Text>
+
+                        <Button variant="primary">Download</Button>
+                    </Card.Body>
+                </Card>
+            </Row>
+        </div>
+    )
+}
+export default Products;
+/*<Card className="shadow" onClick={()=>docs(product)} style={{cursor: 'pointer'}}>
                 <Card.Img variant="top" />
                 <Card.Body>
                     <Card.Title>
@@ -14,9 +34,4 @@ const Products = ({product,docs}) => {
                        {product.doc}
                     </Card.Text>
                 </Card.Body>
-            </Card>
-
-        </Col>
-    )
-}
-export default Products;
+            </Card>*/
