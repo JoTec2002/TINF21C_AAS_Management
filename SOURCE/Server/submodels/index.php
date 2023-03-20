@@ -10,16 +10,21 @@ switch ($_SERVER['REQUEST_METHOD']){
         //get Type of GET request
         if($request == "submodels"){
             //Get ALL request
+            print_r("Test");
             print json_encode(GetAllSubmodels(), JSON_NUMERIC_CHECK|JSON_UNESCAPED_SLASHES);
             http_response_code(200);
             break;
-        }else{
-
+        }else {
+            if (isset($_GET["idShort"])) {
+                $idShort = $_GET["idShort"];
+                print json_encode(GetAllSubmodelsByIdShort($idShort), JSON_NUMERIC_CHECK | JSON_UNESCAPED_SLASHES);
+                http_response_code(200);
+                break;
+            }
         }
-        break;
+
 
     case "POST":
-
         break;
 
     case "PUT":
