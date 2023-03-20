@@ -1,13 +1,22 @@
 import { Component } from 'react';
 import { Col, Row,Container } from "react-bootstrap";
-import { Mydocs, ListKategorie, NavComponent,Products } from "./components";
+import { Mydocs, ListKategorie, NavComponent,DetailsProdukt } from "./components";
 import { API_URL } from "./utils/constanst";
 import axios from "axios";
 import swal from "sweetalert";
+import Guest from "./Pages/Guest";
+import RouterPages from "./utils/RouterPages";
 
 
 export default class App extends Component {
-    constructor(props) {
+    render(){
+        return(
+            <RouterPages/>
+        )
+    }
+}
+/*
+* constructor(props) {
         super(props)
         this.state={
             shells: [],
@@ -26,7 +35,7 @@ export default class App extends Component {
                 console.log(error);
             })
     }
-    /*
+
         changeProduct= (value) =>{
             this.setState({
                     choose: value,
@@ -45,47 +54,47 @@ export default class App extends Component {
 
 
         }
-    */
-    render(){
-        const { shells,choose }=this.state
-        return(
-            <div className="App">
-                <NavComponent />
-                <div className="mt2">
-                    <Container fluid>
-                        <Row>
 
-                            <Col md={4} mt="2">
-                                <h4><strong>Deteils Produkt</strong></h4>
-                                <hr />
-                                <Row>
-                                    {shells && shells.map((shells) => (
-                                        <ListKategorie changeProduct={this.changeProduct} choose={choose}
-                                                       shells={shells}
-                                        />
+render(){
+    const { shells,choose }=this.state
+    return(
+        <div className="App">
+            <NavComponent />
+            <div className="mt2">
+                <Container fluid>
+                    <Row>
 
-                                    ))}
-                                </Row>
-                            </Col>
+                        <Col md={4} mt="2">
+                            <h4><strong>Produkte</strong></h4>
 
-                            <Col md={6} mt="2">
-                                <h4><strong>Deteils Produkt</strong></h4>
-                                <hr />
-                                <Row>
-                                    {shells && shells.map((shells) => (
-                                        <Products
-                                            shells={shells}
-                                        />
+                            <Row>
+                                {shells && shells.map((shells) => (
+                                    <Produkte changeProduct={this.changeProduct} choose={choose}
+                                                   shells={shells}
+                                    />
 
-                                    ))}
-                                </Row>
-                            </Col>
-                            <Mydocs />
-                        </Row>
-                    </Container>
-                </div>
+                                ))}
+                            </Row>
+                        </Col>
+
+                        <Col md={6} mt="2">
+                            <h4><strong>Deteils Produkt</strong></h4>
+                            <hr />
+                            <Row>
+                                {shells && shells.map((shells) => (
+                                    <DetailsProdukt
+                                        shells={shells}
+                                    />
+
+                                ))}
+                            </Row>
+                        </Col>
+                        <Mydocs />
+                    </Row>
+                </Container>
             </div>
-        );
-    }
-}
+        </div>
+
+    );
+}*/
 
