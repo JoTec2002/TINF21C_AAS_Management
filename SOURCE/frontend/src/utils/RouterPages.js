@@ -8,9 +8,9 @@ const RouterPages =()=>{
         <Router>
             <Routes>
                 <Route path='/' element={<Guest />}/>
-                <Route path='/home' element={<Home />}/>
-                <Route path='/admin' element={<AdminDashboard />}/>
-                <Route path='/*' element={<Notfound />}/>
+                <Route path='/:home' element={<Home />}/>
+                <Route path='/:admin' element={<AdminDashboard />}/>
+                <Route path='/:*' element={<Notfound />}/>
             </Routes>
         </Router>
     )
