@@ -1,5 +1,5 @@
 import React, {useState} from "react"
-import { Col, Card ,Row , Button} from "react-bootstrap";
+import {Col, Card, Row, Button, ListGroup, Container} from "react-bootstrap";
 
 
 
@@ -14,24 +14,50 @@ const DetailsProdukt = () => {
             <Col md={6} mt="2">
                 <h4>
                 <strong></strong>
-                <strong>Produkte</strong>
+                <strong>Details Produkt</strong>
             </h4>
             <hr />
-            <Row className="mb-4">
-                <Card className="shadow">
-                    <Card.Img variant="top" src="holder.js/100px180" />
-                    <Card.Body>
-                        <Card.Title>Name Produkt</Card.Title>
+                    <Row>
 
-                        <Card.Text>
-                            <Row>id:Id Produkz</Row>
-                            <Row>others</Row>
-                        </Card.Text>
+                        <Col md={6} xs={6}>
 
-                        <Button variant="primary">Download</Button>
-                    </Card.Body>
-                </Card>
-            </Row>
+                            <Card style={{border:"none"}} >
+
+                            <Card.Img variant="top" src="https://ccae4836-001e-48c2-a4f9-235554f9400b.ma.bw-cloud-instance.org/submodels/d3d3LmV4YW1wbGUuY29tL2lkcy9zbS8zMjAyXzAyMzFfNTAyMl81NDA1/submodelelements/GeneralInformation.ProductImage01/attachment" />
+                            </Card>
+                        </Col>
+                        <Col md={6} xs={6}>
+                            <Card  style={{ border:"none"}}>
+                                <Card.Header>
+                                <Card.Title>Norgren_B84G_4GK_AP3_RME</Card.Title>
+                                </Card.Header>
+                                <Card.Body>
+
+                                <ListGroup variant="flush">
+                                    <ListGroup.Item>Herstellername
+                                        <Card.Text>-------</Card.Text>
+                                    </ListGroup.Item>
+                                    <ListGroup.Item>Herstellerproduktbeziehung
+                                        <Card.Text>-------</Card.Text>
+                                    </ListGroup.Item>
+                                    <ListGroup.Item>Abteilung
+                                        <Card.Text>-------</Card.Text>
+                                    </ListGroup.Item>
+                                    <ListGroup.Item>Adresse
+                                        <Card.Text>--------------</Card.Text>
+                                    </ListGroup.Item>
+                                </ListGroup>
+
+
+                                <Button variant="primary">Download</Button>
+                                </Card.Body>
+                            </Card>
+
+                        </Col>
+
+
+                    </Row>
+
             </Col>
 
     )
