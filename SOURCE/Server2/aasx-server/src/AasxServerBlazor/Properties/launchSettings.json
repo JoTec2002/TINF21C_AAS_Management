@@ -1,0 +1,30 @@
+{
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:56189",
+      "sslPort": 0
+    }
+  },
+  "profiles": {
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "commandLineArgs": "--rest --port 51710 --data-path C:\\MIHO\\Develop\\Aasx\\repo --edit --secret-string=123",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "AasxServerBlazor": {
+      "commandName": "Project",
+      "commandLineArgs": "--rest --data-path \"C:\\Development\\TimeSeriesView\" --edit --external-blazor http://localhost:5001 --no-security",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:5001",
+      "jsWebView2Debugging": true
+    }
+  }
+}
