@@ -44,7 +44,7 @@ const DetailsProdukt = () => {
                         </Card>
 
                     </Col>
-                    <Button variant="info">Produkt Hinzufügen</Button>
+                    <Button href="new"variant="info">Produkt Hinzufügen</Button>
                     </Row>
 
             </Col>
