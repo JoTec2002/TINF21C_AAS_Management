@@ -12,7 +12,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AasCore.Aas3_0_RC02;
 using AdminShellNS;
+using Extenstions;
 using Opc.Ua;
 
 namespace AasOpcUaServer
@@ -65,24 +67,24 @@ namespace AasOpcUaServer
         public class NodeRecord
         {
             public NodeState uanode = null;
-            public AdminShell.Referable referable = null;
-            public AdminShell.Identification identification = null;
+            public IReferable referable = null;
+            public string identification = null;
 
             public NodeRecord() { }
-            public NodeRecord(NodeState uanode, AdminShell.Referable referable)
+            public NodeRecord(NodeState uanode, IReferable referable)
             {
                 this.uanode = uanode;
                 this.referable = referable;
             }
-            public NodeRecord(NodeState uanode, AdminShell.Identification identification)
+            public NodeRecord(NodeState uanode, string identification)
             {
                 this.uanode = uanode;
                 this.identification = identification;
             }
         }
 
-        private Dictionary<AdminShell.Referable, NodeRecord> NodeRecordFromReferable
-            = new Dictionary<AdminShell.Referable, NodeRecord>();
+        private Dictionary<IReferable, NodeRecord> NodeRecordFromReferable
+            = new Dictionary<IReferable, NodeRecord>();
         private Dictionary<string, NodeRecord> NodeRecordFromIdentificationHash
             = new Dictionary<string, NodeRecord>();
 
@@ -95,9 +97,9 @@ namespace AasOpcUaServer
             if (nr.referable != null && !NodeRecordFromReferable.ContainsKey(nr.referable))
                 NodeRecordFromReferable.Add(nr.referable, nr);
 
-            if (nr.identification != null && nr.identification.idType != null && nr.identification.id != null)
+            if (nr.identification != null && nr.identification != "")
             {
-                var hash = nr.identification.idType.Trim().ToUpper() + "|" + nr.identification.id.Trim().ToUpper();
+                var hash = "" + nr.identification.Trim().ToUpper();
                 if (!NodeRecordFromIdentificationHash.ContainsKey(hash))
                     NodeRecordFromIdentificationHash.Add(hash, nr);
             }
@@ -108,7 +110,7 @@ namespace AasOpcUaServer
         /// </summary>
         /// <param name="referable"></param>
         /// <returns></returns>
-        public NodeRecord LookupNodeRecordFromReferable(AdminShell.Referable referable)
+        public NodeRecord LookupNodeRecordFromReferable(IReferable referable)
         {
             if (NodeRecordFromReferable == null || !NodeRecordFromReferable.ContainsKey(referable))
                 return null;
@@ -120,9 +122,9 @@ namespace AasOpcUaServer
         /// </summary>
         /// <param name="identification"></param>
         /// <returns></returns>
-        public NodeRecord LookupNodeRecordFromIdentification(AdminShell.Identification identification)
+        public NodeRecord LookupNodeRecordFromIdentification(string identification)
         {
-            var hash = identification.idType.Trim().ToUpper() + "|" + identification.id.Trim().ToUpper();
+            var hash = "" + identification.Trim().ToUpper();
             if (NodeRecordFromReferable == null || !NodeRecordFromIdentificationHash.ContainsKey(hash))
                 return null;
             return NodeRecordFromIdentificationHash[hash];
@@ -143,10 +145,10 @@ namespace AasOpcUaServer
         {
             public enum ActionType { None, SetAasReference, SetDictionaryEntry }
 
-            public AdminShell.Reference targetReference = null;
+            public Reference targetReference = null;
             public ActionType actionType = ActionType.None;
 
-            public NodeLateActionLinkToReference(NodeState uanode, AdminShell.Reference targetReference,
+            public NodeLateActionLinkToReference(NodeState uanode, Reference targetReference,
                 ActionType actionType)
             {
                 this.uanode = uanode;
@@ -166,8 +168,8 @@ namespace AasOpcUaServer
             this.noteLateActions.Add(la);
         }
 
-        private AdminShell.Referable FindAllReferableByReference(AdminShellPackageEnv[] packages,
-            AdminShell.Reference rf)
+        private IReferable FindAllReferableByReference(AdminShellPackageEnv[] packages,
+            Reference rf)
         {
             // access
             if (packages == null || rf == null)
@@ -189,7 +191,7 @@ namespace AasOpcUaServer
         /// Top level creation functions. Uses the definitions of RootAAS, RootConceptDescriptions, 
         /// RootDataSpecifications to synthesize information model
         /// </summary>
-        public void CreateAddInstanceObjects(AdminShell.AdministrationShellEnv env)
+        public void CreateAddInstanceObjects(AasCore.Aas3_0_RC02.Environment env)
         {
             if (RootAAS == null)
                 return;
@@ -203,8 +205,8 @@ namespace AasOpcUaServer
                 }
 
             // AAS
-            if (env.AdministrationShells != null)
-                foreach (var aas in env.AdministrationShells)
+            if (env.AssetAdministrationShells != null)
+                foreach (var aas in env.AssetAdministrationShells)
                     this.AasTypes.AAS.CreateAddInstanceObject(RootAAS, env, aas);
 
             // go through late actions
@@ -229,8 +231,12 @@ namespace AasOpcUaServer
                         continue;
 
                     // now, we have everything to formulate a reference
-                    lax.uanode.AddReference(this.AasTypes.HasAasReference.GetTypeNodeId(), false,
-                        targetNodeRec.uanode.NodeId);
+                    if (!lax.uanode.ReferenceExists(this.AasTypes.HasAasReference.GetTypeNodeId(), false,
+                                        targetNodeRec.uanode.NodeId))
+                    {
+                        lax.uanode.AddReference(this.AasTypes.HasAasReference.GetTypeNodeId(), false,
+                                        targetNodeRec.uanode.NodeId);
+                    }
                 }
 
                 // a bit more complicated: could include a "empty reference" to outside concept
@@ -250,8 +256,12 @@ namespace AasOpcUaServer
                         if (targetNodeRec != null && targetNodeRec.uanode != null)
                         {
                             // simple case: have a target node, just make a link
-                            lax.uanode.AddReference(this.AasTypes.HasDictionaryEntry.GetTypeNodeId(), false,
-                                targetNodeRec.uanode.NodeId);
+                            if (lax.uanode.ReferenceExists(this.AasTypes.HasDictionaryEntry.GetTypeNodeId(), false,
+                                                        targetNodeRec.uanode.NodeId))
+                            {
+                                lax.uanode.AddReference(this.AasTypes.HasDictionaryEntry.GetTypeNodeId(), false,
+                                                        targetNodeRec.uanode.NodeId);
+                            }
                             foundAtAll = true;
                         }
                     }
@@ -262,16 +272,20 @@ namespace AasOpcUaServer
                     if (!foundAtAll && lax.targetReference.Keys.Count == 1)
                     {
                         // can turn the targetReference to a simple identification
-                        var targetId = new AdminShell.Identification(lax.targetReference.Keys[0].idType,
-                            lax.targetReference.Keys[0].value);
+                        //var targetId = new AdminShellConverters().Identifier(lax.targetReference.Keys[0].Value);
+                        var targetId = lax.targetReference.Keys[0].Value;
 
                         // we might have such an (empty) target already available as uanode
                         var nr = this.LookupNodeRecordFromIdentification(targetId);
                         if (nr != null)
                         {
                             // just create the missing link
-                            lax.uanode.AddReference(this.AasTypes.HasDictionaryEntry.GetTypeNodeId(), false,
-                                nr.uanode?.NodeId);
+                            if (!lax.uanode.ReferenceExists(this.AasTypes.HasDictionaryEntry.GetTypeNodeId(), false,
+                                                        nr.uanode?.NodeId))
+                            {
+                                lax.uanode.AddReference(this.AasTypes.HasDictionaryEntry.GetTypeNodeId(), false,
+                                                        nr.uanode?.NodeId);
+                            }
                         }
                         else
                         {
@@ -282,13 +296,17 @@ namespace AasOpcUaServer
                                 var miss = this.CreateAddObject(
                                     this.RootMissingDictionaryEntries,
                                     AasUaBaseEntity.CreateMode.Instance,
-                                    targetId.id,
+                                    targetId,
                                     ReferenceTypeIds.HasComponent,
                                     this.AasTypes.ConceptDescription.GetTypeObjectFor(targetId)?.NodeId);
 
                                 // add the reference
-                                lax.uanode.AddReference(this.AasTypes.HasDictionaryEntry.GetTypeNodeId(), false,
-                                    miss?.NodeId);
+                                if (lax.uanode.ReferenceExists(this.AasTypes.HasDictionaryEntry.GetTypeNodeId(), false,
+                                                                miss?.NodeId))
+                                {
+                                    lax.uanode.AddReference(this.AasTypes.HasDictionaryEntry.GetTypeNodeId(), false,
+                                                                miss?.NodeId);
+                                }
 
                                 // put it into the NodeRecords, that it can be re-used?? no!!
                                 this.AddNodeRecord(new AasEntityBuilder.NodeRecord(miss, targetId));
@@ -297,7 +315,7 @@ namespace AasOpcUaServer
                             {
                                 // just create the missing link
                                 // TODO (MIHO, 2020-08-06): check, which namespace shall be used
-                                var missingTarget = new ExpandedNodeId("" + targetId.id, 99);
+                                var missingTarget = new ExpandedNodeId("" + targetId, 99);
                                 lax.uanode.AddReference(this.AasTypes.HasDictionaryEntry.GetTypeNodeId(), false,
                                     missingTarget);
                             }
@@ -564,7 +582,10 @@ namespace AasOpcUaServer
             {
                 if (parent != null)
                 {
-                    parent.AddReference(referenceTypeFromParentId, false, x.NodeId);
+                    if (!parent.ReferenceExists(referenceTypeFromParentId, false, x.NodeId))
+                    {
+                        parent.AddReference(referenceTypeFromParentId, false, x.NodeId);
+                    }
                     if (referenceTypeFromParentId == ReferenceTypeIds.HasComponent)
                         x.AddReference(referenceTypeFromParentId, true, parent.NodeId);
                     if (referenceTypeFromParentId == ReferenceTypeIds.HasProperty)
@@ -681,9 +702,7 @@ namespace AasOpcUaServer
             public AasUaEntityRelationshipElement RelationshipElement;
             public AasUaEntityOperationVariable OperationVariable;
             public AasUaEntityOperation Operation;
-            public AasUaEntityConceptDictionary ConceptDictionary;
             public AasUaEntityConceptDescription ConceptDescription;
-            public AasUaEntityView View;
             public AasUaEntityAsset Asset;
             public AasUaEntityAAS AAS;
 
@@ -758,9 +777,11 @@ namespace AasOpcUaServer
                 RelationshipElement = new AasUaEntityRelationshipElement(builder, 1017);
                 OperationVariable = new AasUaEntityOperationVariable(builder, 1018);
                 Operation = new AasUaEntityOperation(builder, 1019);
-                ConceptDictionary = new AasUaEntityConceptDictionary(builder, 1020);
+                //TODO:Remove
+                //ConceptDictionary = new AasUaEntityConceptDictionary(builder, 1020);
                 ConceptDescription = new AasUaEntityConceptDescription(builder, 1021);
-                View = new AasUaEntityView(builder, 1022);
+                //TODO:Remove
+                //View = new AasUaEntityView(builder, 1022);
                 Asset = new AasUaEntityAsset(builder, 1023);
                 AAS = new AasUaEntityAAS(builder, 1024);
             }

@@ -1,1 +1,1 @@
-AasxServerWindows.exe --rest --data-path aasxs
+AasxServerWindows.exe --rest --no-security --data-path aasxs

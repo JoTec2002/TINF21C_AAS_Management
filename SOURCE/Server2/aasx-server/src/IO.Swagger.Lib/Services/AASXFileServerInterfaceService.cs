@@ -46,7 +46,9 @@ namespace IO.Swagger.Services
                         Directory.CreateDirectory(archivePath);
                     }
                     var fileName = Path.Combine(archivePath, Path.GetFileName(_envFileNames[packageIndex]));
-                    System.IO.File.Move(_envFileNames[packageIndex], fileName);
+                    System.IO.File.Copy(_envFileNames[packageIndex], fileName, true);
+                    System.IO.File.Delete(_envFileNames[packageIndex]);
+                    //System.IO.File.Move(_envFileNames[packageIndex], fileName);
                 }
                 catch (Exception ex)
                 {
@@ -85,6 +87,7 @@ namespace IO.Swagger.Services
                 {
                     copyFileName = Path.GetTempFileName().Replace(".tmp", ".aasx");
                     System.IO.File.Copy(requestedFileName, copyFileName, true);
+                    AasxServer.Program.env[packageIndex].SaveAs(requestedFileName);
                 }
                 catch (Exception ex)
                 {
@@ -118,7 +121,7 @@ namespace IO.Swagger.Services
                     var aasIdList = new List<string>();
                     foreach (var aas in _packages[i].AasEnv.AdministrationShells)
                     {
-                        aasIdList.Add(aas.identification.id);
+                        aasIdList.Add(aas.id.value);
                     }
                     packageDescription.AasIds = aasIdList;
                     packageDescriptionList.Add(packageDescription);
@@ -286,13 +289,13 @@ namespace IO.Swagger.Services
             {
                 foreach (var aas in package.AasEnv.AdministrationShells)
                 {
-                    if (!string.IsNullOrEmpty(aas.identification.id) && aas.identification.id.Equals(aasId))
+                    if (!string.IsNullOrEmpty(aas.id?.value) && aas.id.value.Equals(aasId))
                     {
                         var output = new AssetAdministrationShellAndAsset
                         {
                             aas = aas
                         };
-                        var asset = package.AasEnv.FindAsset(aas.assetRef);
+                        var asset = aas.assetInformation;
                         if (asset != null)
                         {
                             output.asset = asset;

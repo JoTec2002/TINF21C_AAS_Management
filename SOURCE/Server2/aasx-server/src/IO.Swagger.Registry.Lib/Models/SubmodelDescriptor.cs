@@ -63,6 +63,13 @@ namespace IO.Swagger.Registry.Models
         public GlobalReference SemanticId { get; set; }
 
         /// <summary>
+        /// Gets or Sets SearchData
+        /// </summary>
+
+        [DataMember(Name = "federatedElements")]
+        public List<String> FederatedElements { get; set; }
+
+        /// <summary>
         /// Returns the string presentation of the object
         /// </summary>
         /// <returns>String presentation of the object</returns>

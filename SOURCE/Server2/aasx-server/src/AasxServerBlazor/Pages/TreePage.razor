@@ -1,5 +1,8 @@
 ﻿@page "/"
 @inject AASService SubmodelService
+@inject NavigationManager NavigationManager
+@using AasCore.Aas3_0_RC02
+@using Extenstions
 @using Microsoft.IdentityModel.Tokens;
 @using System
 @using System.Net;
@@ -7,7 +10,7 @@
 @using System.Drawing;
 @using System.IO;
 @using AasxServerBlazor.Data
-@using static AdminShellNS.AdminShellV20;
+@*@using static AdminShellNS.AdminShellV30;*@
 @using static AasxServerStandardBib.TimeSeriesPlotting;
 
 @implements IDisposable
@@ -17,9 +20,13 @@
     <div class="col-4" style="border-width:3px; border-style: solid; border-color: blue; border-radius: 8px; word-wrap: break-word; word-break: break-all; position: sticky">
         @updateVisibleTree(Items, selectedNode)
         @if (Program.isLoading)
-        {<span style="color:white;background-color:blue;">Loading...</span>}
+        {<span style="color:white;background-color:blue;">Loading...</span>
+        }
         else
-        { IO.Swagger.Registry.Controllers.RegistryAndDiscoveryInterfaceApiController.initRegistry(DateTime.UtcNow); }
+        { 
+            // IO.Swagger.Registry.Controllers.RegistryAndDiscoveryInterfaceApiController.initRegistry(DateTime.UtcNow);
+            AasxRestServerLibrary.AasxRestServer.TestResource.initListOfRepositories();
+        }
         <Tree Nodes="Items" ChildSelector="@(item => item.Childs)"
               @bind-SelectedNode="SelectedNode"
               @bind-ExpandedNodes="ExpandedNodes"
@@ -27,6 +34,68 @@
               HtmlId="@(item => GetHtmlId(item))">
             <TitleTemplate>
                 @{ //// SubmodelService.syncSubTree(context);
+                }
+                @*//No need for "Coll" to be red, now "Coll" is part of V3
+                @if(IsSmColl(context))
+                {
+                    <span style="color:white;background-color:red;">@ViewNodeType(context)</span>
+                }
+                else
+                {
+                    <span style="color:white;background-color:blue;">@ViewNodeType(context)</span>
+                }*@
+                @if (AasxRestServerLibrary.AasxHttpContextHelper.withAuthentification)
+                {
+                    var display = false;
+                    var access = false;
+                    bool withAllow = false;
+                    if (context.Tag is Submodel sm)
+                    {
+                        // check, if access to submodel is allowed
+                        access = AasxRestServerLibrary.AasxHttpContextHelper.checkAccessLevelWithAllow(
+                            null, "/submodels", "READ", out withAllow,
+                                sm.IdShort, "sm", sm);
+                        display = true;
+                    }
+                    if (context.Tag is ISubmodelElement sme)
+                    {
+                        string path = sme.IdShort;
+                        var p = sme.Parent;
+                        while (!(p is Submodel))
+                        {
+                            path = (p as ISubmodelElement).IdShort + "." + path;
+                            p = (p as ISubmodelElement).Parent;
+                        }
+                        path = (p as Submodel).IdShort + "." + path;
+                        // check, if access to submodelelement is allowed
+                        access = AasxRestServerLibrary.AasxHttpContextHelper.checkAccessLevelWithAllow(
+                            null, "/submodelelements", "READ", out withAllow,
+                                path, "", p);
+                        display = true;
+                    }
+                    if (display)
+                    {
+                        if (context.Childs == null || context.Childs.Count() == 0)
+                            withAllow = false;
+                        if (access)
+                        {
+                            <span style="color:green;background-color:green;">&nbsp&nbsp</span>
+                            <span>&nbsp</span>
+                        }
+                        else
+                        {
+                            if (!withAllow)
+                            {
+                                <span style="color:red;background-color:red;">&nbsp&nbsp</span>
+                                <span>&nbsp</span>
+                            }
+                            else
+                            {
+                                <span style="color:red;background-color:red;">&nbsp</span><span style="color:green;background-color:green;">&nbsp</span>
+                                <span>&nbsp</span>
+                            }
+                        }
+                    }
                 }
                 <span style="color:white;background-color:blue;">@ViewNodeType(context)</span>
                 @ViewNodeID(context)@ViewNodeInfo(context)
@@ -38,8 +107,69 @@
     <div class="col-8" style="border-width: 3px; border-style: solid; border-color: blue; border-radius: 8px; position: sticky">
         <div class="sticky-top" style="word-wrap:break-word;word-break:break-all;">
             @{
-                <span style="color:white;background-color:blue;" id="SelectedNodeInfoType">@ViewNodeType(selectedNode)</span>
-                <span id="SelectedNodeInfoId">@ViewNodeID(selectedNode)</span><br>
+                if (selectedNode != null)
+                {
+                    if (!(selectedNode.Tag is string))
+                    {
+                        <span style="color:white;background-color:blue;" id="SelectedNodeInfoType">@ViewNodeType(selectedNode)</span>
+                        <span id="SelectedNodeInfoId">@ViewNodeID(selectedNode)</span>
+                        <br>
+                    }
+                    else
+                    {
+                        if (selectedNode.Tag is string && selectedNode.Text.Contains("/readme"))
+                        {
+                            string text = System.IO.File.ReadAllText(selectedNode.Text);
+                            text = text.Replace("%BLAZOR%", Program.externalBlazor);
+                            if (text.Contains("%ACCESSRULES%"))
+                            {
+                                string accessRules = AasxRestServerLibrary.AasxHttpContextHelper.securityAccessRules();
+                                <table border=1 cellpadding=4>
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th nowrap>Kind</th>
+                                            <th>Permission</th>
+                                            <th>Type</th>
+                                            <th>API</th>
+                                            <th>Path</th>
+                                            <th>SemanticID</th>
+                                            <th>See</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{
+                                            var lines = accessRules.Split('\n');
+                                            foreach (var l in lines)
+                                            {
+                                                <tr>
+                                                    @{
+                                                        var cols = l.Split('\t');
+                                                        for (int c = 0; c < cols.Count(); c++)
+                                                        {
+                                                            if (c != 1 && c!= 2)
+                                                            {
+                                                                <td>@cols[c]</td>
+                                                            }
+                                                            else
+                                                            {
+                                                                <td nowrap>@cols[c]</td>
+                                                            }
+                                                        }
+                                                }
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                            else
+                            {
+                                <span>@((MarkupString)text)</span>
+                            }
+                        }
+                    }
+                }
                 for (int line = 0; line < 6; line++)
                 {
                     string nodeDetails0 = ViewNodeDetails(selectedNode, line, 0);
@@ -50,18 +180,22 @@
                         string detailsId="SelectedNodeDetailsLeft_" + line;
                         <span style="color:white;background-color:blue;" id="@detailsId">@nodeDetails0</span>
                         detailsId = "SelectedNodeDetailsRight_" + line;
-                        <span id="@detailsId">@nodeDetails1 @nodeDetails2</span><br>
+                        <span id="@detailsId">&nbsp;@nodeDetails1 @nodeDetails2</span>
+                        <br>
                     }
                 }
-                if (selectedNode != null && selectedNode.Tag is Referable r)
+                if (selectedNode != null && selectedNode.Tag is IReferable r)
                 {
                     <span style="color:lightgray;">UPDATE @r.TimeStamp.ToString("yy-MM-dd HH:mm:ss.fff")</span><br />
                     <button style="border-width: 1px; border-color: black; background-color: lightgray" @onclick="setTimeStamp">TIMESTAMP</button><br />
                     <span style="color:lightgray;">CREATE @r.TimeStampCreate.ToString("yy-MM-dd HH:mm:ss.fff")</span><br />
+                    <span style="color:lightgray;">TREE @r.TimeStampTree.ToString("yy-MM-dd HH:mm:ss.fff")</span>
+
+                    <br />
                     @code {
                         private void setTimeStamp()
                         {
-                            (selectedNode.Tag as Referable).setTimeStamp(DateTime.UtcNow);
+                            (selectedNode.Tag as IReferable).SetTimeStamp(DateTime.UtcNow);
                         }
                     }
                 }
@@ -137,16 +271,16 @@
                     {
                         if (selectedNode.Tag is Property)
                         {
-                            (selectedNode.Tag as Property).value = CurrentValue;
-                            (selectedNode.Tag as Property).setTimeStamp(DateTime.UtcNow);
+                            (selectedNode.Tag as Property).Value = CurrentValue;
+                            (selectedNode.Tag as Property).SetTimeStamp(DateTime.UtcNow);
                             this.StateHasChanged();
                         }
                         CurrentValue = "";
                     }
                 }
-                if (selectedNode != null && (selectedNode.Tag is AdministrationShell || selectedNode.Tag is AdminShellNS.AdminShellV20.File))
+                if (selectedNode != null && (selectedNode.Tag is AssetAdministrationShell || selectedNode.Tag is AasCore.Aas3_0_RC02.File))
                 {
-                    if (selectedNode.Tag is AdministrationShell)
+                    if (selectedNode.Tag is AssetAdministrationShell)
                     {
                         <button style="border-width: 1px; border-color: black; color: white; background-color: blue" @onclick="runCreateQRCodeImage">QRCODE</button><br />
                         string qrcodeLink = getQRCodeLink(selectedNode);
@@ -175,6 +309,31 @@
                     }
                 }
 
+                if (selectedNode != null && selectedNode.Tag is Submodel sm)
+                {
+                    var idEncoded = Base64UrlEncoder.Encode(sm.Id);
+                    var path = Program.externalBlazor + "/submodels/" + idEncoded;
+                    <span style="color:white;background-color:blue;">URL:</span>
+                    <span>&nbsp</span>
+                    <a href="@path" target="_blank">@path</a><br>
+                }
+
+                if (selectedNode != null && selectedNode.Tag is ISubmodelElement sme)
+                {
+                    string path = sme.IdShort;
+                    var p = sme.Parent;
+                    while (!(p is Submodel))
+                    {
+                        path = (p as ISubmodelElement).IdShort + "." + path;
+                        p = (p as ISubmodelElement).Parent;
+                    }
+                    var idEncoded = Base64UrlEncoder.Encode((p as Submodel).Id);
+                    path = Program.externalBlazor + "/submodels/" + idEncoded + "/submodelelements/" + path;
+                    <span style="color:white;background-color:blue;">URL:</span>
+                    <span>&nbsp</span>
+                    <a href="@path" target="_blank">@path</a><br>
+                }
+
                 if (selectedNode != null && selectedNode.Tag is SubmodelElementCollection smc)
                 {
                     string semanticId = "";
@@ -182,7 +341,7 @@
 
                     try
                     {
-                        semanticId = smc.semanticId.Keys[0].value;
+                        semanticId = smc.SemanticId?.GetAsIdentifier();
                     }
                     catch { }
                     if (semanticId == "https://admin-shell.io/sandbox/zvei/TimeSeriesData/TimeSeries/1/0" ||
@@ -199,47 +358,42 @@
 
                             //ListOfTimeSeriesData _timeSeriesData = new ListOfTimeSeriesData();
                             _timeSeriesData.Clear();
-                            var mm = AdminShell.Key.MatchMode.Relaxed;
+                            //var mm = AdminShell.Key.MatchMode.Relaxed;
 
                             // make initial data for time series
                             var tsd = new TimeSeriesData() { SourceTimeSeries = smc };
                             _timeSeriesData.Add(tsd);
 
                             // plot arguments for time series
-                            tsd.Args = PlotArguments.Parse(smc.HasQualifierOfType("TimeSeries.Args")?.value);
+                            tsd.Args = PlotArguments.Parse(smc.FindQualifierOfType("TimeSeries.Args")?.Value);
 
                             // TODO: info - ZveiTimeSeriesDataV10 is currently hardcoded as JSON string in code
                             var pcts = ZveiTimeSeriesDataV10.Static;
 
-                            var tssReference = pcts.CD_TimeSeriesSegment.GetReference();
+                            //var tssReference = pcts.CD_TimeSeriesSegment.GetReference();
+                            var tssReference = pcts.CD_TimeSeriesSegment.GetCdReference();
                             //var k = new Key("ConceptDescription", false, "IRI", "https://admin-shell.io/sandbox/zvei/TimeSeriesData/TimeSeriesSegment/1/0");
                             //var tssReference = new Reference(k);
                             //var smcAllValues = smc.value.FindAllSemanticIdAs<AdminShell.SubmodelElementCollection>(tssReference, mm);
 
                             // is it a segment
-                            try
+                            if (semanticId == "https://admin-shell.io/sandbox/zvei/TimeSeriesData/TimeSeriesSegment/1/0")
                             {
-                                if (semanticId == "https://admin-shell.io/sandbox/zvei/TimeSeriesData/TimeSeriesSegment/1/0")
-                                {
-                                    TimeSeriesAddSegmentData(pcts, mm, tsd, smc);
-                                }
-                                else
-                                {
-                                    // search for segements on current level
-                                    var smcAllValues = smc.value.FindAllSemanticIdAs<AdminShell.SubmodelElementCollection>(tssReference, mm);
-
-                                    if (smcAllValues.Count() != 0)
-                                    {
-                                        foreach (var smcseg in smcAllValues)
-                                        {
-                                            TimeSeriesAddSegmentData(pcts, mm, tsd, smcseg);
-                                        }
-                                    }
-                                }
+                                TimeSeriesAddSegmentData(pcts, tsd, smc);
                             }
-                            catch
+                            else
                             {
-                            };
+                                // search for segements on current level
+                                var smcAllValues = smc.Value.FindAllSemanticIdAs<SubmodelElementCollection>(tssReference.GetAsExactlyOneKey().Value);
+
+        if (smcAllValues.Count() != 0)
+        {
+            foreach (var smcseg in smcAllValues)
+            {
+                TimeSeriesAddSegmentData(pcts, tsd, smcseg);
+            }
+        }
+    }
 
                             _timeSeriesData?.RenderTimeSeries(defPlotHeight: 200, "en", bi.sessionNumber, plotFilter.combinedFromDate, plotFilter.combinedToDate);
                             watchTimeToProcessImage.Stop();
@@ -321,14 +475,14 @@
                     </div>
                 }
 
-                if (selectedNode != null && (selectedNode.Tag is AdminShellNS.AdminShellV20.BasicEvent be))
+                if (selectedNode != null && (selectedNode.Tag is BasicEventElement be))
                 {
-                    if (be.observed != null)
+                    if (be.Observed != null)
                     {
-                        string okey = be.observed.GetAsExactlyOneKey().ToString();
+                        string okey = be.Observed.GetAsExactlyOneKey().ToStringExtended();
                         <span style="color:white;background-color:blue;">Observed</span>
                         <span>@(" " + okey)</span><br />
-                        var refsme = Program.env[0].AasEnv.FindReferableByReference(be.observed);
+                        var refsme = Program.env[0].AasEnv.FindReferableByReference(be.Observed);
                         if (refsme != null)
                         {
                             <span style="color:lightgray;">UPDATE @refsme.TimeStamp.ToString("yy-MM-dd HH:mm:ss.fff")</span><br />
@@ -426,8 +580,8 @@
     async Task DownloadFile()
     {
         this.StateHasChanged();
-        var f = selectedNode.Tag as AdminShellNS.AdminShellV20.File;
-        var fileName = System.IO.Path.GetFileName(f.value);
+        var f = selectedNode.Tag as AasCore.Aas3_0_RC02.File;
+        var fileName = System.IO.Path.GetFileName(f.Value);
         if (fileName != "")
         {
             try
@@ -435,7 +589,7 @@
                 byte[] data;
                 using (System.IO.MemoryStream ms = new System.IO.MemoryStream())
                 {
-                    Program.env[selectedNode.envIndex].GetLocalStreamFromPackage(f.value).CopyTo(ms);
+                    Program.env[selectedNode.envIndex].GetLocalStreamFromPackage(f.Value).CopyTo(ms);
                     data = ms.ToArray();
                 }
                 //
@@ -701,23 +855,23 @@
         bool done = false;
         if (!done && i.Tag is Submodel sm)
         {
-            foreach (var smew1 in sm.submodelElements)
+            foreach (var smew1 in sm.SubmodelElements)
             {
-                listIdshort.Add(smew1.submodelElement.idShort);
+                listIdshort.Add(smew1.IdShort);
             }
             done = true;
         }
         if (!done && i.Tag is SubmodelElementCollection smec)
         {
-            foreach (var smew2 in smec.value)
+            foreach (var smew2 in smec.Value)
             {
-                listIdshort.Add(smew2.submodelElement.idShort);
+                listIdshort.Add(smew2.IdShort);
             }
             done = true;
         }
-        if (!done && i.Tag is SubmodelElement sme)
+        if (!done && i.Tag is ISubmodelElement sme)
         {
-            listIdshort.Add(sme.idShort);
+            listIdshort.Add(sme.IdShort);
             done = true;
         }
         // check if child name exists in data children idshorts, if not delete
@@ -771,9 +925,9 @@
 
         object o = item.Tag;
 
-        if (o is AdministrationShell)
+        if (o is AssetAdministrationShell)
         {
-            var aas = o as AdministrationShell;
+            var aas = o as AssetAdministrationShell;
             lock (Program.changeAasxFile)
             {
                 try
@@ -795,17 +949,16 @@
             }
         }
 
-        if (o is AdminShellNS.AdminShellV20.File)
+        if (o is AasCore.Aas3_0_RC02.File f)
         {
-            var f = o as AdminShellNS.AdminShellV20.File;
 
             // Test for /aasx/
-            if (f.value != "")
+            if (!string.IsNullOrEmpty(f.Value))
             {
-                string[] split = f.value.Split(new Char[] { '/' });
+                string[] split = f.Value.Split(new Char[] { '/' });
                 if (split.Length == 2 || split.Length > 1 && split[1].ToLower() == "aasx")
                 {
-                    split = f.value.Split(new Char[] { '.' });
+                    split = f.Value.Split(new Char[] { '.' });
                     switch (split.Last().ToLower())
                     {
                         case "jpg":
@@ -813,7 +966,7 @@
                         case "png":
                             try
                             {
-                                using (System.IO.Stream s = Program.env[item.envIndex].GetLocalStreamFromPackage(f.value))
+                                using (System.IO.Stream s = Program.env[item.envIndex].GetLocalStreamFromPackage(f.Value))
                                 {
                                     if (s != null)
                                     {
@@ -854,14 +1007,14 @@
 
         object o = item.Tag;
 
-        if (o is AdministrationShell)
+        if (o is AssetAdministrationShell)
         {
-            var aas = o as AdministrationShell;
-            var asset = Program.env[item.envIndex].AasEnv.FindAsset(aas.assetRef);
+            var aas = o as AssetAdministrationShell;
+            var asset = aas.AssetInformation;
             if (asset != null)
             {
                 // string url = WebUtility.UrlEncode(asset.identification.id);
-                string url = asset.identification.id;
+                string url = asset.GlobalAssetId.GetAsIdentifier();
                 // string link = prefix + hostPort + "/server/getaasxbyassetid/" + url;
                 // string link = Program.externalRest + "/server/getaasxbyassetid/" + url;
                 string link = url;
@@ -882,7 +1035,7 @@
 
         object o = item.Tag;
 
-        if (o is AdministrationShell)
+        if (o is AssetAdministrationShell)
         {
             string image = Program.generatedQrCodes[item.Tag];
 
@@ -914,7 +1067,7 @@
 
         object o = item.Tag;
 
-        if (o is AdministrationShell)
+        if (o is AssetAdministrationShell)
         {
             if (Program.generatedQrCodes.ContainsKey(item.Tag))
             {
@@ -922,12 +1075,12 @@
                 return;
             }
 
-            var aas = o as AdministrationShell;
-            var asset = Program.env[item.envIndex].AasEnv.FindAsset(aas.assetRef);
+            var aas = o as AssetAdministrationShell;
+            var asset = aas.AssetInformation;
             if (asset != null)
             {
                 // string url = WebUtility.UrlEncode(asset.identification.id);
-                string url = asset.identification.id;
+                string url = asset.GlobalAssetId.GetAsIdentifier();
                 // string link = prefix + hostPort + "/server/getaasxbyassetid/" + url;
                 // string link = Program.externalRest + "/server/getaasxbyassetid/" + url;
                 string link = url;
@@ -962,13 +1115,11 @@
 
         object o = item.Tag;
 
-        if (o is AdminShellNS.AdminShellV20.File)
+        if (o is AasCore.Aas3_0_RC02.File f)
         {
 
-            var f = o as AdminShellNS.AdminShellV20.File;
-
             // Test for /aasx/
-            string[] split = f.value.Split(new Char[] { '/' });
+            string[] split = f.Value.Split(new Char[] { '/' });
             if (split.Length == 2 || split[1].ToLower() == "aasx")
             {
                 return true;
@@ -1005,24 +1156,29 @@
             return Program.externalRest + "/server/getaasx/" + Convert.ToString(selectedNode.envIndex);
         }
 
-        if (o is AdministrationShell)
+        if (o is AssetAdministrationShell)
         {
             // return prefix + hostPort + "/server/getaasx/" + Convert.ToString(selectedNode.envIndex);
-            return Program.externalRest + "/server/getaasx/" + Convert.ToString(selectedNode.envIndex);
+            //return Program.externalRest + "/server/getaasx/" + Convert.ToString(selectedNode.envIndex);
+            string currentUrl = NavigationManager.Uri;
+            return currentUrl + "packages/" + Base64UrlEncoder.Encode(Convert.ToString(selectedNode.envIndex));
         }
 
-        if (o is AdminShellNS.AdminShellV20.File || o is Property)
+        if (o is AasCore.Aas3_0_RC02.File || o is Property)
         {
             string value = "";
 
-            if (o is AdminShellNS.AdminShellV20.File)
+            if (o is AasCore.Aas3_0_RC02.File)
             {
-                value = (o as AdminShellNS.AdminShellV20.File).value;
+                value = (o as AasCore.Aas3_0_RC02.File).Value;
             }
             if (o is Property)
             {
-                value = (o as Property).value;
+                value = (o as Property).Value;
             }
+
+            if (value == null || value == "")
+                return "";
 
             split = value.Split(new Char[] { ':' });
             if (split[0].ToLower() == "http" || split[0].ToLower() == "https")
@@ -1038,7 +1194,40 @@
                 if (split.Length == 2 || split[1].ToLower() == "aasx")
                 {
                     // return prefix + hostPort + "/server/getfile/" + item.envIndex.ToString() + value;
-                    return Program.externalRest + "/server/getfile/" + item.envIndex.ToString() + value;
+                    //return Program.externalRest + "/server/getfile/" + item.envIndex.ToString() + value;   //Old Grapevine implementation
+                    string idShortPath = item.Text;
+                    string submodelId = "", aasId = "";
+                    var currentParentItem = item.parent;
+                    while (currentParentItem != null)
+                    {
+                        if (currentParentItem is Item parentItem)
+                        {
+                            var parent = parentItem.Tag;
+                            if(parent is IIdentifiable identifiable)
+                            {
+                                if(parent is Submodel submodel)
+                                {
+                                    submodelId = submodel.Id;
+                                }
+                                else if(parent is AssetAdministrationShell aas)
+                                {
+                                    aasId = aas.Id;
+                                }
+                            }
+                            else if(parent is IReferable referable)
+                            {
+                                idShortPath = referable.IdShort + "." + idShortPath;
+                            }
+                            currentParentItem = parentItem.parent;
+                        }
+                    }
+
+                    string currentUrl = NavigationManager.Uri;
+                    //return currentUrl + "shells/" + Base64UrlEncoder.Encode(aasId) + "/submodels/"+ Base64UrlEncoder.Encode(submodelId) + 
+                    //"/submodel/submodel-elements/" + idShortPath + "/attachment";
+                    return currentUrl + "submodels/"+ Base64UrlEncoder.Encode(submodelId) + 
+                    "/submodelelements/" + idShortPath + "/attachment";
+
                 }
             }
         }
@@ -1056,7 +1245,7 @@
         string ret = "";
         object o = item.Tag;
 
-        if (o is AdministrationShell)
+        if (o is AssetAdministrationShell)
         {
             string symbols = Program.envSymbols[item.envIndex];
 
@@ -1085,6 +1274,32 @@
         return ret;
     }
 
+    /// <summary>
+    /// This method list added to check if Node is only SubmodelElementCollection (from V2)
+    /// 
+    /// </summary>
+    /// <param name="item"></param>
+    /// <returns></returns>
+    bool IsSmColl(Item item)
+    {
+        if(item == null)
+        {
+            return false;
+        }
+
+        if(item.Tag is SubmodelElementList)
+        {
+            return false;
+        }
+
+        if(item.Tag is SubmodelElementCollection)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     string ViewNodeType(Item item)
     {
         if (item == null)
@@ -1106,15 +1321,20 @@
         {
         ret = (o as Referable).GetElementName();
         return (ret);
-    }
-    */
+        }
+        */
+
+        if (o is string && item.Text.Contains("/readme"))
+        {
+            ret += item.Text;
+        }
 
         if (o == null && Program.envSymbols[item.envIndex] == "L")
         {
             ret += "AASX2";
         }
 
-        if (o is AdministrationShell)
+        if (o is AssetAdministrationShell)
         {
             ret += "AAS";
         }
@@ -1122,9 +1342,13 @@
         {
             ret += "Sub";
         }
-        if (o is SubmodelElement)
+        if (o is ISubmodelElement)
         {
-            if (o is SubmodelElementCollection)
+            if(o is SubmodelElementList)
+            {
+                ret += "SML";
+            }
+            else if (o is SubmodelElementCollection)
             {
                 ret += "Coll";
             }
@@ -1137,7 +1361,7 @@
         {
             ret += "Opr";
         }
-        if (o is AdminShellNS.AdminShellV20.File)
+        if (o is AasCore.Aas3_0_RC02.File)
         {
             ret += "File";
         }
@@ -1145,7 +1369,7 @@
         {
             ret += "Blob";
         }
-        if (o is AdminShellNS.AdminShellV20.Range)
+        if (o is AasCore.Aas3_0_RC02.Range)
         {
             ret += "Range";
         }
@@ -1165,9 +1389,13 @@
         {
             ret += "Ent";
         }
-        if (o is AdminShellNS.AdminShellV20.BasicEvent)
+        if (o is BasicEventElement)
         {
             ret += "Evt";
+        }
+        if(o is AnnotatedRelationshipElement)
+        {
+            ret += "RelA";
         }
 
         return (ret);
@@ -1184,7 +1412,7 @@
 
         object o = item.Tag;
 
-        if (o is Referable r)
+        if (o is IReferable r)
             // ret += " (" + r.TimeStamp.Ticks + ") ";
             ret += " (" + r.TimeStamp.ToString("yy-MM-dd HH:mm:ss.fff") + ") ";
 
@@ -1207,58 +1435,62 @@
             ret = item.Text;
         }
 
-        if (o is AdministrationShell)
+        if (o is string && item.Text.Contains("/readme"))
         {
-            var aas = o as AdministrationShell;
-            ret = aas.idShort;
+            ret = " ";
+        }
+
+        if (o is AssetAdministrationShell)
+        {
+            var aas = o as AssetAdministrationShell;
+            ret = aas.IdShort;
         }
         if (o is Submodel)
         {
             var sm = o as Submodel;
             ret = "";
-            if (sm.kind != null && sm.kind.IsTemplate)
+            if (sm.Kind != null && sm.Kind == ModelingKind.Template)
                 ret += "<T> ";
-            ret += sm.idShort;
+            ret += sm.IdShort;
         }
-        if (o is SubmodelElement)
+        if (o is ISubmodelElement)
         {
-            var sme = o as SubmodelElement;
+            var sme = o as ISubmodelElement;
             ret = "";
-            if (sme.kind != null && sme.kind.IsTemplate)
+            if (sme.Kind != null && sme.Kind == ModelingKind.Template)
                 ret += "<T> ";
-            ret += sme.idShort;
+            ret += sme.IdShort;
         }
-        if (o is AdminShellNS.AdminShellV20.File)
+        if (o is AasCore.Aas3_0_RC02.File f)
         {
-            var f = o as AdminShellNS.AdminShellV20.File;
             ret = "";
-            if (f.kind != null && f.kind.IsTemplate)
+            if (f.Kind != null && f.Kind == ModelingKind.Template)
                 ret += "<T> ";
-            ret += f.idShort;
+            ret += f.IdShort;
         }
         if (o is Blob)
         {
             var b = o as Blob;
             ret = "";
-            if (b.kind != null && b.kind.IsTemplate)
+            if (b.Kind != null && b.Kind == ModelingKind.Template)
                 ret += "<T> ";
-            ret += b.idShort;
+            ret += b.IdShort;
         }
-        if (o is AdminShellNS.AdminShellV20.Range)
+        if (o is AasCore.Aas3_0_RC02.Range)
         {
-            var r = o as AdminShellNS.AdminShellV20.Range;
+            var r = o as AasCore.Aas3_0_RC02.Range;
             ret = "";
-            if (r.kind != null && r.kind.IsTemplate)
+            if (r.Kind != null && r.Kind == ModelingKind.Template)
                 ret += "<T> ";
-            ret += r.idShort;
+            ret += r.IdShort;
         }
         if (o is MultiLanguageProperty)
         {
             var mlp = o as MultiLanguageProperty;
             ret = "";
-            if (mlp.kind != null && mlp.kind.IsTemplate)
+            if (mlp.Kind != null && mlp.Kind == ModelingKind.Template)
                 ret += "<T> ";
-            ret += mlp.idShort;
+            ret += mlp.IdShort;
         }
         return (ret);
     }
@@ -1284,16 +1516,16 @@
 
         object o = item.Tag;
 
-        if (o is AdministrationShell)
+        if (o is AssetAdministrationShell)
         {
-            var aas = o as AdministrationShell;
+            var aas = o as AssetAdministrationShell;
             // ret = aas.identification.ToString();
         }
         if (o is Submodel)
         {
             var sm = o as Submodel;
             // ret = sm.identification.ToString();
-            if (sm.qualifiers != null && sm.qualifiers.Count > 0)
+            if (sm.Qualifiers != null && sm.Qualifiers.Count > 0)
             {
                 ret += " @QUALIFIERS";
             }
@@ -1302,40 +1534,51 @@
         {
             var sme = o as SubmodelElementCollection;
             // ret = sm.identification.ToString();
-            if (sme.value.Count > 0)
+            if (sme.Value != null)
             {
-                ret += " #" + sme.value.Count;
+                if (sme.Value.Count > 0)
+                {
+                    ret += " #" + sme.Value.Count;
+                }
+            }
+            if (sme.Qualifiers != null && sme.Qualifiers.Count > 0)
+            {
+                ret += " @QUALIFIERS";
             }
         }
-        if (o is SubmodelElement)
+        if (o is ISubmodelElement)
         {
             if (o is Property)
             {
                 var prop = o as Property;
-                if (prop.value != "")
+                if (prop.Value!= null && prop.Value != "")
                 {
-                    ret = " = " + prop.value;
+                    string v = prop.Value;
+                    if (v.Length > 100)
+                        v = v.Substring(0, 100) + " ..";
+                    ret = " = " + v;
                 }
-                if (prop.qualifiers != null && prop.qualifiers.Count > 0)
+                if (prop.Qualifiers != null && prop.Qualifiers.Count > 0)
                 {
                     ret += " @QUALIFIERS";
                 }
             }
-            if (o is AdminShellNS.AdminShellV20.File)
+            if (o is AasCore.Aas3_0_RC02.File f)
             {
-                var f = o as AdminShellNS.AdminShellV20.File;
-                ret = " = " + f.value;
-                if (f.qualifiers != null && f.qualifiers.Count > 0)
+                if (f.Value != null)
+                    ret = " = " + f.Value;
+                if (f.Qualifiers != null && f.Qualifiers.Count > 0)
                 {
                     ret += " @QUALIFIERS";
                 }
             }
         }
-        if (o is AdminShellNS.AdminShellV20.Range)
+        if (o is AasCore.Aas3_0_RC02.Range)
         {
-            var r = o as AdminShellNS.AdminShellV20.Range;
-            ret = " = " + r.min + " .. " + r.max;
-            if (r.qualifiers != null && r.qualifiers.Count > 0)
+            var r = o as AasCore.Aas3_0_RC02.Range;
+            if (r.Min != null && r.Max != null)
+                ret = " = " + r.Min + " .. " + r.Max;
+            if (r.Qualifiers != null && r.Qualifiers.Count > 0)
             {
                 ret += " @QUALIFIERS";
             }
@@ -1343,15 +1586,18 @@
         if (o is MultiLanguageProperty)
         {
             var mlp = o as MultiLanguageProperty;
-            var ls = mlp.value;
-            ret = " = ";
-            for (int i = 0; i < ls.Count; i++)
+            var ls = mlp.Value;
+            if (ls != null)
             {
-                ret += ls.langString[i].lang + " ";
-                if (i == 0)
-                    ret += ls.langString[i].str + " ";
+                ret = " = ";
+                for (int i = 0; i < ls.Count; i++)
+                {
+                    ret += ls[i].Language + " ";
+                    if (i == 0)
+                        ret += ls[i].Text + " ";
+                }
             }
-            if (mlp.qualifiers != null && mlp.qualifiers.Count > 0)
+            if (mlp.Qualifiers != null && mlp.Qualifiers.Count > 0)
             {
                 ret += " @QUALIFIERS";
             }
@@ -1376,14 +1622,14 @@
             return "";
         }
 
-        if (o is AdministrationShell)
+        if (o is AssetAdministrationShell)
         {
             string subjectIssuer = null;
 
             ret = "";
-            var aas = o as AdministrationShell;
+            var aas = o as AssetAdministrationShell;
 
-            var asset = Program.env[item.envIndex].AasEnv.FindAsset(aas.assetRef);
+            var asset = aas.AssetInformation;
 
             switch (line)
             {
@@ -1391,9 +1637,9 @@
                     if (col == 0)
                         ret = "ID";
                     if (col == 1)
-                        ret = aas.identification + "";
+                        ret = aas.Id + "";
                     if (col == 2)
-                        ret = " ==> " + Base64UrlEncoder.Encode(aas.identification.id) + "";
+                        ret = " ==> " + Base64UrlEncoder.Encode(aas.Id) + "";
                     break;
                 case 1:
                     if (asset != null)
@@ -1401,7 +1647,7 @@
                         if (col == 0)
                             ret = "ASSET";
                         if (col == 1)
-                            ret = asset.idShort;
+                            ret = asset.GlobalAssetId.GetAsIdentifier();
                     }
                     break;
                 case 2:
@@ -1410,9 +1656,9 @@
                         if (col == 0)
                             ret = "ASSETID";
                         if (col == 1)
-                            ret = asset.identification + "";
+                            ret = asset.GlobalAssetId.GetAsIdentifier() + "";
                         if (col == 2)
-                            ret = " ==> " + Base64UrlEncoder.Encode(asset.identification.id) + "";
+                            ret = " ==> " + Base64UrlEncoder.Encode(asset.GlobalAssetId.GetAsIdentifier()) + "";
                     }
                     break;
                 case 3:
@@ -1422,7 +1668,7 @@
                             ret = "ASSETID URLENCODED";
                         if (col == 1)
                         {
-                            string url = WebUtility.UrlEncode(asset.identification.id);
+                            string url = WebUtility.UrlEncode(asset.GlobalAssetId.GetAsIdentifier());
                             ret = url;
                         }
                     }
@@ -1430,31 +1676,46 @@
                 /*
                 case 3:
                 subjectIssuer = Program.envSubjectIssuer[item.envIndex];
-                if (subjectIssuer != null)
-                    {
-                    string[] s = subjectIssuer.Split(';');
-                        if (s.Length > 0 && s[0] != "")
-                {
-            ret = "SUBJECT";
-            if (col == 1)
-            ret = s[0];
-            }
-            }
-            break;
-            case 4:
-            subjectIssuer = Program.envSubjectIssuer[item.envIndex];
-                if (subjectIssuer != null)
+    if (subjectIssuer != null)
+    {
+    string[] s = subjectIssuer.Split(';');
+    if (s.Length > 0 && s[0] != "")
+    {
+    ret = "SUBJECT";
+    if (col == 1)
+    ret = s[0];
+    }
+    }
+    break;
+    case 4:
+    subjectIssuer = Program.envSubjectIssuer[item.envIndex];
+            if (subjectIssuer != null)
                 {
                 string[] s = subjectIssuer.Split(';');
-                    if (s.Length > 1 && s[1] != "")
-                    {
-                        ret = "ISSUER";
-                if (col == 1)
-            ret = s[1];
+    if (s.Length > 1 && s[1] != "")
+    {
+    ret = "ISSUER";
+    if (col == 1)
+    ret = s[1];
         }
-        }
+            }
             break;
-            */
+                */
+                case 4:
+                    if (aas.Extensions != null)
+                    {
+                        if (col == 0)
+                            ret = "Extensions";
+                        if (col == 1)
+                        {
+                            ret = "";
+                            foreach (var e in aas.Extensions)
+                            {
+                                ret += e.Name + " : " + e.Value + "; ";
+                            }
+                        }
+                    }
+                    break;
                 case 5:
                 case 6:
                 case 7:
@@ -1476,9 +1737,9 @@
                     if (col == 0)
                         ret = "ID";
                     if (col == 1)
-                        ret = sm.identification + "";
+                        ret = sm.Id + "";
                     if (col == 2)
-                        ret = " ==> " + Base64UrlEncoder.Encode(sm.identification.id) + "";
+                        ret = " ==> " + Base64UrlEncoder.Encode(sm.Id) + "";
                     break;
                 case 1:
                     if (col == 0)
@@ -1486,18 +1747,31 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        var k = sm.semanticId?.GetAsExactlyOneKey();
+                        var k = sm.SemanticId?.GetAsExactlyOneKey();
                         if (k != null)
                         {
-                            ret = k.ToString();
+                            ret = $"[{k.Type}, {k.Value}]";
                         }
                     }
                     break;
                 case 2:
-                    if (col == 0)
-                        ret = getQualifiers(sm.qualifiers, col);
+                    ret = getQualifiers(sm.Qualifiers, col);
                     break;
                 case 3:
+                    if (sm.Extensions != null)
+                    {
+                        if (col == 0)
+                            ret = "Extensions";
+                        if (col == 1)
+                        {
+                            ret = "";
+                            foreach (var e in sm.Extensions)
+                            {
+                                ret += e.Name + " : " + e.Value + "; ";
+                            }
+                        }
+                    }
+                    break;
                 case 4:
                 case 5:
                 case 6:
@@ -1523,10 +1797,10 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        var k = prop.semanticId?.GetAsExactlyOneKey();
+                        var k = prop.SemanticId?.GetAsExactlyOneKey();
                         if (k != null)
                         {
-                            ret = k.ToString();
+                            ret = $"[{k.Type}, {k.Value}]";
                         }
                     }
                     break;
@@ -1534,17 +1808,16 @@
                     if (col == 0)
                         ret = "Value Type";
                     if (col == 1)
-                        ret = prop.valueType + "";
+                        ret = prop.ValueType + "";
                     break;
                 case 2:
                     if (col == 0)
                         ret = "Value";
                     if (col == 1)
-                        ret = prop.value + "";
+                        ret = prop.Value + "";
                     break;
                 case 3:
-                    if (col == 0)
-                        ret = getQualifiers(prop.qualifiers, col);
+                    ret = getQualifiers(prop.Qualifiers, col);
                     break;
                 case 4:
                     if (col == 0)
@@ -1573,10 +1846,10 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        var k = e.semanticId?.GetAsExactlyOneKey();
+                        var k = e.SemanticId?.GetAsExactlyOneKey();
                         if (k != null)
                         {
-                            ret = k.ToString();
+                            ret = $"[{k.Type}, {k.Value}]";
                         }
                     }
                     break;
@@ -1584,30 +1857,43 @@
                     if (col == 0)
                         ret = "Entity Type";
                     if (col == 1)
-                        ret = e.entityType + "";
+                        ret = e.EntityType + "";
                     break;
                 case 2:
                     ret = "";
-                    if (e.GetEntityType() == Entity.EntityTypeEnum.SelfManagedEntity)
+                    if (e.EntityType == EntityType.SelfManagedEntity)
                     {
-                        if (e.assetRef != null)
+                        if (e.GlobalAssetId != null)
                         {
                             if (col == 0)
                                 ret = "Asset";
                             if (col == 1)
                             {
-                                var k = e.assetRef.Keys;
+                                var k = e.GlobalAssetId.Keys;
                                 if (k != null)
                                 {
-                                    ret = k.ToString();
+                                    ret = k.ToStringExtended();
+                                }
+                            }
+                        }
+
+                        if (e.SpecificAssetId != null)
+                        {
+                            if (col == 0)
+                                ret = "Asset";
+                            if (col == 1)
+                            {
+                                var k = e.SpecificAssetId.Value;
+                                if (k != null)
+                                {
+                                    ret = k;
                                 }
                             }
                         }
                     }
                     break;
                 case 3:
-                    if (col == 0)
-                        ret = getQualifiers(e.qualifiers, col);
+                    ret = getQualifiers(e.Qualifiers, col);
                     break;
                 case 4:
                 case 5:
@@ -1621,10 +1907,9 @@
             return ret;
         }
 
-        if (o is AdminShellNS.AdminShellV20.File)
+        if (o is AasCore.Aas3_0_RC02.File f)
         {
-            var f = o as AdminShellNS.AdminShellV20.File;
-            // ret += ", " + f.value;
+            ret += ", " + f.Value;
             switch (line)
             {
                 case 0:
@@ -1633,10 +1918,10 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        var k = f.semanticId?.GetAsExactlyOneKey();
+                        var k = f.SemanticId?.GetAsExactlyOneKey();
                         if (k != null)
                         {
-                            ret = k.ToString();
+                            ret = $"[{k.Type}, {k.Value}]";
                         }
                     }
                     break;
@@ -1644,11 +1929,10 @@
                     if (col == 0)
                         ret = "Value";
                     if (col == 1)
-                        ret = f.value;
+                        ret = f.Value;
                     break;
                 case 2:
-                    if (col == 0)
-                        ret = getQualifiers(f.qualifiers, col);
+                    ret = getQualifiers(f.Qualifiers, col);
                     break;
                 case 3:
                 case 4:
@@ -1663,9 +1947,8 @@
             return ret;
         }
 
-        if (o is Blob)
+        if (o is Blob b)
         {
-            var b = o as Blob;
             ret = "";
             switch (line)
             {
@@ -1675,28 +1958,27 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        var k = b.semanticId?.GetAsExactlyOneKey();
+                        var k = b.SemanticId?.GetAsExactlyOneKey();
                         if (k != null)
                         {
-                            ret = k.ToString();
+                            ret = $"[{k.Type}, {k.Value}]";
                         }
                     }
                     break;
                 case 1:
                     if (col == 0)
-                        ret = "MimeType";
+                        ret = "ContentType";
                     if (col == 1)
-                        ret = b.mimeType;
+                        ret = b.ContentType;
                     break;
                 case 2:
                     if (col == 0)
                         ret = "Value";
                     if (col == 1)
-                        ret = b.value;
+                        ret = System.Text.Encoding.ASCII.GetString(b.Value);
                     break;
                 case 3:
-                    if (col == 0)
-                        ret = getQualifiers(b.qualifiers, col);
+                    ret = getQualifiers(b.Qualifiers, col);
                     break;
                 case 4:
                 case 5:
@@ -1710,10 +1992,10 @@
             return ret;
         }
 
-        if (o is AdminShellNS.AdminShellV20.Range)
+        if (o is AasCore.Aas3_0_RC02.Range)
         {
-            var r = o as AdminShellNS.AdminShellV20.Range;
-            // ret = r.idShort;
+            var r = o as AasCore.Aas3_0_RC02.Range;
+            ret = r.IdShort;
             switch (line)
             {
                 case 0:
@@ -1722,10 +2004,10 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        var k = r.semanticId?.GetAsExactlyOneKey();
+                        var k = r.SemanticId?.GetAsExactlyOneKey();
                         if (k != null)
                         {
-                            ret = k.ToString();
+                            ret = $"[{k.Type}, {k.Value}]";
                         }
                     }
                     break;
@@ -1733,17 +2015,16 @@
                     if (col == 0)
                         ret = "Min";
                     if (col == 1)
-                        ret = r.min + "";
+                        ret = r.Min + "";
                     break;
                 case 2:
                     if (col == 0)
                         ret = "Max";
                     if (col == 1)
-                        ret = r.max + "";
+                        ret = r.Max + "";
                     break;
                 case 3:
-                    if (col == 0)
-                        ret = getQualifiers(r.qualifiers, col);
+                    ret = getQualifiers(r.Qualifiers, col);
                     break;
                 case 4:
                     if (col == 0)
@@ -1772,10 +2053,10 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        var k = op.semanticId?.GetAsExactlyOneKey();
+                        var k = op.SemanticId?.GetAsExactlyOneKey();
                         if (k != null)
                         {
-                            ret = k.ToString();
+                            ret = $"[{k.Type}, {k.Value}]";
                         }
                     }
                     break;
@@ -1785,9 +2066,9 @@
                     if (col == 1)
                     {
                         ret = "0";
-                        if (op.inputVariable != null)
+                        if (op.InputVariables != null)
                         {
-                            ret = op.inputVariable.Count + "";
+                            ret = op.InputVariables.Count + "";
                         }
                     }
                     break;
@@ -1797,15 +2078,14 @@
                     if (col == 1)
                     {
                         ret = "0";
-                        if (op.outputVariable != null)
+                        if (op.OutputVariables != null)
                         {
-                            ret = op.outputVariable.Count + "";
+                            ret = op.OutputVariables.Count + "";
                         }
                     }
                     break;
                 case 3:
-                    if (col == 0)
-                        ret = getQualifiers(op.qualifiers, col);
+                    ret = getQualifiers(op.Qualifiers, col);
                     break;
                 case 4:
                 case 5:
@@ -1819,6 +2099,66 @@
             return ret;
         }
 
+        if (o is AnnotatedRelationshipElement)
+        {
+            var r = o as AnnotatedRelationshipElement;
+            // ret = r.idShort;
+            switch (line)
+            {
+                case 0:
+                    if (col == 0)
+                        ret = "Semantic ID";
+                    if (col == 1)
+                    {
+                        ret = "NULL";
+                        var k = r.SemanticId?.GetAsExactlyOneKey();
+                        if (k != null)
+                        {
+                            ret = $"[{k.Type}, {k.Value}]";
+                        }
+                    }
+                    break;
+                case 1:
+                    if (col == 0)
+                        ret = "First";
+                    if (col == 1)
+                    {
+                        ret = "NULL";
+                        var k = r.First;
+                        if (k != null)
+                        {
+                            ret = k.Keys.ToStringExtended();
+                        }
+                    }
+                    break;
+                case 2:
+                    if (col == 0)
+                        ret = "Second";
+                    if (col == 1)
+                    {
+                        ret = "NULL";
+                        var k = r.Second;
+                        if (k != null)
+                        {
+                            ret = k.Keys.ToStringExtended();
+                        }
+                    }
+                    break;
+                case 3:
+                    if (col == 0)
+                        ret = getQualifiers(r.Qualifiers, col);
+                    break;
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                case 8:
+                case 9:
+                    ret = "";
+                    break;
+            }
+            return ret;
+        }
         if (o is RelationshipElement)
         {
             var r = o as RelationshipElement;
@@ -1831,10 +2171,10 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        var k = r.semanticId?.GetAsExactlyOneKey();
+                        var k = r.SemanticId?.GetAsExactlyOneKey();
                         if (k != null)
                         {
-                            ret = k.ToString();
+                            ret = $"[{k.Type}, {k.Value}]";
                         }
                     }
                     break;
@@ -1844,10 +2184,10 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        var k = r.first;
+                        var k = r.First;
                         if (k != null)
                         {
-                            ret = k.Keys.ToString();
+                            ret = k.Keys.ToStringExtended();
                         }
                     }
                     break;
@@ -1857,16 +2197,15 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        var k = r.second;
+                        var k = r.Second;
                         if (k != null)
                         {
-                            ret = k.Keys.ToString();
+                            ret = k.Keys.ToStringExtended();
                         }
                     }
                     break;
                 case 3:
-                    if (col == 0)
-                        ret = getQualifiers(r.qualifiers, col);
+                    ret = getQualifiers(r.Qualifiers, col);
                     break;
                 case 4:
                 case 5:
@@ -1892,10 +2231,10 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        var k = r.semanticId?.GetAsExactlyOneKey();
+                        var k = r.SemanticId?.GetAsExactlyOneKey();
                         if (k != null)
                         {
-                            ret = k.ToString();
+                            ret = $"[{k.Type}, {k.Value}]";
                         }
                     }
                     break;
@@ -1905,19 +2244,28 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        if (!(r.value == null || r.value.IsEmpty))
+                        /*
+                        if (r.GetModelReference() != null)
                         {
-                            var k = r.value.Keys;
+                            var k = r.Value.Keys;
                             if (k != null)
                             {
-                                ret = k.ToString();
+                                ret = k.ToStringExtended();
+                            }
+                        }
+                        */
+                        if (r.Value != null)
+                        {
+                            var k = r.Value.Keys;
+                            if (k != null)
+                            {
+                                ret = k.ToStringExtended();
                             }
                         }
                     }
                     break;
                 case 2:
-                    if (col == 0)
-                        ret = getQualifiers(r.qualifiers, col);
+                    ret = getQualifiers(r.Qualifiers, col);
                     break;
                 case 3:
                 case 4:
@@ -1935,10 +2283,10 @@
         if (o is MultiLanguageProperty)
         {
             var mlp = o as MultiLanguageProperty;
-            var ls = mlp.value;
+            var ls = mlp.Value;
             for (int i = 0; i < ls.Count; i++)
             {
-                ret += ls.langString[i].lang + " ";
+                ret += ls[i].Language + " ";
             }
             switch (line)
             {
@@ -1948,10 +2296,10 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        var k = mlp.semanticId?.GetAsExactlyOneKey();
+                        var k = mlp.SemanticId?.GetAsExactlyOneKey();
                         if (k != null)
                         {
-                            ret = k.ToString();
+                            ret = $"[{k.Type}, {k.Value}]";
                         }
                     }
                     break;
@@ -1963,14 +2311,13 @@
                     if (ls.Count > line - 1)
                     {
                         if (col == 0)
-                            ret = ls.langString[line - 1].lang;
+                            ret = ls[line - 1].Language;
                         if (col == 1)
-                            ret = ls.langString[line - 1].str + "";
+                            ret = ls[line - 1].Text + "";
                     }
                     break;
                 case 5:
-                    if (col == 0)
-                        ret = getQualifiers(mlp.qualifiers, col);
+                    ret = getQualifiers(mlp.Qualifiers, col);
                     break;
                 case 6:
                 case 7:
@@ -1982,9 +2329,9 @@
             return ret;
         }
 
-        if (o is SubmodelElement)
+        if (o is ISubmodelElement)
         {
-            var sme = o as SubmodelElement;
+            var sme = o as ISubmodelElement;
             // ret = sme.idShort + ", " + sme.semanticId;
             switch (line)
             {
@@ -1994,16 +2341,15 @@
                     if (col == 1)
                     {
                         ret = "NULL";
-                        var k = sme.semanticId?.GetAsExactlyOneKey();
+                        var k = sme.SemanticId?.GetAsExactlyOneKey();
                         if (k != null)
                         {
-                            ret = k.ToString();
+                            ret = $"[{k.Type}, {k.Value}]";
                         }
                     }
                     break;
                 case 1:
-                    if (col == 0)
-                        ret = getQualifiers(sme.qualifiers, col);
+                    ret = getQualifiers(sme.Qualifiers, col);
                     break;
                 case 2:
                 case 3:
@@ -2022,13 +2368,14 @@
         return (ret);
     }
 
-    static string getQualifiers(QualifierCollection q, int col)
+    static string getQualifiers(List<Qualifier> q, int col)
     {
         string ret = "";
 
         if (q != null && q.Count > 0)
         {
-            ret = "Qualifiers";
+            if (col == 0)
+                ret = "Qualifiers";
             if (col == 1)
             {
                 ret = "";
@@ -2036,10 +2383,13 @@
                 {
                     if (i != 0)
                         ret += ", ";
-                    ret += q[i].type + " ";
-                    if (q[i].value != "")
+                    if (q[i].Type != null && q[i].Type != "")
                     {
-                        ret += "= " + q[i].value;
+                        ret += q[i].Type + " ";
+                    }
+                    if (q[i].Value != null && q[i].Value != "")
+                    {
+                        ret += "= " + q[i].Value;
                     }
                 }
             }
@@ -2047,27 +2397,28 @@
         return ret;
     }
 
-    public string getUnit(Item item, SubmodelElement se, int col)
+    public string getUnit(Item item, ISubmodelElement se, int col)
     {
         string ret = "";
-        if (se.semanticId == null || se.semanticId.Keys == null)
+        if (se.SemanticId == null || se.SemanticId.Keys != null || se.SemanticId.Keys.Count != 0)
         {
             return ret;
         }
-        var cd = Program.env[item.envIndex].AasEnv.FindConceptDescription(se.semanticId.Keys);
+        var cd = Program.env[item.envIndex].AasEnv.FindConceptDescriptionByReference(se.SemanticId);
         if (cd != null)
         {
-            var iec = cd.GetIEC61360();
-            if (iec != null)
-            {
-                ret = "Unit";
-                if (col == 1)
-                {
-                    ret = iec.unit;
-                    if (iec.unitId != null && iec.unitId.keys != null && iec.unitId.keys.Count > 0)
-                        ret += " (UnitId = " + iec.unitId.keys[0].ToString() + ")";
-                }
-            }
+            //TODO: jtikekar temporarily commented
+            //var iec = cd.GetIEC61360();
+            //if (iec != null)
+            //{
+            //    ret = "Unit";
+            //    if (col == 1)
+            //    {
+            //        ret = iec.unit;
+            //        if (iec.unitId != null && iec.unitId.Value != null && iec.unitId.Value.Count > 0)
+            //            ret += " (UnitId = " + iec.unitId.Value.ToString() + ")";
+            //    }
+            //}
         }
         return ret;
     }

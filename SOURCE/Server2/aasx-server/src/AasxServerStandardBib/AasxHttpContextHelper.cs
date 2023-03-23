@@ -4,6 +4,8 @@ using System.Dynamic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -12,8 +14,10 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using AasCore.Aas3_0_RC02;
 using AasxServer;
 using AdminShellNS;
+using Extenstions;
 using Grapevine.Interfaces.Server;
 using Grapevine.Server;
 using Grapevine.Server.Attributes;
@@ -24,6 +28,13 @@ using Jose.netstandard1_4;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
+using HttpStatusCode = Grapevine.Shared.HttpStatusCode;
+using System.Collections.Specialized;
+using JetBrains.Annotations;
+using System.Data;
+using Opc.Ua;
+using System.Text.Json.Nodes;
+using Namotion.Reflection;
 
 /* Copyright (c) 2018-2019 Festo AG & Co. KG <https://www.festo.com/net/de_de/Forms/web/contact_international>, author: Michael Hoffmeister
 
@@ -93,7 +104,8 @@ namespace AasxRestServerLibrary
                         var vl = v.Split(',');
                         if (vl.Length == 2)
                         {
-                            var id = new AdminShell.Identification(vl[0], vl[1]);
+                            //var id = new IIdentifiable(vl[1]);
+                            var id = vl[1];
                             var h = new AasxHttpHandleIdentification(id, "@" + k);
                             res.Add(h);
                         }
@@ -134,7 +146,8 @@ namespace AasxRestServerLibrary
                         var idt = m2.Groups[2].ToString();
                         var ids = m2.Groups[3].ToString();
 
-                        var id = new AdminShell.Identification(idt, ids);
+                        //var id = new IIdentifiable(ids);
+                        var id = ids;
                         var h = new AasxHttpHandleIdentification(id, "@" + k);
                         res.Add(h);
                     }
@@ -163,11 +176,11 @@ namespace AasxRestServerLibrary
                 if (i > Packages.Length)
                     return null;
 
-                if (Packages[i] == null || Packages[i].AasEnv == null || Packages[i].AasEnv.AdministrationShells == null
-                    || Packages[i].AasEnv.AdministrationShells.Count < 1)
+                if (Packages[i] == null || Packages[i].AasEnv == null || Packages[i].AasEnv.AssetAdministrationShells == null
+                    || Packages[i].AasEnv.AssetAdministrationShells.Count < 1)
                     return null;
 
-                findAasReturn.aas = Packages[i].AasEnv.AdministrationShells[0];
+                findAasReturn.aas = Packages[i].AasEnv.AssetAdministrationShells[0];
                 findAasReturn.iPackage = i;
             }
             else
@@ -175,7 +188,7 @@ namespace AasxRestServerLibrary
                 // Name
                 if (aasid == "id")
                 {
-                    findAasReturn.aas = Packages[0].AasEnv.AdministrationShells[0];
+                    findAasReturn.aas = Packages[0].AasEnv.AssetAdministrationShells[0];
                     findAasReturn.iPackage = 0;
                 }
                 else
@@ -184,9 +197,9 @@ namespace AasxRestServerLibrary
                     {
                         if (Packages[i] != null)
                         {
-                            if (Packages[i].AasEnv.AdministrationShells[0].idShort == aasid)
+                            if (Packages[i].AasEnv.AssetAdministrationShells[0].IdShort == aasid)
                             {
-                                findAasReturn.aas = Packages[i].AasEnv.AdministrationShells[0];
+                                findAasReturn.aas = Packages[i].AasEnv.AssetAdministrationShells[0];
                                 findAasReturn.iPackage = i;
                                 break;
                             }
@@ -200,12 +213,12 @@ namespace AasxRestServerLibrary
 
             // trivial
             /*
-            if (Packages[0] == null || Packages[0].AasEnv == null || Packages[0].AasEnv.AdministrationShells == null || Packages[0].AasEnv.AdministrationShells.Count < 1)
+            if (Packages[0] == null || Packages[0].AasEnv == null || Packages[0].AasEnv.AssetAdministrationShells == null || Packages[0].AasEnv.AssetAdministrationShells.Count < 1)
                 return null;
 
             // default aas?
             if (aasid == null || aasid.Trim() == "" || aasid.Trim().ToLower() == "id")
-                return Packages[0].AasEnv.AdministrationShells[0];
+                return Packages[0].AasEnv.AssetAdministrationShells[0];
 
 
             var specialHandles = this.CreateHandlesFromRawUrl(rawUrl);
@@ -213,12 +226,12 @@ namespace AasxRestServerLibrary
             if (handleId != null && handleId.identification != null)
                 return Packages[0].AasEnv.FindAAS(handleId.identification);
 
-            // no, iterate over idShort
+            // no, iterate over IdShort
             return Packages[0].AasEnv.FindAAS(aasid);
             */
         }
 
-        public AdminShell.SubmodelRef FindSubmodelRefWithinAas(FindAasReturn findAasReturn, string smid, System.Collections.Specialized.NameValueCollection queryStrings = null, string rawUrl = null)
+        public Reference FindSubmodelRefWithinAas(FindAasReturn findAasReturn, string smid, System.Collections.Specialized.NameValueCollection queryStrings = null, string rawUrl = null)
         {
             // trivial
             if (Packages[findAasReturn.iPackage] == null || Packages[findAasReturn.iPackage].AasEnv == null || findAasReturn.aas == null || smid == null || smid.Trim() == "")
@@ -229,7 +242,7 @@ namespace AasxRestServerLibrary
             var handleId = IdRefHandleStore.ResolveSpecific<AasxHttpHandleIdentification>(smid, specialHandles);
 
             // no, iterate & find
-            foreach (var smref in findAasReturn.aas.submodelRefs)
+            foreach (var smref in findAasReturn.aas.Submodels)
             {
                 if (handleId != null && handleId.identification != null)
                 {
@@ -239,7 +252,7 @@ namespace AasxRestServerLibrary
                 else
                 {
                     var sm = this.Packages[findAasReturn.iPackage].AasEnv.FindSubmodel(smref);
-                    if (sm != null && sm.idShort != null && sm.idShort.Trim().ToLower() == smid.Trim().ToLower())
+                    if (sm != null && sm.IdShort != null && sm.IdShort.Trim().ToLower() == smid.Trim().ToLower())
                         return smref;
                 }
             }
@@ -248,7 +261,7 @@ namespace AasxRestServerLibrary
             return null;
         }
 
-        public AdminShell.Submodel FindSubmodelWithinAas(FindAasReturn findAasReturn, string smid, System.Collections.Specialized.NameValueCollection queryStrings = null, string rawUrl = null)
+        public Submodel FindSubmodelWithinAas(FindAasReturn findAasReturn, string smid, System.Collections.Specialized.NameValueCollection queryStrings = null, string rawUrl = null)
         {
             // trivial
             if (Packages[findAasReturn.iPackage] == null || Packages[findAasReturn.iPackage].AasEnv == null || findAasReturn.aas == null || smid == null || smid.Trim() == "")
@@ -258,14 +271,14 @@ namespace AasxRestServerLibrary
             var specialHandles = this.CreateHandlesFromRawUrl(rawUrl);
             var handleId = IdRefHandleStore.ResolveSpecific<AasxHttpHandleIdentification>(smid, specialHandles);
             if (handleId != null && handleId.identification != null)
-                return Packages[findAasReturn.iPackage].AasEnv.FindSubmodel(handleId.identification);
+                return Packages[findAasReturn.iPackage].AasEnv.FindSubmodelById(handleId.identification);
 
             // no, iterate & find
 
-            foreach (var smref in findAasReturn.aas.submodelRefs)
+            foreach (var smref in findAasReturn.aas.Submodels)
             {
                 var sm = this.Packages[findAasReturn.iPackage].AasEnv.FindSubmodel(smref);
-                if (sm != null && sm.idShort != null && sm.idShort.Trim().ToLower() == smid.Trim().ToLower())
+                if (sm != null && sm.IdShort != null && sm.IdShort.Trim().ToLower() == smid.Trim().ToLower())
                     return sm;
             }
 
@@ -274,9 +287,9 @@ namespace AasxRestServerLibrary
         }
 
 
-        public AdminShell.Submodel FindSubmodelWithinAas(string aasid, string smid, System.Collections.Specialized.NameValueCollection queryStrings = null, string rawUrl = null)
+        public Submodel FindSubmodelWithinAas(string aasid, string smid, System.Collections.Specialized.NameValueCollection queryStrings = null, string rawUrl = null)
         {
-            AdminShell.AdministrationShell aas = null;
+            AssetAdministrationShell aas = null;
             int iPackage = -1;
 
             if (Packages == null)
@@ -290,11 +303,11 @@ namespace AasxRestServerLibrary
                 if (i > Packages.Length)
                     return null;
 
-                if (Packages[i] == null || Packages[i].AasEnv == null || Packages[i].AasEnv.AdministrationShells == null
-                    || Packages[i].AasEnv.AdministrationShells.Count < 1)
+                if (Packages[i] == null || Packages[i].AasEnv == null || Packages[i].AasEnv.AssetAdministrationShells == null
+                    || Packages[i].AasEnv.AssetAdministrationShells.Count < 1)
                     return null;
 
-                aas = Packages[i].AasEnv.AdministrationShells[0];
+                aas = Packages[i].AasEnv.AssetAdministrationShells[0];
                 iPackage = i;
             }
             else
@@ -302,7 +315,7 @@ namespace AasxRestServerLibrary
                 // Name
                 if (aasid == "id")
                 {
-                    aas = Packages[0].AasEnv.AdministrationShells[0];
+                    aas = Packages[0].AasEnv.AssetAdministrationShells[0];
                     iPackage = 0;
                 }
                 else
@@ -311,9 +324,9 @@ namespace AasxRestServerLibrary
                     {
                         if (Packages[i] != null)
                         {
-                            if (Packages[i].AasEnv.AdministrationShells[0].idShort == aasid)
+                            if (Packages[i].AasEnv.AssetAdministrationShells[0].IdShort == aasid)
                             {
-                                aas = Packages[i].AasEnv.AdministrationShells[0];
+                                aas = Packages[i].AasEnv.AssetAdministrationShells[0];
                                 iPackage = i;
                                 break;
                             }
@@ -327,10 +340,10 @@ namespace AasxRestServerLibrary
 
             // no, iterate & find
 
-            foreach (var smref in aas.submodelRefs)
+            foreach (var smref in aas.Submodels)
             {
                 var sm = this.Packages[iPackage].AasEnv.FindSubmodel(smref);
-                if (sm != null && sm.idShort != null && sm.idShort.Trim().ToLower() == smid.Trim().ToLower())
+                if (sm != null && sm.IdShort != null && sm.IdShort.Trim().ToLower() == smid.Trim().ToLower())
                     return sm;
             }
 
@@ -340,7 +353,7 @@ namespace AasxRestServerLibrary
 
 
 
-        public AdminShell.Submodel FindSubmodelWithoutAas(string smid, System.Collections.Specialized.NameValueCollection queryStrings = null, string rawUrl = null)
+        public Submodel FindSubmodelWithoutAas(string smid, System.Collections.Specialized.NameValueCollection queryStrings = null, string rawUrl = null)
         {
             // trivial
             if (Packages[0] == null || Packages[0].AasEnv == null || smid == null || smid.Trim() == "")
@@ -350,12 +363,12 @@ namespace AasxRestServerLibrary
             var specialHandles = this.CreateHandlesFromRawUrl(rawUrl);
             var handleId = IdRefHandleStore.ResolveSpecific<AasxHttpHandleIdentification>(smid, specialHandles);
             if (handleId != null && handleId.identification != null)
-                return Packages[0].AasEnv.FindSubmodel(handleId.identification);
+                return Packages[0].AasEnv.FindSubmodelById(handleId.identification);
 
             // no, iterate & find
             foreach (var sm in this.Packages[0].AasEnv.Submodels)
             {
-                if (sm != null && sm.idShort != null && sm.idShort.Trim().ToLower() == smid.Trim().ToLower())
+                if (sm != null && sm.IdShort != null && sm.IdShort.Trim().ToLower() == smid.Trim().ToLower())
                     return sm;
             }
 
@@ -363,7 +376,7 @@ namespace AasxRestServerLibrary
             return null;
         }
 
-        public AdminShell.ConceptDescription FindCdWithoutAas(FindAasReturn findAasReturn, string cdid, System.Collections.Specialized.NameValueCollection queryStrings = null, string rawUrl = null)
+        public ConceptDescription FindCdWithoutAas(FindAasReturn findAasReturn, string cdid, System.Collections.Specialized.NameValueCollection queryStrings = null, string rawUrl = null)
         {
             // trivial
             if (Packages[findAasReturn.iPackage] == null || Packages[findAasReturn.iPackage].AasEnv == null || findAasReturn.aas == null || cdid == null || cdid.Trim() == "")
@@ -373,12 +386,12 @@ namespace AasxRestServerLibrary
             var specialHandles = this.CreateHandlesFromRawUrl(rawUrl);
             var handleId = IdRefHandleStore.ResolveSpecific<AasxHttpHandleIdentification>(cdid, specialHandles);
             if (handleId != null && handleId.identification != null)
-                return Packages[findAasReturn.iPackage].AasEnv.FindConceptDescription(handleId.identification);
+                return Packages[findAasReturn.iPackage].AasEnv.FindConceptDescriptionById(handleId.identification);
 
             // no, iterate & find
             foreach (var cd in Packages[findAasReturn.iPackage].AasEnv.ConceptDescriptions)
             {
-                if (cd.idShort != null && cd.idShort.Trim().ToLower() == cdid.Trim().ToLower())
+                if (cd.IdShort != null && cd.IdShort.Trim().ToLower() == cdid.Trim().ToLower())
                     return cd;
             }
 
@@ -389,19 +402,19 @@ namespace AasxRestServerLibrary
 
         public class FindSubmodelElementResult
         {
-            public AdminShell.Referable elem = null;
-            public AdminShell.SubmodelElementWrapper wrapper = null;
-            public AdminShell.Referable parent = null;
+            public IReferable elem = null;
+            public ISubmodelElement submodelElement = null;
+            public IReferable parent = null;
 
-            public FindSubmodelElementResult(AdminShell.Referable elem = null, AdminShell.SubmodelElementWrapper wrapper = null, AdminShell.Referable parent = null)
+            public FindSubmodelElementResult(IReferable elem = null, ISubmodelElement wrapper = null, IReferable parent = null)
             {
                 this.elem = elem;
-                this.wrapper = wrapper;
+                this.submodelElement = wrapper;
                 this.parent = parent;
             }
         }
 
-        public FindSubmodelElementResult FindSubmodelElement(AdminShell.Referable parent, List<AdminShell.SubmodelElementWrapper> wrappers, string[] elemids, int elemNdx = 0)
+        public FindSubmodelElementResult FindSubmodelElement(IReferable parent, List<ISubmodelElement> wrappers, string[] elemids, int elemNdx = 0)
         {
             // trivial
             if (wrappers == null || elemids == null || elemNdx >= elemids.Length)
@@ -409,36 +422,54 @@ namespace AasxRestServerLibrary
 
             // dive into each
             foreach (var smw in wrappers)
-                if (smw.submodelElement != null)
+                if (smw != null)
                 {
-                    // idShort need to match
-                    if (smw.submodelElement.idShort.Trim().ToLower() != elemids[elemNdx].Trim().ToLower())
+                    // IdShort need to match
+                    if (smw.IdShort.Trim().ToLower() != elemids[elemNdx].Trim().ToLower())
                         continue;
 
                     // leaf
                     if (elemNdx == elemids.Length - 1)
                     {
-                        return new FindSubmodelElementResult(elem: smw.submodelElement, wrapper: smw, parent: parent);
+                        return new FindSubmodelElementResult(elem: smw, wrapper: smw, parent: parent);
                     }
                     else
                     {
                         // recurse into?
-                        var xsmc = smw.submodelElement as AdminShell.SubmodelElementCollection;
+                        var xsmc = smw as SubmodelElementCollection;
                         if (xsmc != null)
                         {
-                            var r = FindSubmodelElement(xsmc, xsmc.value, elemids, elemNdx + 1);
+                            var r = FindSubmodelElement(xsmc, xsmc.Value, elemids, elemNdx + 1);
                             if (r != null)
                                 return r;
                         }
 
-                        var xop = smw.submodelElement as AdminShell.Operation;
+                        var xop = smw as Operation;
                         if (xop != null)
                         {
-                            var w2 = new List<AdminShell.SubmodelElementWrapper>();
-                            for (int i = 0; i < 2; i++)
-                                foreach (var opv in xop[i])
-                                    if (opv.value != null)
-                                        w2.Add(opv.value);
+                            //var w2 = new List<SubmodelElementWrapper>();
+                            var w2 = new List<ISubmodelElement>();
+
+                            //for (int i = 0; i < 2; i++)
+                            //    foreach (var opv in xop[i])
+                            //        if (opv.Value != null)
+                            //            w2.Add(opv.Value);
+
+                            foreach (var opv in xop.InputVariables)
+                            {
+                                if (opv.Value != null)
+                                {
+                                    w2.Add(opv.Value);
+                                }
+                            }
+
+                            foreach (var opv in xop.OutputVariables)
+                            {
+                                if (opv.Value != null)
+                                {
+                                    w2.Add(opv.Value);
+                                }
+                            }
 
                             var r = FindSubmodelElement(xop, w2, elemids, elemNdx + 1);
                             if (r != null)
@@ -485,34 +516,149 @@ namespace AasxRestServerLibrary
             {
                 JsonProperty property = base.CreateProperty(member, memberSerialization);
 
-                if (!BlobHasValue && property.DeclaringType == typeof(AdminShell.Blob) && property.PropertyName == "value")
+                if (!BlobHasValue && property.DeclaringType == typeof(Blob) && property.PropertyName == "value")
                     property.ShouldSerialize = instance => { return false; };
 
-                if (!SubmodelHasElements && property.DeclaringType == typeof(AdminShell.Submodel) && property.PropertyName == "submodelElements")
+                if (!SubmodelHasElements && property.DeclaringType == typeof(Submodel) && property.PropertyName == "submodelElements")
                     property.ShouldSerialize = instance => { return false; };
 
-                if (!SmcHasValue && property.DeclaringType == typeof(AdminShell.SubmodelElementCollection) && property.PropertyName == "value")
+                if (!SmcHasValue && property.DeclaringType == typeof(SubmodelElementCollection) && property.PropertyName == "value")
                     property.ShouldSerialize = instance => { return false; };
 
-                if (!OpHasVariables && property.DeclaringType == typeof(AdminShell.Operation) && (property.PropertyName == "in" || property.PropertyName == "out"))
+                if (!OpHasVariables && property.DeclaringType == typeof(Operation) && (property.PropertyName == "in" || property.PropertyName == "out"))
                     property.ShouldSerialize = instance => { return false; };
 
-                if (!AasHasViews && property.DeclaringType == typeof(AdminShell.AdministrationShell) && property.PropertyName == "views")
+                //TODO (jtikekar, 2022-07-08): AssetAdministrationShell.Views not supported anymore
+                if (!AasHasViews && property.DeclaringType == typeof(AssetAdministrationShell) && property.PropertyName == "views")
                     property.ShouldSerialize = instance => { return false; };
 
                 return property;
             }
         }
 
+        public static string makeJsonLD(string json, int count)
+        {
+            int total = json.Length;
+            string header = "";
+            string jsonld = "";
+            string name = "";
+            int state = 0;
+            int identification = 0;
+            string id = "idNotFound";
+
+            for (int i = 0; i < total; i++)
+            {
+                var c = json[i];
+                switch (state)
+                {
+                    case 0:
+                        if (c == '"')
+                        {
+                            state = 1;
+                        }
+                        else
+                        {
+                            jsonld += c;
+                        }
+                        break;
+                    case 1:
+                        if (c == '"')
+                        {
+                            state = 2;
+                        }
+                        else
+                        {
+                            name += c;
+                        }
+                        break;
+                    case 2:
+                        if (c == ':')
+                        {
+                            bool skip = false;
+                            string pattern = ": null";
+                            if (i + pattern.Length < total)
+                            {
+                                if (json.Substring(i, pattern.Length) == pattern)
+                                {
+                                    skip = true;
+                                    i += pattern.Length;
+                                    // remove last "," in jsonld if character after null is not ","
+                                    int j = jsonld.Length - 1;
+                                    while (Char.IsWhiteSpace(jsonld[j]))
+                                    {
+                                        j--;
+                                    }
+                                    if (jsonld[j] == ',' && json[i] != ',')
+                                    {
+                                        jsonld = jsonld.Substring(0, j) + "\r\n";
+                                    }
+                                    else
+                                    {
+                                        jsonld = jsonld.Substring(0, j + 1) + "\r\n";
+                                    }
+                                    while (json[i] != '\n')
+                                        i++;
+                                }
+                            }
+
+                            if (!skip)
+                            {
+                                if (name == "identification")
+                                    identification++;
+                                if (name == "id" && identification == 1)
+                                {
+                                    id = "";
+                                    int j = i;
+                                    while (j < json.Length && json[j] != '"')
+                                    {
+                                        j++;
+                                    }
+                                    j++;
+                                    while (j < json.Length && json[j] != '"')
+                                    {
+                                        id += json[j];
+                                        j++;
+                                    }
+                                }
+                                count++;
+                                name += "__" + count;
+                                if (header != "")
+                                    header += ",\r\n";
+                                header += "  \"" + name + "\": " + "\"aio:" + name + "\"";
+                                jsonld += "\"" + name + "\":";
+                            }
+                        }
+                        else
+                        {
+                            jsonld += "\"" + name + "\"" + c;
+                        }
+                        state = 0;
+                        name = "";
+                        break;
+                }
+            }
+
+            string prefix = "  \"aio\": \"https://admin-shell-io.com/ns#\",\r\n";
+            prefix += "  \"I40GenericCredential\": \"aio:I40GenericCredential\",\r\n";
+            prefix += "  \"__AAS\": \"aio:__AAS\",\r\n";
+            header = prefix + header;
+            header = "\"context\": {\r\n" + header + "\r\n},\r\n";
+            int k = jsonld.Length - 2;
+            while (k >= 0 && jsonld[k] != '}' && jsonld[k] != ']')
+            {
+                k--;
+            }
+            #pragma warning disable format
+            jsonld = jsonld.Substring(0, k+1);
+            jsonld += ",\r\n" + "  \"id\": \"" + id + "\"\r\n}\r\n";
+            jsonld = "\"doc\": " + jsonld;
+            jsonld = "{\r\n\r\n" + header + jsonld + "\r\n\r\n}\r\n";
+            #pragma warning restore format
+
+            return jsonld;
+        }
         protected static void SendJsonResponse(Grapevine.Interfaces.Server.IHttpContext context, object obj, IContractResolver contractResolver = null)
         {
-            var settings = new JsonSerializerSettings();
-            if (contractResolver != null)
-                settings.ContractResolver = contractResolver;
-            var json = JsonConvert.SerializeObject(obj, Formatting.Indented, settings);
-            var buffer = context.Request.ContentEncoding.GetBytes(json);
-            var length = buffer.Length;
-
             var queryString = context.Request.QueryString;
             string refresh = queryString["refresh"];
             if (refresh != null && refresh != "")
@@ -520,6 +666,88 @@ namespace AasxRestServerLibrary
                 context.Response.Headers.Remove("Refresh");
                 context.Response.Headers.Add("Refresh", refresh);
             }
+            string jsonld = queryString["jsonld"];
+            string vc = queryString["vc"];
+
+            var settings = new JsonSerializerSettings();
+            if (contractResolver != null)
+                settings.ContractResolver = contractResolver;
+            var json = JsonConvert.SerializeObject(obj, Formatting.Indented, settings);
+
+            if (jsonld != null || vc != null)
+            {
+                jsonld = makeJsonLD(json, 0);
+                json = jsonld;
+
+                if (vc != null && jsonld != null && jsonld != "")
+                {
+                    string requestPath = "https://nameplate.h2894164.stratoserver.net/demo/sign?create_as_verifiable_presentation=false";
+
+                    var handler = new HttpClientHandler();
+
+                    if (AasxServer.AasxTask.proxy != null)
+                        handler.Proxy = AasxServer.AasxTask.proxy;
+                    else
+                        handler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;
+
+                    var client = new HttpClient(handler);
+                    client.Timeout = TimeSpan.FromSeconds(60);
+
+                    bool error = false;
+                    HttpResponseMessage response = new HttpResponseMessage();
+                    try
+                    {
+                        var content = new StringContent(jsonld, System.Text.Encoding.UTF8, "application/json");
+                        var task = Task.Run(async () =>
+                        {
+                            response = await client.PostAsync(
+                                requestPath, content);
+                        });
+                        task.Wait();
+                        error = !response.IsSuccessStatusCode;
+                    }
+                    catch
+                    {
+                        error = true;
+                    }
+                    if (!error)
+                    {
+                        json = response.Content.ReadAsStringAsync().Result;
+                    }
+                    else
+                    {
+                        string r = "ERROR POST; " + response.StatusCode.ToString();
+                        r += " ; " + requestPath;
+                        if (response.Content != null)
+                            r += " ; " + response.Content.ReadAsStringAsync().Result;
+                        Console.WriteLine(r);
+                        json = r;
+                    }
+                }
+            }
+
+            //TODO:jtikekar remove
+            if (context.Request.RawUrl.Equals("/aas/0/core") && obj is ExpandoObject findAasReturn)
+            {
+                var value = new JsonObject();
+                foreach (KeyValuePair<string, object> kvp in findAasReturn)
+                {
+                    if (kvp.Key.Equals("AAS"))
+                    {
+                        value["AAS"] = Jsonization.Serialize.ToJsonObject((AssetAdministrationShell)kvp.Value);
+                    }
+                    else if (kvp.Key.Equals("Asset"))
+                    {
+                        value["AssetInformation"] = Jsonization.Serialize.ToJsonObject((AssetInformation)kvp.Value);
+                    }
+                }
+
+                json = value.ToString();
+
+            }
+
+            var buffer = context.Request.ContentEncoding.GetBytes(json);
+            var length = buffer.Length;
 
             AasxRestServer.TestResource.allowCORS(context);
 
@@ -608,11 +836,12 @@ namespace AasxRestServerLibrary
             }
 
             // try to get the asset as well
-            var asset = this.Packages[findAasReturn.iPackage].AasEnv.FindAsset(findAasReturn.aas.assetRef);
+            // TODO (MIHO, 2022-01-07): decide what to do with the frame
+            AssetInformation asset = null;
 
             // result
             res.AAS = findAasReturn.aas;
-            res.Asset = asset;
+            res.Asset = findAasReturn.aas.AssetInformation;
 
             // return as JSON
             var cr = new AdminShellConverters.AdaptiveFilterContractResolver(deep: deep, complete: complete);
@@ -653,10 +882,12 @@ namespace AasxRestServerLibrary
             }
 
             // create a new, filtered AasEnv
-            AdminShell.AdministrationShellEnv copyenv = null;
+            AasCore.Aas3_0_RC02.Environment copyenv = new AasCore.Aas3_0_RC02.Environment();
             try
             {
-                copyenv = AdminShell.AdministrationShellEnv.CreateFromExistingEnv(this.Packages[findAasReturn.iPackage].AasEnv, filterForAas: new List<AdminShell.AdministrationShell>(new AdminShell.AdministrationShell[] { findAasReturn.aas }));
+                var sourceEnvironment = Packages[findAasReturn.iPackage].AasEnv;
+                var aasList = new List<AssetAdministrationShell>() { findAasReturn.aas };
+                copyenv = copyenv.CreateFromExistingEnvironment(sourceEnvironment, aasList);
             }
             catch (Exception ex)
             {
@@ -673,8 +904,8 @@ namespace AasxRestServerLibrary
                     {
                         // build a file name
                         var fn = "aasenv.json";
-                        if (findAasReturn.aas.idShort != null)
-                            fn = findAasReturn.aas.idShort + "." + fn;
+                        if (findAasReturn.aas.IdShort != null)
+                            fn = findAasReturn.aas.IdShort + "." + fn;
                         // serialize via helper
                         var jsonwriter = copyenv.SerialiazeJsonToStream(new StreamWriter(ms), leaveJsonWriterOpen: true);
                         // write out again
@@ -779,10 +1010,10 @@ namespace AasxRestServerLibrary
             }
 
             // list of Identification
-            AdminShell.AdministrationShell aas = null;
+            AssetAdministrationShell aas = null;
             try
             {
-                aas = Newtonsoft.Json.JsonConvert.DeserializeObject<AdminShell.AdministrationShell>(context.Request.Payload);
+                aas = Newtonsoft.Json.JsonConvert.DeserializeObject<AssetAdministrationShell>(context.Request.Payload);
             }
             catch (Exception ex)
             {
@@ -791,14 +1022,14 @@ namespace AasxRestServerLibrary
             }
 
             // need id for idempotent behaviour
-            if (aas.identification == null)
+            if (aas.Id == null)
             {
                 context.Response.SendResponse(HttpStatusCode.BadRequest, $"Identification of entity is (null); PUT cannot be performed.");
                 return;
             }
 
             // datastructure update
-            context.Server.Logger.Debug($"Putting AdministrationShell with idShort {aas.idShort ?? "--"} and id {aas.identification?.ToString() ?? "--"}");
+            context.Server.Logger.Debug($"Putting AdministrationShell with IdShort {aas.IdShort ?? "--"} and id {aas.Id?.ToString() ?? "--"}");
 
             bool emptyPackageAvailable = false;
             int emptyPackageIndex = -1;
@@ -806,11 +1037,11 @@ namespace AasxRestServerLibrary
             {
                 if (this.Packages[envi] != null)
                 {
-                    var existingAas = this.Packages[envi].AasEnv.FindAAS(aas.identification);
+                    var existingAas = this.Packages[envi].AasEnv.FindAasById(aas.Id);
                     if (existingAas != null)
                     {
-                        this.Packages[envi].AasEnv.AdministrationShells.Remove(existingAas);
-                        this.Packages[envi].AasEnv.AdministrationShells.Add(aas);
+                        this.Packages[envi].AasEnv.AssetAdministrationShells.Remove(existingAas);
+                        this.Packages[envi].AasEnv.AssetAdministrationShells.Add(aas);
                         SendTextResponse(context, "OK (update, index=" + envi + ")");
                         return;
                     }
@@ -828,7 +1059,7 @@ namespace AasxRestServerLibrary
             if (emptyPackageAvailable)
             {
                 this.Packages[emptyPackageIndex] = new AdminShellPackageEnv();
-                this.Packages[emptyPackageIndex].AasEnv.AdministrationShells.Add(aas);
+                this.Packages[emptyPackageIndex].AasEnv.AssetAdministrationShells.Add(aas);
                 SendTextResponse(context, "OK (new, index=" + emptyPackageIndex + ")");
                 return;
             }
@@ -893,34 +1124,42 @@ namespace AasxRestServerLibrary
                     Console.WriteLine("EvalPutAasxOnServer: file.instancesIdentificationSuffix = " + file.instancesIdentificationSuffix);
 
                     // instantiate aas
-                    foreach (var aas in aasEnv.AasEnv.AdministrationShells)
+                    foreach (var aas in aasEnv.AasEnv.AssetAdministrationShells)
                     {
-                        aas.idShort += file.instancesIdentificationSuffix;
-                        aas.identification.id += file.instancesIdentificationSuffix;
-                        aas.assetRef[0].value += file.instancesIdentificationSuffix;
-                        foreach (var smref in aas.submodelRefs)
+                        aas.IdShort += file.instancesIdentificationSuffix;
+                        aas.Id += file.instancesIdentificationSuffix;
+                        //aas.assetRef[0].Value += file.instancesIdentificationSuffix;
+                        //aas.AssetInformation.SetIdentification(new AdminShellV30.Identifier(file.instancesIdentificationSuffix));
+                        var assetIdKey = new Key(KeyTypes.GlobalReference, file.instancesIdentificationSuffix);
+                        var keyList = new List<Key>() { assetIdKey };
+                        aas.AssetInformation.GlobalAssetId = new Reference(AasCore.Aas3_0_RC02.ReferenceTypes.GlobalReference, keyList);
+                        foreach (var smref in aas.Submodels)
                         {
                             foreach (var key in smref.Keys)
                             {
-                                key.value += file.instancesIdentificationSuffix;
+                                key.Value += file.instancesIdentificationSuffix;
                             }
                         }
                     }
 
                     // instantiate asset
-                    foreach (var asset in aasEnv.AasEnv.Assets)
-                    {
-                        asset.idShort += file.instancesIdentificationSuffix;
-                        asset.identification.id += file.instancesIdentificationSuffix;
-                    }
+                    //foreach (var asset in aasEnv.AasEnv.Assets)
+                    //{
+                    //    //asset.IdShort += file.instancesIdentificationSuffix;
+                    //    //asset.identification.id += file.instancesIdentificationSuffix;
+                    //    //asset.SetIdentification(new AdminShellV30.Identifier(file.instancesIdentificationSuffix));
+                    //    var assetIdKey = new Key(KeyTypes.GlobalReference, file.instancesIdentificationSuffix);
+                    //    var keyList = new List<Key>() { assetIdKey };
+                    //    asset.GlobalAssetId = new Reference(ReferenceTypes.GlobalReference, keyList);
+                    //}
 
                     // instantiate submodel
                     foreach (var submodel in aasEnv.AasEnv.Submodels)
                     {
-                        submodel.identification.id += file.instancesIdentificationSuffix;
+                        submodel.Id += file.instancesIdentificationSuffix;
                         if (file.instantiateSubmodelsIdShort)
                         {
-                            submodel.idShort += file.instancesIdentificationSuffix;
+                            submodel.IdShort += file.instancesIdentificationSuffix;
                         }
                     }
                 }
@@ -929,16 +1168,16 @@ namespace AasxRestServerLibrary
             string aasIdShort = "";
             try
             {
-                aasIdShort = aasEnv.AasEnv.AdministrationShells[0].idShort;
+                aasIdShort = aasEnv.AasEnv.AssetAdministrationShells[0].IdShort;
             }
             catch (Exception ex)
             {
-                context.Response.SendResponse(HttpStatusCode.BadRequest, $"Cannot find idShort in {file.path}. Aborting... {ex.Message}");
+                context.Response.SendResponse(HttpStatusCode.BadRequest, $"Cannot find IdShort in {file.path}. Aborting... {ex.Message}");
                 return;
             }
 
             var findAasReturn = this.FindAAS(aasIdShort, context.Request.QueryString, context.Request.RawUrl);
-            Console.WriteLine("FindAAS() with idShort \"" + aasIdShort + "\" yields package-index " + findAasReturn.iPackage);
+            Console.WriteLine("FindAAS() with IdShort \"" + aasIdShort + "\" yields package-index " + findAasReturn.iPackage);
 
             if (findAasReturn.aas == null)
             {
@@ -1002,7 +1241,7 @@ namespace AasxRestServerLibrary
             }
 
             var findAasReturn = this.FindAAS(aasid, context.Request.QueryString, context.Request.RawUrl);
-            Console.WriteLine("FindAAS() with idShort \"" + aasid + "\" yields package-index " + findAasReturn.iPackage);
+            Console.WriteLine("FindAAS() with IdShort \"" + aasid + "\" yields package-index " + findAasReturn.iPackage);
 
             if (findAasReturn.aas == null)
             {
@@ -1014,7 +1253,7 @@ namespace AasxRestServerLibrary
             {
                 try
                 {
-                    Packages[findAasReturn.iPackage].SaveAs(file.path, false, AdminShellPackageEnv.PreferredFormat.Json, null);
+                    Packages[findAasReturn.iPackage].SaveAs(file.path, false, AdminShellPackageEnv.SerializationFormat.Json, null);
                     Program.envFileName[findAasReturn.iPackage] = file.path;
                     context.Response.StatusCode = HttpStatusCode.Ok;
                     SendTextResponse(context, "OK (saved)");
@@ -1041,7 +1280,7 @@ namespace AasxRestServerLibrary
             {
                 accessrights = SecurityCheck(context, ref index);
 
-                var aas = Program.env[aasInfo.iPackage].AasEnv.AdministrationShells[0];
+                var aas = Program.env[aasInfo.iPackage].AasEnv.AssetAdministrationShells[0];
                 if (!checkAccessRights(context, accessrights, "/aasx", "UPDATE", "", "aas", aas))
                 {
                     return;
@@ -1058,7 +1297,7 @@ namespace AasxRestServerLibrary
             }
 
             // find package index to replace
-            Console.WriteLine("FindAAS() with idShort \"" + aasid + "\" yields package-index " + aasInfo.iPackage);
+            Console.WriteLine("FindAAS() with IdShort \"" + aasid + "\" yields package-index " + aasInfo.iPackage);
             var packIndex = aasInfo.iPackage;
             if (packIndex < 0 || packIndex >= Packages.Length)
             {
@@ -1069,10 +1308,10 @@ namespace AasxRestServerLibrary
             /*
             if (withAuthentification)
             {
-                string idshort = AasxServer.Program.env[packIndex].AasEnv.AdministrationShells[0].idShort;
+                string IdShort = AasxServer.Program.env[packIndex].AasEnv.AssetAdministrationShells[0].IdShort;
                 string aasRights = "NONE";
                 if (securityRightsAAS.Count != 0)
-                    aasRights = securityRightsAAS[idshort];
+                    aasRights = securityRightsAAS[IdShort];
                 if (!checkAccessRights(context, accessrights, aasRights))
                 {
                     return;
@@ -1088,7 +1327,7 @@ namespace AasxRestServerLibrary
             try
             {
                 var ba = Convert.FromBase64String(context.Request.Payload);
-                File.WriteAllBytes(tempFn, ba);
+                System.IO.File.WriteAllBytes(tempFn, ba);
             }
             catch (Exception ex)
             {
@@ -1105,7 +1344,7 @@ namespace AasxRestServerLibrary
                     Packages[packIndex].Close();
 
                     // copy to back (rename experienced to be more error-prone)
-                    File.Copy(packFn, packFn + ".bak", overwrite: true);
+                    System.IO.File.Copy(packFn, packFn + ".bak", overwrite: true);
                 }
                 catch (Exception ex)
                 {
@@ -1121,7 +1360,7 @@ namespace AasxRestServerLibrary
                     Console.WriteLine($"Replace original AASX package on server: {packFn}");
 
                     // copy into same location
-                    File.Copy(tempFn, packFn, overwrite: true);
+                    System.IO.File.Copy(tempFn, packFn, overwrite: true);
 
                     // open again
                     var newAasx = new AdminShellPackageEnv(packFn, true);
@@ -1161,14 +1400,15 @@ namespace AasxRestServerLibrary
             {
                 if (this.Packages[envi] != null)
                 {
-                    foreach (var aas in this.Packages[envi].AasEnv.AdministrationShells)
+                    foreach (var aas in this.Packages[envi].AasEnv.AssetAdministrationShells)
                     {
-                        if (aas.assetRef != null)
+                        if (aas.AssetInformation != null)
                         {
-                            var asset = Program.env[envi].AasEnv.FindAsset(aas.assetRef);
+                            object asset = null;
+                            //var asset = Program.env[envi].AasEnv.FindAsset(aas.assetInformation);
                             if (asset != null)
                             {
-                                string url = System.Net.WebUtility.UrlEncode(asset.identification.id).ToUpper();
+                                string url = System.Net.WebUtility.UrlEncode("").ToUpper();
                                 if (assetId == url)
                                 {
                                     string headers = context.Request.Headers.ToString();
@@ -1258,7 +1498,7 @@ namespace AasxRestServerLibrary
             }
 
             // datastructure update
-            if (this.Packages[0] == null || this.Packages[0].AasEnv == null || this.Packages[0].AasEnv.AdministrationShells == null)
+            if (this.Packages[0] == null || this.Packages[0].AasEnv == null || this.Packages[0].AasEnv.AssetAdministrationShells == null)
             {
                 context.Response.SendResponse(HttpStatusCode.InternalServerError, $"Error accessing internal data structures.");
                 return;
@@ -1268,18 +1508,19 @@ namespace AasxRestServerLibrary
             var findAasReturn = this.FindAAS(aasid, context.Request.QueryString, context.Request.RawUrl);
             if (findAasReturn.aas == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with idShort '{aasid}' found.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with IdShort '{aasid}' found.");
                 return;
             }
 
             // find the asset
-            var asset = this.Packages[findAasReturn.iPackage].AasEnv.FindAsset(findAasReturn.aas.assetRef);
+            //var asset = this.Packages[findAasReturn.iPackage].AasEnv.FindAsset(findAasReturn.aas.assetInformation);
+            var asset = findAasReturn.aas.AssetInformation;
 
             // delete
-            context.Server.Logger.Debug($"Deleting AdministrationShell with idShort {findAasReturn.aas.idShort ?? "--"} and id {findAasReturn.aas.identification?.ToString() ?? "--"}");
-            this.Packages[findAasReturn.iPackage].AasEnv.AdministrationShells.Remove(findAasReturn.aas);
+            context.Server.Logger.Debug($"Deleting AdministrationShell with IdShort {findAasReturn.aas.IdShort ?? "--"} and id {findAasReturn.aas.Id?.ToString() ?? "--"}");
+            this.Packages[findAasReturn.iPackage].AasEnv.AssetAdministrationShells.Remove(findAasReturn.aas);
 
-            if (this.Packages[findAasReturn.iPackage].AasEnv.AdministrationShells.Count == 0)
+            if (this.Packages[findAasReturn.iPackage].AasEnv.AssetAdministrationShells.Count == 0)
             {
                 this.Packages[findAasReturn.iPackage] = null;
             }
@@ -1287,8 +1528,8 @@ namespace AasxRestServerLibrary
             {
                 if (deleteAsset && asset != null)
                 {
-                    context.Server.Logger.Debug($"Deleting Asset with idShort {asset.idShort ?? "--"} and id {asset.identification?.ToString() ?? "--"}");
-                    this.Packages[findAasReturn.iPackage].AasEnv.Assets.Remove(asset);
+                    context.Server.Logger.Debug($"Deleting Asset with Global Asset Id {asset.GlobalAssetId.GetAsIdentifier() ?? "--"}");
+                    //this.Packages[findAasReturn.iPackage].AasEnv.Assets.Remove(asset);
                 }
             }
 
@@ -1333,23 +1574,23 @@ namespace AasxRestServerLibrary
             var handle = IdRefHandleStore.ResolveSpecific<AasxHttpHandleIdentification>(assetid, specialHandles);
             if (handle != null && handle.identification != null)
             {
-                foreach (var aas in this.Packages[0].AasEnv.AdministrationShells)
-                    if (aas.assetRef != null && aas.assetRef.Matches(handle.identification))
+                foreach (var aas in this.Packages[0].AasEnv.AssetAdministrationShells)
+                    if (aas.AssetInformation != null && (aas.AssetInformation.GlobalAssetId.Matches(handle.identification) || aas.AssetInformation.GlobalAssetId.Matches(handle.identification)))
                     {
                         dynamic o = new ExpandoObject();
-                        o.identification = aas.identification;
-                        o.idShort = aas.idShort;
+                        o.identification = aas.Id;
+                        o.IdShort = aas.IdShort;
                         res.Add(o);
                     }
             }
             else
             {
-                foreach (var aas in this.Packages[0].AasEnv.AdministrationShells)
-                    if (aas.idShort != null && aas.idShort.Trim() != "" && aas.idShort.Trim().ToLower() == assetid.Trim().ToLower())
+                foreach (var aas in this.Packages[0].AasEnv.AssetAdministrationShells)
+                    if (aas.IdShort != null && aas.IdShort.Trim() != "" && aas.IdShort.Trim().ToLower() == assetid.Trim().ToLower())
                     {
                         dynamic o = new ExpandoObject();
-                        o.identification = aas.identification;
-                        o.idShort = aas.idShort;
+                        o.identification = aas.Id;
+                        o.IdShort = aas.IdShort;
                         res.Add(o);
                     }
             }
@@ -1385,10 +1626,10 @@ namespace AasxRestServerLibrary
             }
 
             // de-serialize asset
-            AdminShell.Asset asset = null;
+            AssetInformation asset = null;
             try
             {
-                asset = Newtonsoft.Json.JsonConvert.DeserializeObject<AdminShell.Asset>(context.Request.Payload);
+                asset = Newtonsoft.Json.JsonConvert.DeserializeObject<AssetInformation>(context.Request.Payload);
             }
             catch (Exception ex)
             {
@@ -1396,28 +1637,29 @@ namespace AasxRestServerLibrary
                 return;
             }
 
-            // need id for idempotent behaviour
-            if (asset.identification == null)
-            {
-                context.Response.SendResponse(HttpStatusCode.BadRequest, $"Identification of entity is (null); PUT cannot be performed.");
-                return;
-            }
+            //// need id for idempotent behaviour
+            //if (asset.identification == null)
+            //{
+            //    context.Response.SendResponse(HttpStatusCode.BadRequest, $"Identification of entity is (null); PUT cannot be performed.");
+            //    return;
+            //}
 
-            // datastructure update
-            if (this.Packages[0] == null || this.Packages[0].AasEnv == null || this.Packages[0].AasEnv.Assets == null)
-            {
-                context.Response.SendResponse(HttpStatusCode.InternalServerError, $"Error accessing internal data structures.");
-                return;
-            }
-            context.Server.Logger.Debug($"Adding Asset with idShort {asset.idShort ?? "--"}");
-            var existingAsset = this.Packages[0].AasEnv.FindAsset(asset.identification);
-            if (existingAsset != null)
-                this.Packages[0].AasEnv.Assets.Remove(existingAsset);
-            this.Packages[0].AasEnv.Assets.Add(asset);
+            //// datastructure update
+            //if (this.Packages[0] == null || this.Packages[0].AasEnv == null || this.Packages[0].AasEnv.Assets == null)
+            //{
+            //    context.Response.SendResponse(HttpStatusCode.InternalServerError, $"Error accessing internal data structures.");
+            //    return;
+            //}
+            //context.Server.Logger.Debug($"Adding Asset with IdShort {asset.IdShort ?? "--"}");
+            //var existingAsset = this.Packages[0].AasEnv.FindAsset(asset.identification);
+            //if (existingAsset != null)
+            //    this.Packages[0].AasEnv.Assets.Remove(existingAsset);
+            //this.Packages[0].AasEnv.Assets.Add(asset);
 
             // simple OK
             Program.signalNewData(2);
             context.Response.StatusCode = HttpStatusCode.Ok;
+            object existingAsset = null;
             SendTextResponse(context, "OK" + ((existingAsset != null) ? " (updated)" : " (new)"));
         }
 
@@ -1451,53 +1693,54 @@ namespace AasxRestServerLibrary
             var findAasReturn = this.FindAAS(aasid, context.Request.QueryString, context.Request.RawUrl);
             if (findAasReturn.aas == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with idShort '{aasid}' found.");
-                Console.WriteLine("ERROR PUT: No AAS with idShort '{0}' found.", aasid);
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with IdShort '{aasid}' found.");
+                Console.WriteLine("ERROR PUT: No AAS with IdShort '{0}' found.", aasid);
                 return;
             }
 
             // de-serialize asset
-            AdminShell.Asset asset = null;
-            try
-            {
-                asset = Newtonsoft.Json.JsonConvert.DeserializeObject<AdminShell.Asset>(context.Request.Payload);
-            }
-            catch (Exception ex)
-            {
-                context.Response.SendResponse(HttpStatusCode.BadRequest, $"Cannot deserialize payload: {ex.Message}.");
-                return;
-            }
+            //AdminShell.Asset asset = null;
+            //try
+            //{
+            //    asset = Newtonsoft.Json.JsonConvert.DeserializeObject<AdminShell.Asset>(context.Request.Payload);
+            //}
+            //catch (Exception ex)
+            //{
+            //    context.Response.SendResponse(HttpStatusCode.BadRequest, $"Cannot deserialize payload: {ex.Message}.");
+            //    return;
+            //}
 
-            // need id for idempotent behaviour
-            if (asset.identification == null)
-            {
-                context.Response.SendResponse(HttpStatusCode.BadRequest, $"Identification of entity is (null); PUT cannot be performed.");
-                Console.WriteLine("ERROR PUT: Identification of entity is (null); PUT cannot be performed.");
-                return;
-            }
+            //// need id for idempotent behaviour
+            //if (asset.identification == null)
+            //{
+            //    context.Response.SendResponse(HttpStatusCode.BadRequest, $"Identification of entity is (null); PUT cannot be performed.");
+            //    Console.WriteLine("ERROR PUT: Identification of entity is (null); PUT cannot be performed.");
+            //    return;
+            //}
 
-            // datastructure update
-            if (this.Packages[findAasReturn.iPackage] == null || this.Packages[findAasReturn.iPackage].AasEnv == null || this.Packages[findAasReturn.iPackage].AasEnv.Assets == null)
-            {
-                context.Response.SendResponse(HttpStatusCode.InternalServerError, $"Error accessing internal data structures.");
-                return;
-            }
+            //// datastructure update
+            //if (this.Packages[findAasReturn.iPackage] == null || this.Packages[findAasReturn.iPackage].AasEnv == null || this.Packages[findAasReturn.iPackage].AasEnv.Assets == null)
+            //{
+            //    context.Response.SendResponse(HttpStatusCode.InternalServerError, $"Error accessing internal data structures.");
+            //    return;
+            //}
 
-            // add Asset
-            context.Server.Logger.Debug($"Adding Asset with idShort {asset.idShort ?? "--"} and id {asset.identification?.ToString() ?? "--"}");
-            var existingAsset = this.Packages[findAasReturn.iPackage].AasEnv.FindAsset(asset.identification);
-            if (existingAsset != null)
-                this.Packages[findAasReturn.iPackage].AasEnv.Assets.Remove(existingAsset);
-            this.Packages[findAasReturn.iPackage].AasEnv.Assets.Add(asset);
+            //// add Asset
+            //context.Server.Logger.Debug($"Adding Asset with IdShort {asset.IdShort ?? "--"} and id {asset.identification?.ToString() ?? "--"}");
+            //var existingAsset = this.Packages[findAasReturn.iPackage].AasEnv.FindAsset(asset.identification);
+            //if (existingAsset != null)
+            //    this.Packages[findAasReturn.iPackage].AasEnv.Assets.Remove(existingAsset);
+            //this.Packages[findAasReturn.iPackage].AasEnv.Assets.Add(asset);
 
-            // add AssetRef to AAS        
-            findAasReturn.aas.assetRef = new AdminShellV20.AssetRef(new AdminShellV20.Reference(new AdminShellV20.Key("Asset", true, asset.identification.idType, asset.identification.id)));
+            //// add AssetRef to AAS        
+            //findAasReturn.aas.assetRef = new AdminShellV20.AssetRef(new AdminShellV20.Reference(new AdminShellV20.Key("Asset", true, asset.identification.idType, asset.identification.id)));
 
-            Console.WriteLine("{0} Received PUT Asset {1}", countPut++, asset.idShort);
+            //Console.WriteLine("{0} Received PUT Asset {1}", countPut++, asset.IdShort);
 
             // simple OK
             Program.signalNewData(2);
             context.Response.StatusCode = HttpStatusCode.Ok;
+            object existingAsset = null;
             SendTextResponse(context, "OK" + ((existingAsset != null) ? " (updated)" : " (new)"));
         }
         #endregion
@@ -1506,23 +1749,23 @@ namespace AasxRestServerLibrary
 
         public class GetSubmodelsItem
         {
-            public AdminShell.Identification id = new AdminShell.Identification();
-            public string idShort = "";
+            public IIdentifiable id;
+            public string IdShort = "";
             public string kind = "";
 
             public GetSubmodelsItem() { }
 
-            public GetSubmodelsItem(AdminShell.Identification id, string idShort, string kind)
+            public GetSubmodelsItem(IIdentifiable id, string IdShort, string kind)
             {
                 this.id = id;
-                this.idShort = idShort;
+                this.IdShort = IdShort;
                 this.kind = kind;
             }
 
-            public GetSubmodelsItem(AdminShell.Identifiable idi, string kind)
+            public GetSubmodelsItem(IIdentifiable idi, string kind)
             {
-                this.id = idi.identification;
-                this.idShort = idi.idShort;
+                this.id = idi;
+                this.IdShort = idi.IdShort;
                 this.kind = kind;
             }
         }
@@ -1549,7 +1792,7 @@ namespace AasxRestServerLibrary
             var findAasReturn = this.FindAAS(aasid, context.Request.QueryString, context.Request.RawUrl);
             if (findAasReturn.aas == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with idShort '{aasid}' found.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with IdShort '{aasid}' found.");
                 return;
             }
 
@@ -1557,12 +1800,13 @@ namespace AasxRestServerLibrary
             var res = new List<GetSubmodelsItem>();
 
             // get all submodels
-            foreach (var smref in findAasReturn.aas.submodelRefs)
+            foreach (var smref in findAasReturn.aas.Submodels)
             {
                 var sm = this.Packages[findAasReturn.iPackage].AasEnv.FindSubmodel(smref);
                 if (sm != null)
                 {
-                    res.Add(new GetSubmodelsItem(sm, sm.kind.kind));
+                    //res.Add(new GetSubmodelsItem(sm, sm.kind.kind));
+                    res.Add(new GetSubmodelsItem(sm, sm.Kind.ToString()));
                 }
             }
 
@@ -1602,20 +1846,20 @@ namespace AasxRestServerLibrary
             var findAasReturn = this.FindAAS(aasid, context.Request.QueryString, context.Request.RawUrl);
             if (findAasReturn.aas == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with idShort '{aasid}' found.");
-                Console.WriteLine("ERROR PUT: No AAS with idShort '{0}' found.", aasid);
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with IdShort '{aasid}' found.");
+                Console.WriteLine("ERROR PUT: No AAS with IdShort '{0}' found.", aasid);
                 return;
             }
 
             // de-serialize Submodel
-            AdminShell.Submodel submodel = null;
+            Submodel submodel = null;
             try
             {
                 using (TextReader reader = new StringReader(context.Request.Payload))
                 {
                     JsonSerializer serializer = new JsonSerializer();
                     serializer.Converters.Add(new AdminShellConverters.JsonAasxConverter("modelType", "name"));
-                    submodel = (AdminShell.Submodel)serializer.Deserialize(reader, typeof(AdminShell.Submodel));
+                    submodel = (Submodel)serializer.Deserialize(reader, typeof(Submodel));
                 }
             }
             catch (Exception ex)
@@ -1626,7 +1870,7 @@ namespace AasxRestServerLibrary
             }
 
             // need id for idempotent behaviour
-            if (submodel.identification == null)
+            if (submodel.Id == null)
             {
                 context.Response.SendResponse(HttpStatusCode.BadRequest, $"Identification of entity is (null); PUT cannot be performed.");
                 Console.WriteLine("ERROR PUT: Identification of entity is (null); PUT cannot be performed.");
@@ -1634,15 +1878,15 @@ namespace AasxRestServerLibrary
             }
 
             // datastructure update
-            if (this.Packages[findAasReturn.iPackage] == null || this.Packages[findAasReturn.iPackage].AasEnv == null || this.Packages[findAasReturn.iPackage].AasEnv.Assets == null)
+            if (this.Packages[findAasReturn.iPackage] == null || this.Packages[findAasReturn.iPackage].AasEnv == null /*|| this.Packages[findAasReturn.iPackage].AasEnv.Assets == null*/)
             {
                 context.Response.SendResponse(HttpStatusCode.InternalServerError, $"Error accessing internal data structures.");
                 return;
             }
 
             // add Submodel
-            context.Server.Logger.Debug($"Adding Submodel with idShort {submodel.idShort ?? "--"} and id {submodel.identification?.ToString() ?? "--"}");
-            var existingSm = this.Packages[findAasReturn.iPackage].AasEnv.FindSubmodel(submodel.identification);
+            context.Server.Logger.Debug($"Adding Submodel with IdShort {submodel.IdShort ?? "--"} and id {submodel.Id?.ToString() ?? "--"}");
+            var existingSm = this.Packages[findAasReturn.iPackage].AasEnv.FindSubmodelById(submodel.Id);
             if (existingSm != null)
             {
                 int indexOfExistingSm = this.Packages[findAasReturn.iPackage].AasEnv.Submodels.IndexOf(existingSm);
@@ -1654,16 +1898,19 @@ namespace AasxRestServerLibrary
                 this.Packages[findAasReturn.iPackage].AasEnv.Submodels.Add(submodel);
             }
 
-            // add SubmodelRef to AAS            
-            var newsmr = AdminShell.SubmodelRef.CreateNew("Submodel", true, submodel.identification.idType, submodel.identification.id);
-            var existsmr = findAasReturn.aas.HasSubmodelRef(newsmr);
+            // add SubmodelRef to AAS
+            var key = new Key(KeyTypes.Submodel, submodel.Id);
+            var KeyList = new List<Key>() { key };
+            Reference newsmr = new Reference(AasCore.Aas3_0_RC02.ReferenceTypes.ModelReference, KeyList);
+            //var newsmr = SubmodelRef.CreateNew("Submodel", submodel.Id);
+            var existsmr = findAasReturn.aas.HasSubmodelReference(newsmr);
             if (!existsmr)
             {
-                context.Server.Logger.Debug($"Adding SubmodelRef to AAS with idShort {findAasReturn.aas.idShort ?? "--"} and id {findAasReturn.aas.identification?.ToString() ?? "--"}");
-                findAasReturn.aas.AddSubmodelRef(newsmr);
+                context.Server.Logger.Debug($"Adding SubmodelRef to AAS with IdShort {findAasReturn.aas.IdShort ?? "--"} and id {findAasReturn.aas.Id?.ToString() ?? "--"}");
+                findAasReturn.aas.Submodels.Add(newsmr);
             }
 
-            Console.WriteLine("{0} Received PUT Submodel {1}", countPut++, submodel.idShort);
+            Console.WriteLine("{0} Received PUT Submodel {1}", countPut++, submodel.IdShort);
 
             // simple OK
             Program.signalNewData(2);
@@ -1700,7 +1947,7 @@ namespace AasxRestServerLibrary
             var findAasReturn = this.FindAAS(aasid, context.Request.QueryString, context.Request.RawUrl);
             if (findAasReturn.aas == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with idShort '{aasid}' found.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with IdShort '{aasid}' found.");
                 return;
             }
 
@@ -1708,8 +1955,8 @@ namespace AasxRestServerLibrary
             var smref = this.FindSubmodelRefWithinAas(findAasReturn, smid, context.Request.QueryString, context.Request.RawUrl);
             if (smref != null)
             {
-                context.Server.Logger.Debug($"Removing SubmodelRef {smid} from AAS with idShort {findAasReturn.aas.idShort ?? "--"} and id {findAasReturn.aas.identification?.ToString() ?? "--"}");
-                findAasReturn.aas.submodelRefs.Remove(smref);
+                context.Server.Logger.Debug($"Removing SubmodelRef {smid} from AAS with IdShort {findAasReturn.aas.IdShort ?? "--"} and id {findAasReturn.aas.Id?.ToString() ?? "--"}");
+                findAasReturn.aas.Submodels.Remove(smref);
             }
 
             // delete Submodel 2nd
@@ -1757,11 +2004,11 @@ namespace AasxRestServerLibrary
             var sm = this.FindSubmodelWithinAas(aasid, smid, context.Request.QueryString, context.Request.RawUrl);
             if (sm == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with idShort '{smid}' found.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with IdShort '{smid}' found.");
                 return;
             }
 
-            Console.WriteLine("{0} Received GET Submodel {1}", countGet++, sm.idShort);
+            Console.WriteLine("{0} Received GET Submodel {1}", countGet++, sm.IdShort);
 
             // return as JSON
             var cr = new AdminShellConverters.AdaptiveFilterContractResolver(deep: deep, complete: complete);
@@ -1792,7 +2039,7 @@ namespace AasxRestServerLibrary
 
             if (sm == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with idShort '{smid}' found.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with IdShort '{smid}' found.");
                 return;
             }
 
@@ -1811,85 +2058,91 @@ namespace AasxRestServerLibrary
                 dynamic row = new ExpandoObject();
 
                 // defaults
-                row.idShorts = "";
+                row.IdShorts = "";
                 row.typeName = "";
                 row.semIdType = "";
                 row.semId = "";
                 row.shortName = "";
                 row.unit = "";
-                row.value = "";
+                row.Value = "";
 
-                // idShort is a concatenation
+                // IdShort is a concatenation
                 var path = "";
                 foreach (var p in parents)
-                    path += p.idShort + "/";
+                    path += p.IdShort + "/";
 
                 // SubnmodelElement general
-                row.idShorts = path + sme.idShort ?? "(-)";
-                row.typeName = sme.GetElementName();
-                if (sme.semanticId == null || sme.semanticId.Keys == null || sme.semanticId.Keys.Count == 0)
+                row.IdShorts = path + sme.IdShort ?? "(-)";
+                //row.typeName = sme.GetElementName();
+                row.typeName = sme.GetType().ToString();
+                if (sme.SemanticId == null || sme.SemanticId.Keys == null /*|| sme.semanticId.Keys.Count == 0*/)
                 { }
-                else if (sme.semanticId.Keys.Count > 1)
+                else if (sme.SemanticId.Keys.Count > 1)
                 {
                     row.semId = "(complex)";
                 }
                 else
                 {
-                    row.semIdType = sme.semanticId.Keys[0].idType;
-                    row.semId = sme.semanticId.Keys[0].value;
+                    row.semId = sme.SemanticId.Keys.First().Value;
+                    //row.semIdType = sme.semanticId.Keys[0].idType;
+                    //row.semId = sme.semanticId.Keys[0].Value;
                 }
 
                 // try find a concept description
-                if (sme.semanticId != null)
+                if (sme.SemanticId != null)
                 {
-                    var cd = this.Packages[0].AasEnv.FindConceptDescription(sme.semanticId.Keys);
+                    var cd = this.Packages[0].AasEnv.FindConceptDescriptionByReference(sme.SemanticId);
                     if (cd != null)
                     {
-                        var ds = cd.GetIEC61360();
-                        if (ds != null)
-                        {
-                            row.shortName = (ds.shortName == null ? "" : ds.shortName.GetDefaultStr());
-                            row.unit = ds.unit ?? "";
-                        }
+                        //TODO: jtikekar Temporarily commented
+                        //var ds = cd.GetIEC61360();
+                        //if (ds != null)
+                        //{
+                        //    row.shortName = (ds.shortName == null ? "" : ds.shortName.GetDefaultStr());
+                        //    row.unit = ds.unit ?? "";
+                        //}
                     }
                 }
 
                 // try add a value
-                if (sme is AdminShell.Property)
+                if (sme is Property)
                 {
-                    var p = sme as AdminShell.Property;
-                    row.value = "" + (p.value ?? "") + ((p.valueId != null) ? p.valueId.ToString() : "");
+                    var p = sme as Property;
+                    row.Value = "" + (p.Value ?? "") + ((p.ValueId != null) ? p.ValueId.ToString() : "");
                 }
 
-                if (sme is AdminShell.File)
+                if (sme is AasCore.Aas3_0_RC02.File)
                 {
-                    var p = sme as AdminShell.File;
-                    row.value = "" + p.value;
+                    var p = sme as AasCore.Aas3_0_RC02.File;
+                    row.Value = "" + p.Value;
                 }
 
-                if (sme is AdminShell.Blob)
+                if (sme is Blob)
                 {
-                    var p = sme as AdminShell.Blob;
-                    if (p.value.Length < 128)
-                        row.value = "" + p.value;
+                    var p = sme as Blob;
+                    if (p.Value.Length < 128)
+                        row.Value = "" + p.Value;
                     else
-                        row.value = "(" + p.value.Length + " bytes)";
+                        row.Value = "(" + p.Value.Length + " bytes)";
                 }
 
-                if (sme is AdminShell.ReferenceElement)
-                {
-                    var p = sme as AdminShell.ReferenceElement;
-                    row.value = "" + p.value.ToString();
-                }
+                if (sme is ReferenceElement gre)
+                    row.Value = "" + gre.Value.ToString();
 
-                if (sme is AdminShell.RelationshipElement)
+                if (sme is ReferenceElement mre)
+                    row.Value = "" + mre.Value.ToString();
+
+                if (sme is RelationshipElement)
                 {
-                    var p = sme as AdminShell.RelationshipElement;
-                    row.value = "" + (p.first?.ToString() ?? "(-)") + " <-> " + (p.second?.ToString() ?? "(-)");
+                    var p = sme as RelationshipElement;
+                    row.Value = "" + (p.First?.ToString() ?? "(-)") + " <-> " + (p.Second?.ToString() ?? "(-)");
                 }
 
                 // now, add the row
                 table.Add(row);
+
+                // recurse
+                return true;
 
             });
 
@@ -1931,12 +2184,12 @@ namespace AasxRestServerLibrary
 
             if (sm == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with idShort '{smid}' found.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with IdShort '{smid}' found.");
                 return;
             }
 
             // find the right SubmodelElement
-            var sme = this.FindSubmodelElement(sm, sm.submodelElements, elemids);
+            var sme = this.FindSubmodelElement(sm, sm.SubmodelElements, elemids);
             if (sme == null)
             {
                 context.Response.SendResponse(HttpStatusCode.NotFound, $"No matching element in Submodel found.");
@@ -1972,14 +2225,14 @@ namespace AasxRestServerLibrary
 
             if (sm == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with idShort '{smid}' found.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with IdShort '{smid}' found.");
                 return;
             }
 
             // find the right SubmodelElement
-            var fse = this.FindSubmodelElement(sm, sm.submodelElements, elemids);
-            var smeb = fse?.elem as AdminShell.Blob;
-            if (smeb == null || smeb.value == null || smeb.value == "")
+            var fse = this.FindSubmodelElement(sm, sm.SubmodelElements, elemids);
+            var smeb = fse?.elem as Blob;
+            if (smeb == null || smeb.Value == null || (smeb.Value.Length == 0))
             {
                 context.Response.SendResponse(HttpStatusCode.NotFound, $"No matching Blob element in Submodel found.");
                 return;
@@ -1987,10 +2240,10 @@ namespace AasxRestServerLibrary
 
             // return as TEXT
             context.Response.StatusCode = HttpStatusCode.Ok;
-            SendTextResponse(context, smeb.value, mimeType: smeb.mimeType);
+            SendTextResponse(context, smeb.Value.ToString(), mimeType: smeb.ContentType);
         }
 
-        private string EvalGetSubmodelElementsProperty_EvalValue(AdminShell.Property smep)
+        private string EvalGetSubmodelElementsProperty_EvalValue(Property smep)
         {
             // access
             if (smep == null)
@@ -1998,10 +2251,10 @@ namespace AasxRestServerLibrary
 
             // try to apply a little bit voodo
             double dblval = 0.0;
-            string strval = smep.value;
-            if (smep.HasQualifierOfType("DEMO") != null && smep.value != null && smep.valueType != null
-                && smep.valueType.Trim().ToLower() == "double"
-                && double.TryParse(smep.value, NumberStyles.Any, CultureInfo.InvariantCulture, out dblval))
+            string strval = smep.Value;
+            if (smep.FindQualifierOfType("DEMO") != null && smep.Value != null && smep.ValueType != null
+                && smep.ValueType == DataTypeDefXsd.Double
+                && double.TryParse(smep.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out dblval))
             {
                 // add noise
                 dblval += Math.Sin((0.001 * DateTime.UtcNow.Millisecond) * 6.28);
@@ -2011,7 +2264,7 @@ namespace AasxRestServerLibrary
         }
 
         private List<ExpandoObject> EvalGetSubmodelElementsProperty_EvalValues(
-            AdminShell.SubmodelElementWrapperCollection wrappers)
+            List<ISubmodelElement> wrappers)
         {
             // access
             if (wrappers == null)
@@ -2019,21 +2272,21 @@ namespace AasxRestServerLibrary
             List<ExpandoObject> res = new List<ExpandoObject>();
 
             // recurse for results
-            wrappers.RecurseOnSubmodelElements(null, new List<AdminShell.SubmodelElement>(),
+            wrappers.RecurseOnSubmodelElements(null, new List<ISubmodelElement>(),
                 (_, pars, el) =>
                 {
-                    if (el is AdminShell.Property smep && pars != null)
+                    if (el is Property smep && pars != null)
                     {
                         var path = new List<string>();
-                        path.Add("" + smep?.idShort);
+                        path.Add("" + smep?.IdShort);
                         for (int i = pars.Count - 1; i >= 0; i--)
-                            path.Insert(0, "" + pars[i].idShort);
+                            path.Insert(0, "" + pars[i].IdShort);
 
                         dynamic tuple = new ExpandoObject();
                         tuple.path = path;
-                        tuple.value = "" + EvalGetSubmodelElementsProperty_EvalValue(smep);
-                        if (smep.valueId != null)
-                            tuple.valueId = smep.valueId;
+                        tuple.Value = "" + EvalGetSubmodelElementsProperty_EvalValue(smep);
+                        if (smep.ValueId != null)
+                            tuple.ValueId = smep.ValueId;
 
                         res.Add(tuple);
                     }
@@ -2066,7 +2319,7 @@ namespace AasxRestServerLibrary
 
             if (sm == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with idShort '{smid}' found.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with IdShort '{smid}' found.");
                 return;
             }
 
@@ -2074,22 +2327,22 @@ namespace AasxRestServerLibrary
             if (elemids == null || elemids.Length < 1)
             {
                 // send the whole Submodel
-                res.values = EvalGetSubmodelElementsProperty_EvalValues(sm.submodelElements);
+                res.Values = EvalGetSubmodelElementsProperty_EvalValues(sm.SubmodelElements);
             }
             else
             {
                 // find the right SubmodelElement
-                var fse = this.FindSubmodelElement(sm, sm.submodelElements, elemids);
+                var fse = this.FindSubmodelElement(sm, sm.SubmodelElements, elemids);
 
-                if (fse?.elem is AdminShell.SubmodelElementCollection smec)
+                if (fse?.elem is SubmodelElementCollection smec)
                 {
-                    res.values = EvalGetSubmodelElementsProperty_EvalValues(smec.value);
+                    res.Values = EvalGetSubmodelElementsProperty_EvalValues(smec.Value);
                 }
-                else if (fse?.elem is AdminShell.Property smep)
+                else if (fse?.elem is Property smep)
                 {
-                    res.value = "" + EvalGetSubmodelElementsProperty_EvalValue(smep);
-                    if (smep.valueId != null)
-                        res.valueId = smep.valueId;
+                    res.Value = "" + EvalGetSubmodelElementsProperty_EvalValue(smep);
+                    if (smep.ValueId != null)
+                        res.ValueId = smep.ValueId;
                 }
                 else
                 {
@@ -2127,21 +2380,21 @@ namespace AasxRestServerLibrary
 
             if (sm == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with idShort '{smid}' found.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with IdShort '{smid}' found.");
                 return;
             }
 
             // find the right SubmodelElement
-            var fse = this.FindSubmodelElement(sm, sm.submodelElements, elemids);
-            var smef = fse?.elem as AdminShell.File;
-            if (smef == null || smef.value == null || smef.value == "")
+            var fse = this.FindSubmodelElement(sm, sm.SubmodelElements, elemids);
+            var smef = fse?.elem as AasCore.Aas3_0_RC02.File;
+            if (smef == null || smef.Value == null || smef.Value == "")
             {
                 context.Response.SendResponse(HttpStatusCode.NotFound, $"No matching File element in Submodel found.");
                 return;
             }
 
             // access
-            var packageStream = this.Packages[0].GetLocalStreamFromPackage(smef.value);
+            var packageStream = this.Packages[0].GetLocalStreamFromPackage(smef.Value);
             if (packageStream == null)
             {
                 context.Response.SendResponse(HttpStatusCode.NotFound, $"No file contents available in package.");
@@ -2150,7 +2403,7 @@ namespace AasxRestServerLibrary
 
             // return as FILE
             context.Response.StatusCode = HttpStatusCode.Ok;
-            SendStreamResponse(context, packageStream, Path.GetFileName(smef.value));
+            SendStreamResponse(context, packageStream, Path.GetFileName(smef.Value));
             packageStream.Close();
         }
 
@@ -2186,10 +2439,10 @@ namespace AasxRestServerLibrary
             }
 
             // de-serialize SubmodelElement
-            AdminShell.SubmodelElement sme = null;
+            ISubmodelElement sme = null;
             try
             {
-                sme = Newtonsoft.Json.JsonConvert.DeserializeObject<AdminShell.SubmodelElement>(context.Request.Payload, new AdminShellConverters.JsonAasxConverter("modelType", "name"));
+                sme = Newtonsoft.Json.JsonConvert.DeserializeObject<ISubmodelElement>(context.Request.Payload, new AdminShellConverters.JsonAasxConverter("modelType", "name"));
             }
             catch (Exception ex)
             {
@@ -2198,9 +2451,9 @@ namespace AasxRestServerLibrary
             }
 
             // need id for idempotent behaviour
-            if (sme.idShort == null)
+            if (sme.IdShort == null)
             {
-                context.Response.SendResponse(HttpStatusCode.BadRequest, $"idShort of entity is (null); PUT cannot be performed.");
+                context.Response.SendResponse(HttpStatusCode.BadRequest, $"IdShort of entity is (null); PUT cannot be performed.");
                 return;
             }
 
@@ -2209,7 +2462,7 @@ namespace AasxRestServerLibrary
 
             if (sm == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with idShort '{smid}' found.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with IdShort '{smid}' found.");
                 return;
             }
 
@@ -2227,26 +2480,26 @@ namespace AasxRestServerLibrary
             var updated = false;
             if (elemids == null || elemids.Length < 1)
             {
-                var existsmw = sm.FindSubmodelElementWrapper(sme.idShort);
+                var existsmw = sm.FindSubmodelElementByIdShort(sme.IdShort);
                 if (existsmw != null)
                 {
                     updated = true;
-                    sme.TimeStampCreate = existsmw.submodelElement.TimeStampCreate;
-                    context.Server.Logger.Debug($"Removing old SubmodelElement {sme.idShort} from Submodel {smid}.");
-                    int indexOfExistingSmw = sm.submodelElements.IndexOf(existsmw);
-                    sm.submodelElements.RemoveAt(indexOfExistingSmw);
+                    sme.TimeStampCreate = existsmw.TimeStampCreate;
+                    context.Server.Logger.Debug($"Removing old SubmodelElement {sme.IdShort} from Submodel {smid}.");
+                    int indexOfExistingSmw = sm.SubmodelElements.IndexOf(existsmw);
+                    sm.SubmodelElements.RemoveAt(indexOfExistingSmw);
                     if (!first)
                     {
-                        sm.Insert(indexOfExistingSmw, sme);
+                        sm.SubmodelElements.Insert(indexOfExistingSmw, sme);
                     }
                     else
                     {
-                        sm.Insert(0, sme);
+                        sm.SubmodelElements.Insert(0, sme);
                     }
                 }
                 else
                 {
-                    context.Server.Logger.Debug($"Adding new SubmodelElement {sme.idShort} to Submodel {smid}.");
+                    context.Server.Logger.Debug($"Adding new SubmodelElement {sme.IdShort} to Submodel {smid}.");
                     sme.TimeStampCreate = timeStamp;
                     if (!first)
                     {
@@ -2257,30 +2510,31 @@ namespace AasxRestServerLibrary
                         sm.Insert(0, sme);
                     }
                 }
+
                 sme.SetAllParentsAndTimestamps(sm, timeStamp, sme.TimeStampCreate);
-                sme.setTimeStamp(timeStamp);
+                sme.SetTimeStamp(timeStamp);
             }
             else
             {
                 // find the right SubmodelElement
-                var parent = this.FindSubmodelElement(sm, sm.submodelElements, elemids);
+                var parent = this.FindSubmodelElement(sm, sm.SubmodelElements, elemids);
                 if (parent == null)
                 {
                     context.Response.SendResponse(HttpStatusCode.NotFound, $"No matching element in Submodel found.");
                     return;
                 }
 
-                if (parent.elem != null && parent.elem is AdminShell.SubmodelElementCollection)
+                if (parent.elem != null && parent.elem is SubmodelElementCollection)
                 {
-                    var parentsmc = parent.elem as AdminShell.SubmodelElementCollection;
-                    var existsmw = parentsmc.FindFirstIdShort(sme.idShort);
+                    var parentsmc = parent.elem as SubmodelElementCollection;
+                    var existsmw = parentsmc.FindFirstIdShortAs<ISubmodelElement>(sme.IdShort);
                     if (existsmw != null)
                     {
                         updated = true;
-                        sme.TimeStampCreate = existsmw.submodelElement.TimeStampCreate;
-                        context.Server.Logger.Debug($"Removing old SubmodelElement {sme.idShort} from SubmodelCollection.");
-                        int indexOfExistingSmw = parentsmc.value.IndexOf(existsmw);
-                        parentsmc.value.RemoveAt(indexOfExistingSmw);
+                        sme.TimeStampCreate = existsmw.TimeStampCreate;
+                        context.Server.Logger.Debug($"Removing old SubmodelElement {sme.IdShort} from SubmodelCollection.");
+                        int indexOfExistingSmw = parentsmc.Value.IndexOf(existsmw);
+                        parentsmc.Value.RemoveAt(indexOfExistingSmw);
                         if (!first)
                         {
                             parentsmc.Insert(indexOfExistingSmw, sme);
@@ -2293,18 +2547,11 @@ namespace AasxRestServerLibrary
                     else
                     {
                         sme.TimeStampCreate = timeStamp;
-                        context.Server.Logger.Debug($"Adding new SubmodelElement {sme.idShort} to SubmodelCollection.");
-                        if (!first)
-                        {
-                            parentsmc.Add(sme);
-                        }
-                        else
-                        {
-                            parentsmc.Insert(0, sme);
-                        }
+                        context.Server.Logger.Debug($"Adding new SubmodelElement {sme.IdShort} to SubmodelCollection.");
+                        parentsmc.Add(sme);
                     }
                     sme.SetAllParentsAndTimestamps(parentsmc, timeStamp, sme.TimeStampCreate);
-                    sme.setTimeStamp(timeStamp);
+                    sme.SetTimeStamp(timeStamp);
                 }
                 else
                 {
@@ -2342,13 +2589,13 @@ namespace AasxRestServerLibrary
 
             if (sm == null || elemids == null || elemids.Length < 1)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with idShort '{smid}' found or no elements to delete specified.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with IdShort '{smid}' found or no elements to delete specified.");
                 return;
             }
 
             // OK, Submodel and Element existing
-            var fse = this.FindSubmodelElement(sm, sm.submodelElements, elemids);
-            if (fse == null || fse.elem == null || fse.parent == null || fse.wrapper == null)
+            var fse = this.FindSubmodelElement(sm, sm.SubmodelElements, elemids);
+            if (fse == null || fse.elem == null || fse.parent == null || fse.submodelElement == null)
             {
                 context.Response.SendResponse(HttpStatusCode.NotFound, $"No matching element in Submodel found.");
                 return;
@@ -2361,16 +2608,16 @@ namespace AasxRestServerLibrary
             {
                 context.Server.Logger.Debug($"Deleting specified SubmodelElement {elinfo} from Submodel {smid}.");
                 AasxRestServerLibrary.AasxRestServer.TestResource.eventMessage.add(
-                    fse.wrapper.submodelElement, "Remove", sm, (ulong)DateTime.UtcNow.Ticks);
-                sm.submodelElements.Remove(fse.wrapper);
+                    fse.submodelElement, "Remove", sm, (ulong)DateTime.UtcNow.Ticks);
+                sm.SubmodelElements.Remove(fse.submodelElement);
                 deleted = true;
             }
 
-            if (fse.parent is AdminShell.SubmodelElementCollection)
+            if (fse.parent is SubmodelElementCollection)
             {
-                var smc = fse.parent as AdminShell.SubmodelElementCollection;
-                context.Server.Logger.Debug($"Deleting specified SubmodelElement {elinfo} from SubmodelElementCollection {smc.idShort}.");
-                smc.value.Remove(fse.wrapper);
+                var smc = fse.parent as SubmodelElementCollection;
+                context.Server.Logger.Debug($"Deleting specified SubmodelElement {elinfo} from SubmodelElementCollection {smc.IdShort}.");
+                smc.Value.Remove(fse.submodelElement);
                 deleted = true;
             }
 
@@ -2403,13 +2650,13 @@ namespace AasxRestServerLibrary
 
             if (sm == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with idShort '{smid}' found.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS '{aasid}' or no Submodel with IdShort '{smid}' found.");
                 return;
             }
 
             // find the right SubmodelElement
-            var fse = this.FindSubmodelElement(sm, sm.submodelElements, elemids);
-            var smep = fse?.elem as AdminShell.Operation;
+            var fse = this.FindSubmodelElement(sm, sm.SubmodelElements, elemids);
+            var smep = fse?.elem as Operation;
             if (smep == null)
             {
                 context.Response.SendResponse(HttpStatusCode.NotFound, $"No matching Operation element in Submodel found.");
@@ -2417,15 +2664,15 @@ namespace AasxRestServerLibrary
             }
 
             // make 1st expectation
-            int numExpectedInputArgs = smep.inputVariable?.Count ?? 0;
+            int numExpectedInputArgs = smep.InputVariables?.Count ?? 0;
             int numGivenInputArgs = 0;
-            int numExpectedOutputArgs = smep.outputVariable?.Count ?? 0;
+            int numExpectedOutputArgs = smep.OutputVariables?.Count ?? 0;
             var inputArguments = (new int[numExpectedInputArgs]).Select(x => "").ToList();
             var outputArguments = (new int[numExpectedOutputArgs]).Select(x => "my value").ToList();
 
             // is a payload required? Always, if at least one input argument required
 
-            if (smep.inputVariable != null && smep.inputVariable.Count > 0)
+            if (smep.InputVariables != null && smep.InputVariables.Count > 0)
             {
                 // payload present
                 if (context.Request.Payload == null || context.Request.ContentType != ContentType.JSON)
@@ -2463,7 +2710,7 @@ namespace AasxRestServerLibrary
             }
 
             // just a test
-            if (smep.HasQualifierOfType("DEMO") != null)
+            if (smep.FindQualifierOfType("DEMO") != null)
             {
                 for (int i = 0; i < Math.Min(numExpectedInputArgs, numExpectedOutputArgs); i++)
                     outputArguments[i] = "CALC on " + inputArguments[i];
@@ -2496,7 +2743,7 @@ namespace AasxRestServerLibrary
             var findAasReturn = this.FindAAS(aasid, context.Request.QueryString, context.Request.RawUrl);
             if (findAasReturn.aas == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with idShort '{aasid}' found.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with IdShort '{aasid}' found.");
                 return;
             }
 
@@ -2505,16 +2752,18 @@ namespace AasxRestServerLibrary
 
             // create a new, filtered AasEnv
             // (this is expensive, but delivers us with a list of CDs which are in relation to the respective AAS)
-            var copyenv = AdminShell.AdministrationShellEnv.CreateFromExistingEnv(this.Packages[findAasReturn.iPackage].AasEnv, filterForAas: new List<AdminShell.AdministrationShell>(new AdminShell.AdministrationShell[] { findAasReturn.aas }));
+            var copyenv = new AasCore.Aas3_0_RC02.Environment();
+            copyenv = copyenv.CreateFromExistingEnvironment(this.Packages[findAasReturn.iPackage].AasEnv, filterForAas: new List<AssetAdministrationShell>(new AssetAdministrationShell[] { findAasReturn.aas }));
 
             // get all CDs and describe them
             foreach (var cd in copyenv.ConceptDescriptions)
             {
                 // describe
                 dynamic o = new ExpandoObject();
-                o.idShort = cd.idShort;
-                o.shortName = cd.GetDefaultShortName();
-                o.identification = cd.identification;
+                o.IdShort = cd.IdShort;
+                //TODO: jtikekar temporarily commented 
+                //o.shortName = cd.GetDefaultShortName();
+                o.identification = cd.Id;
                 o.isCaseOf = cd.IsCaseOf;
 
                 // add
@@ -2656,10 +2905,10 @@ namespace AasxRestServerLibrary
             }
 
             // list of Identification
-            List<AdminShell.Identification> ids = null;
+            List<IIdentifiable> ids = null;
             try
             {
-                ids = Newtonsoft.Json.JsonConvert.DeserializeObject<List<AdminShell.Identification>>(context.Request.Payload);
+                ids = Newtonsoft.Json.JsonConvert.DeserializeObject<List<IIdentifiable>>(context.Request.Payload);
             }
             catch (Exception ex)
             {
@@ -2679,7 +2928,7 @@ namespace AasxRestServerLibrary
             var res = new List<AasxHttpHandleIdentification>();
             foreach (var id in ids)
             {
-                var h = new AasxHttpHandleIdentification(id);
+                var h = new AasxHttpHandleIdentification(id.Id);
                 IdRefHandleStore.Add(h);
                 res.Add(h);
             }
@@ -2736,7 +2985,7 @@ namespace AasxRestServerLibrary
         private static RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider();
 
         public int sessionCount = 0;
-        public char[] sessionUserType = new char[100];
+        public static char[] sessionUserType = new char[100];
         public static string[] sessionUserName = new string[100];
         public static RSA[] sessionUserPulicKey = new RSA[100];
         public static string[] sessionRandom = new string[100];
@@ -2773,7 +3022,7 @@ namespace AasxRestServerLibrary
             if (sessionCount >= 100)
             {
                 Console.WriteLine("ERROR: More than 100 sessions!");
-                Environment.Exit(-1);
+                System.Environment.Exit(-1);
             }
 
             res.token = GuestToken;
@@ -2808,7 +3057,7 @@ namespace AasxRestServerLibrary
 
             if (!error)
             {
-                int userCount = securityUserName.Length;
+                int userCount = securityUserName.Count;
 
                 for (int i = 0; i < userCount; i++)
                 {
@@ -2850,7 +3099,7 @@ namespace AasxRestServerLibrary
             if (sessionCount >= 100)
             {
                 Console.WriteLine("ERROR: More than 100 sessions!");
-                Environment.Exit(-1);
+                System.Environment.Exit(-1);
             }
 
             withAuthentification = true;
@@ -2903,7 +3152,7 @@ namespace AasxRestServerLibrary
                     X509Certificate2Collection xcc = new X509Certificate2Collection();
                     Byte[] certFileBytes = Convert.FromBase64String(x5c64[0]);
                     string fileCert = "./temp/" + user + ".cer";
-                    File.WriteAllBytes(fileCert, certFileBytes);
+                    System.IO.File.WriteAllBytes(fileCert, certFileBytes);
                     Console.WriteLine("Security 2.1b Server: " + fileCert + " received");
 
                     x509 = new X509Certificate2(certFileBytes);
@@ -2948,7 +3197,7 @@ namespace AasxRestServerLibrary
                     user = parsed.SelectToken("user").Value<string>();
 
                     string fileCert = "./user/" + user + ".cer";
-                    if (File.Exists(fileCert))
+                    if (System.IO.File.Exists(fileCert))
                     {
                         x509 = new X509Certificate2(fileCert);
                         Console.WriteLine("Security 2.1a Server: " + fileCert + "exists");
@@ -2959,7 +3208,7 @@ namespace AasxRestServerLibrary
                         string certFileBase64 = parsed.SelectToken("certFile").Value<string>();
                         Byte[] certFileBytes = Convert.FromBase64String(certFileBase64);
                         fileCert = "./temp/" + user + ".cer";
-                        File.WriteAllBytes(fileCert, certFileBytes);
+                        System.IO.File.WriteAllBytes(fileCert, certFileBytes);
                         Console.WriteLine("Security 2.1b Server: " + fileCert + " received");
 
                         x509 = new X509Certificate2(certFileBytes);
@@ -3122,7 +3371,7 @@ namespace AasxRestServerLibrary
             if (sessionCount >= 100)
             {
                 Console.WriteLine("ERROR: More than 100 sessions!");
-                Environment.Exit(-1);
+                System.Environment.Exit(-1);
             }
 
             withAuthentification = true;
@@ -3133,9 +3382,28 @@ namespace AasxRestServerLibrary
             SendJsonResponse(context, res);
         }
 
-        public bool checkAccessLevel(string currentRole, string operation, string neededRights,
+        public static bool checkAccessLevel(string currentRole, string operation, string neededRights,
             string objPath = "", string aasOrSubmodel = null, object objectAasOrSubmodel = null)
         {
+            string error = "";
+            bool withAllow = false;
+            return checkAccessLevelWithError(out error, currentRole, operation, neededRights, out withAllow,
+                objPath, aasOrSubmodel, objectAasOrSubmodel);
+        }
+        public static bool checkAccessLevelWithAllow(string currentRole, string operation, string neededRights,
+            out bool withAllow, string objPath = "", string aasOrSubmodel = null, object objectAasOrSubmodel = null)
+        {
+            string error = "";
+            withAllow = false;
+            return checkAccessLevelWithError(out error, currentRole, operation, neededRights, out withAllow,
+                objPath, aasOrSubmodel, objectAasOrSubmodel);
+        }
+        public static bool checkAccessLevelWithError(out string error, string currentRole, string operation,
+            string neededRights, out bool withAllow,
+            string objPath = "", string aasOrSubmodel = null, object objectAasOrSubmodel = null)
+        {
+            error = "";
+            withAllow = false;
             if (Program.secretStringAPI != null)
             {
                 if (neededRights == "READ")
@@ -3154,36 +3422,45 @@ namespace AasxRestServerLibrary
                 " objPath = " + objPath
                 );
 
-            int iRole = 0;
-            while (securityRole != null && iRole < securityRole.Count && securityRole[iRole].name != null)
+            if (objPath == "")
             {
-                if (aasOrSubmodel == "aas" && securityRole[iRole].objType == "aas" &&
-                    objectAasOrSubmodel != null && securityRole[iRole].objReference == objectAasOrSubmodel &&
-                    securityRole[iRole].permission == neededRights)
+                int iRole = 0;
+                while (securityRole != null && iRole < securityRole.Count && securityRole[iRole].name != null)
                 {
-                    if ((securityRole[iRole].condition == "" && securityRole[iRole].name == currentRole) ||
-                        (securityRole[iRole].condition == "not" && securityRole[iRole].name != currentRole))
+                    if (aasOrSubmodel == "aas" && securityRole[iRole].objType == "aas")
+                    /* (aasOrSubmodel == "submodel" && securityRole[iRole].objType == "sm")) */
                     {
-                        if (securityRole[iRole].kind == "allow")
-                            return true;
-                        if (securityRole[iRole].kind == "deny")
-                            return false;
-                    }
-                }
-                if (securityRole[iRole].name == currentRole && securityRole[iRole].objType == "api" &&
-                    securityRole[iRole].permission == neededRights)
-                {
-                    if (securityRole[iRole].apiOperation == "*" || securityRole[iRole].apiOperation == operation)
-                    {
-                        if (securityRole[iRole].permission == neededRights)
+                        if (objectAasOrSubmodel != null && securityRole[iRole].objReference == objectAasOrSubmodel &&
+                        securityRole[iRole].permission == neededRights)
                         {
-                            return true;
+                            if ((securityRole[iRole].condition == "" && securityRole[iRole].name == currentRole) ||
+                                (securityRole[iRole].condition == "not" && securityRole[iRole].name != currentRole))
+                            {
+                                if (securityRole[iRole].kind == "allow")
+                                    return true;
+                                if (securityRole[iRole].kind == "deny")
+                                {
+                                    error = "DENY AAS " + (objectAasOrSubmodel as AssetAdministrationShell).Id;
+                                    return false;
+                                }
+                            }
                         }
                     }
+                    if (securityRole[iRole].name == currentRole && securityRole[iRole].objType == "api" &&
+                        securityRole[iRole].permission == neededRights)
+                    {
+                        if (securityRole[iRole].apiOperation == "*" || securityRole[iRole].apiOperation == operation)
+                        {
+                            if (securityRole[iRole].permission == neededRights)
+                            {
+                                return checkUsage(out error, securityRole[iRole]);
+                            }
+                        }
+                    }
+                    iRole++;
                 }
-                iRole++;
             }
-            if (operation == "/submodelelements" && objPath != "")
+            if (objPath != "" && (operation == "/submodels" || operation == "/submodelelements"))
             {
                 // next object with rule must have allow
                 // no objects below must have deny
@@ -3191,8 +3468,58 @@ namespace AasxRestServerLibrary
                 string deepestAllow = "";
                 foreach (var role in securityRole)
                 {
+                    if (role.name != currentRole)
+                        continue;
+
+                    if (role.objType == "semanticid")
+                    {
+                        if (objectAasOrSubmodel is Submodel s)
+                        {
+                            if (role.semanticId == "*" || (s.SemanticId != null && s.SemanticId.Keys != null && s.SemanticId.Keys.Count != 0))
+                            {
+                                if (role.semanticId == "*" || (role.semanticId.ToLower() == s.SemanticId.Keys[0].Value.ToLower()))
+                                {
+                                    if (role.kind == "allow")
+                                    {
+                                        if (deepestAllow == "")
+                                        {
+                                            deepestAllow = s.IdShort;
+                                            withAllow = true;
+                                        }
+                                    }
+                                    if (role.kind == "deny")
+                                    {
+                                        if (deepestDeny == "")
+                                            deepestDeny = s.IdShort;
+                                    }
+                                }
+                            }
+                        }
+                        if (objectAasOrSubmodel is string s2)
+                        {
+                            if (s2 != null && s2 != "")
+                            {
+                                if (role.semanticId == s2)
+                                {
+                                    if (role.kind == "allow")
+                                    {
+                                        if (deepestAllow == "")
+                                        {
+                                            deepestAllow = objPath;
+                                            withAllow = true;
+                                        }
+                                    }
+                                    if (role.kind == "deny")
+                                    {
+                                        if (deepestDeny == "")
+                                            deepestDeny = objPath;
+                                    }
+                                }
+                            }
+                        }
+                    }
                     if ((role.objType == "sm" || role.objType == "submodelElement") &&
-                        role.permission == neededRights)
+                        role.submodel == objectAasOrSubmodel && role.permission == neededRights)
                     {
                         if (role.kind == "deny")
                         {
@@ -3204,7 +3531,10 @@ namespace AasxRestServerLibrary
                             if (role.objPath.Length >= objPath.Length) // deny in tree below
                             {
                                 if (objPath == role.objPath.Substring(0, objPath.Length))
+                                {
+                                    error = "DENY " + role.objPath;
                                     return false;
+                                }
                             }
                         }
                         if (role.kind == "allow")
@@ -3212,16 +3542,122 @@ namespace AasxRestServerLibrary
                             if (objPath.Length >= role.objPath.Length) // allow in tree above
                             {
                                 if (role.objPath == objPath.Substring(0, role.objPath.Length))
+                                {
                                     deepestAllow = role.objPath;
+                                    withAllow = true;
+                                }
                             }
                         }
                     }
                 }
-                if (deepestAllow == "" || (deepestDeny.Length > deepestAllow.Length))
+                if (deepestAllow == "")
+                {
+                    error = "ALLOW not defined";
                     return false;
+                }
+                if (deepestDeny.Length > deepestAllow.Length)
+                {
+                    error = "DENY " + deepestDeny;
+                    return false;
+                }
                 return true;
             }
 
+            error = "ALLOW not defined";
+            return false;
+        }
+
+        public static bool checkUsage(out string error, securityRoleClass sr)
+        {
+            error = "";
+
+            if (sr.usage == null)
+                return true;
+
+            foreach (var sme in sr.usage.Value)
+            {
+                switch (sme.IdShort)
+                {
+                    case "accessPerDuration":
+                        if (sme is SubmodelElementCollection smc)
+                        {
+                            Property maxCount = null;
+                            Property actualCount = null;
+                            Property duration = null;
+                            Property actualTime = null;
+                            foreach (var sme2 in smc.Value)
+                            {
+                                switch (sme2.IdShort)
+                                {
+                                    case "maxCount":
+                                        maxCount = sme2 as Property;
+                                        break;
+                                    case "duration":
+                                        duration = sme2 as Property;
+                                        break;
+                                    case "actualCount":
+                                        actualCount = sme2 as Property;
+                                        break;
+                                    case "actualTime":
+                                        actualTime = sme2 as Property;
+                                        break;
+                                }
+                            }
+                            if (maxCount == null || duration == null || actualCount == null || actualTime == null)
+                                return false;
+                            int d = 0;
+                            if (!int.TryParse(duration.Value, out d))
+                            {
+                                return false;
+                            }
+                            DateTime dt = new DateTime();
+                            if (actualTime.Value != null && actualTime.Value != "")
+                            {
+                                try
+                                {
+                                    dt = DateTime.Parse(actualTime.Value);
+                                    if (dt.AddSeconds(d) < DateTime.UtcNow)
+                                    {
+                                        Program.signalNewData(0);
+                                        actualTime.Value = null;
+                                    }
+                                }
+                                catch { }
+                            }
+                            if (actualTime.Value == null || actualTime.Value == "")
+                            {
+                                actualTime.Value = DateTime.UtcNow.ToString();
+                                actualCount.Value = null;
+                            }
+                            if (actualCount.Value == null || actualCount.Value == "")
+                            {
+                                actualCount.Value = "0";
+                            }
+                            int ac = 0;
+                            if (!int.TryParse(actualCount.Value, out ac))
+                            {
+                                Program.signalNewData(0);
+                                return false;
+                            }
+                            int mc = 0;
+                            if (!int.TryParse(maxCount.Value, out mc))
+                            {
+                                Program.signalNewData(0);
+                                return false;
+                            }
+                            ac++;
+                            actualCount.Value = ac.ToString();
+                            if (ac <= mc)
+                            {
+                                Program.signalNewData(0);
+                                return true;
+                            }
+                        }
+                        break;
+                }
+            }
+
+            Program.signalNewData(0);
             return false;
         }
 
@@ -3237,7 +3673,8 @@ namespace AasxRestServerLibrary
             }
             else
             {
-                if (checkAccessLevel(currentRole, operation, neededRights, objPath, aasOrSubmodel, objectAasOrSubmodel))
+                if (checkAccessLevel(currentRole, operation, neededRights,
+                    objPath, aasOrSubmodel, objectAasOrSubmodel))
                     return true;
 
                 if (currentRole == null)
@@ -3263,7 +3700,32 @@ namespace AasxRestServerLibrary
 
             return false;
         }
-        public string SecurityCheck(IHttpContext context, ref int index)
+
+        public static string SecurityCheck(IHttpContext context, ref int index)
+        {
+            return SecurityCheck(context.Request.QueryString, context.Request.Headers, ref index);
+        }
+
+        static string checkUserPW(string userPW64)
+        {
+            var credentialBytes = Convert.FromBase64String(userPW64);
+            var credentials = Encoding.UTF8.GetString(credentialBytes).Split(new[] { ':' }, 2);
+            string username = credentials[0];
+            string password = credentials[1];
+
+            int userCount = securityUserName.Count;
+
+            for (int i = 0; i < userCount; i++)
+            {
+                if (username == securityUserName[i] && password == securityUserPassword[i])
+                {
+                    return (username);
+                }
+            }
+
+            return null;
+        }
+        public static string SecurityCheck(NameValueCollection queryString, NameValueCollection headers, ref int index)
         {
             Console.WriteLine("SecurityCheck");
             bool error = false;
@@ -3291,7 +3753,6 @@ namespace AasxRestServerLibrary
                 accessrights = "READ";
 
                 // Query string with Secret?
-                var queryString = context.Request.QueryString;
                 string s = queryString["s"];
                 if (s != null && s != "")
                 {
@@ -3299,7 +3760,7 @@ namespace AasxRestServerLibrary
                         accessrights = "UPDATE";
                 }
                 /*
-                split = context.Request.Url.ToString().Split(new char[] { '?' });
+                split = request.Url.ToString().Split(new char[] { '?' });
                 if (split != null && split.Length > 1 && split[1] != null)
                 {
                     Console.WriteLine("Received query string = " + split[1]);
@@ -3315,10 +3776,10 @@ namespace AasxRestServerLibrary
                 return accessrights;
             }
 
-            string headers = context.Request.Headers.ToString();
+            // string headers = request.Headers.ToString();
 
             // Check bearer token
-            token = context.Request.Headers.Get("Authorization");
+            token = headers["Authorization"];
             if (token != null)
             {
                 split = token.Split(new Char[] { ' ', '\t' });
@@ -3329,39 +3790,69 @@ namespace AasxRestServerLibrary
                         Console.WriteLine("Received bearer token = " + split[1]);
                         bearerToken = split[1];
                     }
+                    if (bearerToken == null && split[0].ToLower() == "basic")
+                    {
+                        try
+                        {
+                            string username = checkUserPW(split[1]);
+                            if (username != null)
+                            {
+                                user = username;
+                                Console.WriteLine("Received username+password http header = " + user);
+                            }
+                        }
+                        catch { }
+                    }
                 }
             }
             else // check query string for bearer token
             {
-                split = context.Request.Url.ToString().Split(new char[] { '?' });
+                /*
+                split = request.Url.ToString().Split(new char[] { '?' });
                 if (split != null && split.Length > 1 && split[1] != null)
                 {
                     Console.WriteLine("Received query string = " + split[1]);
                     bearerToken = split[1];
                 }
+                */
+                bearerToken = queryString["bearer"];
             }
 
             if (bearerToken == null)
             {
                 error = true;
-
-                // Check email token
-                token = context.Request.Headers.Get("Email");
-                if (token != null)
-                {
-                    Console.WriteLine("Received Email token = " + token);
-                    user = token;
-                    error = false;
-                }
             }
 
             // Check email token
-            token = context.Request.Headers.Get("Email");
+            token = headers["Email"];
             if (token != null)
             {
                 Console.WriteLine("Received Email token = " + token);
                 user = token;
                 error = false;
+            }
+            // Check email query string
+            token = queryString["Email"];
+            if (token != null)
+            {
+                Console.WriteLine("Received Email query string = " + token);
+                user = token;
+                error = false;
+            }
+            // Username+password query string
+            token = queryString["_up"];
+            if (token != null)
+            {
+                try
+                {
+                    string username = checkUserPW(token);
+                    if (username != null)
+                    {
+                        user = username;
+                        Console.WriteLine("Received username+password query string = " + user);
+                    }
+                }
+                catch { }
             }
 
             if (!error)
@@ -3425,60 +3916,70 @@ namespace AasxRestServerLibrary
                             catch { }
                         }
                     }
-
-                    if (user != null && user != "")
-                    {
-                        if (securityRights != null)
-                        {
-                            int rightsCount = securityRights.Count;
-
-                            for (int i = 0; i < rightsCount; i++)
-                            {
-                                if (securityRights[i].name.Contains("@")) // email address
-                                {
-                                    if (user == securityRights[i].name)
-                                    {
-                                        // accessrights = securityRightsValue[i];
-                                        accessrights = securityRights[i].role;
-                                        return accessrights;
-                                    }
-                                }
-                            }
-                            for (int i = 0; i < rightsCount; i++)
-                            {
-                                if (!securityRights[i].name.Contains("@")) // domain name only
-                                {
-                                    string[] splitUser = user.Split('@');
-                                    if (splitUser[1] == securityRights[i].name)
-                                    {
-                                        // accessrights = securityRightsValue[i];
-                                        accessrights = securityRights[i].role;
-                                        return accessrights;
-                                    }
-                                }
-                            }
-                        }
-
-                        return accessrights;
-                    }
-                    else
-                    {
-                        id = Convert.ToInt32(parsed2.SelectToken("sessionID").Value<string>());
-
-                        random = sessionRandom[id];
-                        user = sessionUserName[id];
-
-                        if (random == null || random == "" || user == null || user == "")
-                        {
-                            error = true;
-                        }
-                    }
                 }
                 catch
                 {
                     error = true;
                 }
             }
+
+            if (user != null && user != "")
+            {
+                if (securityRights != null)
+                {
+                    int rightsCount = securityRights.Count;
+
+                    if (user.Contains("@")) // email address
+                    {
+                        for (int i = 0; i < rightsCount; i++)
+                        {
+                            if (securityRights[i].name.Contains("@")) // email address
+                            {
+                                if (user == securityRights[i].name)
+                                {
+                                    // accessrights = securityRightsValue[i];
+                                    accessrights = securityRights[i].role;
+                                    return accessrights;
+                                }
+                            }
+                        }
+                    }
+                    for (int i = 0; i < rightsCount; i++)
+                    {
+                        if (!securityRights[i].name.Contains("@")) // domain name only or non email
+                        {
+                            string u = user;
+                            if (user.Contains("@"))
+                            {
+                                string[] splitUser = user.Split('@');
+                                u = splitUser[1]; // domain only
+                            }
+                            if (u == securityRights[i].name)
+                            {
+                                // accessrights = securityRightsValue[i];
+                                accessrights = securityRights[i].role;
+                                return accessrights;
+                            }
+                        }
+                    }
+                }
+
+                return accessrights;
+            }
+            /*
+            else
+            {
+                id = Convert.ToInt32(parsed2.SelectToken("sessionID").Value<string>());
+
+                random = sessionRandom[id];
+                user = sessionUserName[id];
+
+                if (random == null || random == "" || user == null || user == "")
+                {
+                    error = true;
+                }
+            }
+            */
 
             if (!error)
             {
@@ -3541,46 +4042,50 @@ namespace AasxRestServerLibrary
         {
             dynamic res = new ExpandoObject();
             int index = -1;
+            var aaslist = new List<string>();
 
             Console.WriteLine("Security 4 Server: /server/listaas");
 
             string accessrights = SecurityCheck(context, ref index);
 
-            // get the list
-            var aaslist = new List<string>();
-
-            int aascount = AasxServer.Program.env.Length;
-
-            for (int i = 0; i < aascount; i++)
+            if (!withAuthentification || checkAccessLevel(accessrights, "/server/listaas", "READ"))
             {
-                if (AasxServer.Program.env[i] != null)
+                // get the list
+                int aascount = AasxServer.Program.env.Length;
+
+                for (int i = 0; i < aascount; i++)
                 {
-                    var aas = AasxServer.Program.env[i].AasEnv.AdministrationShells[0];
-                    string idshort = aas.idShort;
-                    string aasRights = "NONE";
-                    if (securityRightsAAS != null && securityRightsAAS.Count != 0)
-                        securityRightsAAS.TryGetValue(idshort, out aasRights);
-                    // aasRights = securityRightsAAS[idshort];
-
-                    bool addEntry = false;
-                    if (!withAuthentification || checkAccessLevel(accessrights, "/server/listaas", "READ", "", "aas", aas))
+                    if (AasxServer.Program.env[i] != null)
                     {
-                        addEntry = true;
-                    }
+                        var aas = AasxServer.Program.env[i].AasEnv.AssetAdministrationShells[0];
+                        string IdShort = aas.IdShort;
+                        string aasRights = "NONE";
+                        if (securityRightsAAS != null && securityRightsAAS.Count != 0)
+                            securityRightsAAS.TryGetValue(IdShort, out aasRights);
+                        // aasRights = securityRightsAAS[IdShort];
 
-                    if (addEntry)
-                    {
-                        string s = i.ToString() + " : "
-                            + idshort + " : "
-                            + aas.identification + " : "
-                            + AasxServer.Program.envFileName[i];
-                        if (withasset)
+                        bool addEntry = false;
+                        // if (!withAuthentification || checkAccessLevel(accessrights, "", "READ", "", "aas", aas))
+                        // allow all AAS in list
                         {
-                            var asset = Program.env[i].AasEnv.FindAsset(aas.assetRef);
-                            s += " : " + asset.identification.id;
-                            s += " : " + asset.kind.kind;
+                            addEntry = true;
                         }
-                        aaslist.Add(s);
+
+                        if (addEntry)
+                        {
+                            string s = i.ToString() + " : "
+                                + IdShort + " : "
+                                + aas.Id + " : "
+                                + AasxServer.Program.envFileName[i];
+                            if (withasset)
+                            {
+                                //var asset = Program.env[i].AasEnv.FindAsset(aas.assetRef);
+                                var asset = aas.AssetInformation;
+                                s += " : " + asset.GlobalAssetId?.Keys[0]?.Value;
+                                s += " : " + asset.AssetKind;
+                            }
+                            aaslist.Add(s);
+                        }
                     }
                 }
             }
@@ -3654,17 +4159,17 @@ namespace AasxRestServerLibrary
                 res.confirm = "Authorization = " + accessrights;
                 */
 
-                var aas = Program.env[fileIndex].AasEnv.AdministrationShells[0];
+                var aas = Program.env[fileIndex].AasEnv.AssetAdministrationShells[0];
                 if (!checkAccessRights(context, accessrights, "/aasx", "READ", "", "aas", aas))
                 {
                     return;
                 }
 
                 /*
-                string idshort = AasxServer.Program.env[fileIndex].AasEnv.AdministrationShells[0].idShort;
+                string IdShort = AasxServer.Program.env[fileIndex].AasEnv.AssetAdministrationShells[0].IdShort;
                 string aasRights = "NONE";
                 if (securityRightsAAS.Count != 0)
-                    aasRights = securityRightsAAS[idshort];
+                    aasRights = securityRightsAAS[IdShort];
                 if (!checkAccessRights(context, accessrights, aasRights))
                 {
                     return;
@@ -3680,7 +4185,7 @@ namespace AasxRestServerLibrary
                 Program.env[fileIndex].SaveAs(fname);
 
                 // return as FILE
-                FileStream packageStream = File.OpenRead(fname);
+                FileStream packageStream = System.IO.File.OpenRead(fname);
                 context.Response.StatusCode = HttpStatusCode.Ok;
                 SendStreamResponse(context, packageStream,
                     Path.GetFileName(AasxServer.Program.envFileName[fileIndex]));
@@ -3741,7 +4246,7 @@ namespace AasxRestServerLibrary
 
             res.confirm = "Authorization = " + accessrights;
 
-            Byte[] binaryFile = File.ReadAllBytes(AasxServer.Program.envFileName[fileIndex]);
+            Byte[] binaryFile = System.IO.File.ReadAllBytes(AasxServer.Program.envFileName[fileIndex]);
             string binaryBase64 = Convert.ToBase64String(binaryFile);
 
             string payload = "{ \"file\" : \" " + binaryBase64 + " \" }";
@@ -3776,11 +4281,13 @@ namespace AasxRestServerLibrary
             }
 
             context.Response.StatusCode = HttpStatusCode.Ok;
-            SendStreamResponse(context, Program.env[envIndex].GetLocalStreamFromPackage(filePath), Path.GetFileName(filePath));
+            string fname = Path.GetFileName(filePath);
+            var s = Program.env[envIndex].GetLocalStreamFromPackage(filePath);
+            SendStreamResponse(context, s, fname);
         }
 
-        public static string[] securityUserName = null;
-        public static string[] securityUserPassword = null;
+        public static List<string> securityUserName = new List<string>();
+        public static List<string> securityUserPassword = new List<string>();
 
         public static string[] serverCertfileNames = null;
         public static X509Certificate2[] serverCerts = null;
@@ -3797,6 +4304,7 @@ namespace AasxRestServerLibrary
 
         public class securityRoleClass
         {
+            public string rulePath = null;
             public string condition = null;
             public string name = null;
             public string objType = null;
@@ -3805,10 +4313,49 @@ namespace AasxRestServerLibrary
             public string objPath = "";
             public string permission = null;
             public string kind = null;
+            public Submodel submodel = null;
+            public string semanticId = "";
+            public SubmodelElementCollection usage = null;
             public securityRoleClass() { }
         }
         public static List<securityRoleClass> securityRole = null;
 
+        public static string securityAccessRules()
+        {
+            string rules = "";
+
+            foreach (var r in securityRole)
+            {
+                if (r.condition != null)
+                    rules += r.condition;
+                if (r.name != null)
+                    rules += r.name;
+                rules += "\t";
+                if (r.kind != null)
+                    rules += r.kind;
+                rules += "\t";
+                if (r.permission != null)
+                    rules += r.permission;
+                rules += "\t";
+                if (r.objType != null)
+                    rules += r.objType;
+                rules += "\t";
+                if (r.apiOperation != null)
+                    rules += r.apiOperation;
+                rules += "\t";
+                if (r.objPath != null)
+                    rules += r.objPath;
+                rules += "\t";
+                if (r.semanticId != null)
+                    rules += r.semanticId;
+                rules += "\t";
+                if (r.rulePath != null)
+                    rules += r.rulePath;
+                rules += "\n";
+            }
+
+            return rules;
+        }
         public static void securityInit()
         {
             withAuthentification = !Program.noSecurity;
@@ -3822,63 +4369,65 @@ namespace AasxRestServerLibrary
                 var env = AasxServer.Program.env[i];
                 if (env != null)
                 {
-                    var aas = env.AasEnv.AdministrationShells[0];
-                    if (aas.submodelRefs != null && aas.submodelRefs.Count > 0)
+                    var aas = env.AasEnv.AssetAdministrationShells[0];
+                    if (aas.Submodels != null && aas.Submodels.Count > 0)
                     {
-                        foreach (var smr in aas.submodelRefs)
+                        foreach (var smr in aas.Submodels)
                         {
                             var sm = env.AasEnv.FindSubmodel(smr);
-                            if (sm != null && sm.idShort != null)
+                            if (sm != null && sm.IdShort != null)
                             {
-                                if (!sm.idShort.ToLower().Contains("Security"))
+                                if (!sm.IdShort.ToLower().Contains("Security"))
                                 {
                                     sm.SetAllParents();
                                 }
                             }
                         }
 
-                        foreach (var smr in aas.submodelRefs)
+                        foreach (var smr in aas.Submodels)
                         {
                             var sm = env.AasEnv.FindSubmodel(smr);
-                            if (sm != null && sm.idShort != null)
+                            if (sm != null && sm.IdShort != null)
                             {
-                                if (sm.idShort == "SecuritySettingsForServer")
+                                if (sm.IdShort == "SecuritySettingsForServer")
                                 {
-                                    int countSme = sm.submodelElements.Count;
+                                    int countSme = sm.SubmodelElements.Count;
                                     for (int iSme = 0; iSme < countSme; iSme++)
                                     {
-                                        var sme = sm.submodelElements[iSme].submodelElement;
-                                        var smec = sme as AdminShell.SubmodelElementCollection;
-                                        int countSmec = smec.value.Count;
-                                        switch (smec.idShort)
+                                        var sme = sm.SubmodelElements[iSme];
+                                        if (sme is Property)
+                                            continue;
+                                        var smec = sme as SubmodelElementCollection;
+                                        int countSmec = smec.Value.Count;
+                                        switch (smec.IdShort)
                                         {
                                             case "authenticationServer":
                                                 for (int iSmec = 0; iSmec < countSmec; iSmec++)
                                                 {
-                                                    var sme2 = smec.value[iSmec].submodelElement;
-                                                    switch (sme2.idShort)
+                                                    var sme2 = smec.Value[iSmec];
+                                                    switch (sme2.IdShort)
                                                     {
                                                         case "endpoint":
-                                                            var p2 = sme2 as AdminShell.Property;
-                                                            AasxServer.Program.redirectServer = p2.value;
+                                                            var p2 = sme2 as Property;
+                                                            AasxServer.Program.redirectServer = p2.Value;
                                                             break;
                                                         case "type":
-                                                            var p3 = sme2 as AdminShell.Property;
-                                                            AasxServer.Program.authType = p3.value;
+                                                            var p3 = sme2 as Property;
+                                                            AasxServer.Program.authType = p3.Value;
                                                             break;
                                                         case "publicCertificate":
-                                                            var f = sme2 as AdminShell.File;
+                                                            var f = sme2 as AasCore.Aas3_0_RC02.File;
                                                             serverCertfileNames = new string[1];
                                                             serverCerts = new X509Certificate2[1];
-                                                            var s = AasxServer.Program.env[i].GetLocalStreamFromPackage(f.value);
+                                                            var s = Program.env[i].GetLocalStreamFromPackage(f.Value);
                                                             if (s != null)
                                                             {
-                                                                using (var m = new System.IO.MemoryStream())
+                                                                using (var m = new MemoryStream())
                                                                 {
                                                                     s.CopyTo(m);
                                                                     var b = m.GetBuffer();
                                                                     serverCerts[0] = new X509Certificate2(b);
-                                                                    string[] split = f.value.Split('/');
+                                                                    string[] split = f.Value.Split('/');
                                                                     serverCertfileNames[0] = split[3];
                                                                     Console.WriteLine("Loaded auth server certifcate: " + serverCertfileNames[0]);
                                                                 }
@@ -3892,29 +4441,29 @@ namespace AasxRestServerLibrary
 
                                                 for (int iSmec = 0; iSmec < countSmec; iSmec++)
                                                 {
-                                                    var smec2 = smec.value[iSmec].submodelElement as AdminShell.SubmodelElementCollection;
-                                                    int countSmec2 = smec2.value.Count;
+                                                    var smec2 = smec.Value[iSmec] as SubmodelElementCollection;
+                                                    int countSmec2 = smec2.Value.Count;
                                                     List<string> subjects = new List<string>();
 
                                                     for (int iSmec2 = 0; iSmec2 < countSmec2; iSmec2++)
                                                     {
-                                                        var smec3 = smec2.value[iSmec2].submodelElement as AdminShell.SubmodelElementCollection;
-                                                        int countSmec3 = smec3.value.Count;
+                                                        var smec3 = smec2.Value[iSmec2] as SubmodelElementCollection;
+                                                        int countSmec3 = smec3.Value.Count;
 
-                                                        switch (smec3.idShort)
+                                                        switch (smec3.IdShort)
                                                         {
                                                             case "subjects":
                                                                 for (int iSmec3 = 0; iSmec3 < countSmec3; iSmec3++)
                                                                 {
-                                                                    var p = smec3.value[iSmec3].submodelElement as AdminShell.Property;
-                                                                    switch (p.idShort)
+                                                                    var p = smec3.Value[iSmec3] as Property;
+                                                                    switch (p.IdShort)
                                                                     {
                                                                         case "emailDomain":
                                                                         case "email":
-                                                                            subjects.Add(p.value);
+                                                                            subjects.Add(p.Value);
                                                                             break;
                                                                         default:
-                                                                            subjects.Add(p.idShort);
+                                                                            subjects.Add(p.IdShort);
                                                                             break;
 
                                                                     }
@@ -3923,12 +4472,12 @@ namespace AasxRestServerLibrary
                                                             case "roles":
                                                                 for (int iSmec3 = 0; iSmec3 < countSmec3; iSmec3++)
                                                                 {
-                                                                    var p = smec3.value[iSmec3].submodelElement as AdminShell.Property;
+                                                                    var p = smec3.Value[iSmec3] as Property;
                                                                     foreach (var s in subjects)
                                                                     {
                                                                         securityRightsClass sr = new securityRightsClass();
                                                                         sr.name = s;
-                                                                        sr.role = p.idShort;
+                                                                        sr.role = p.IdShort;
                                                                         securityRights.Add(sr);
                                                                     }
                                                                 }
@@ -3937,60 +4486,72 @@ namespace AasxRestServerLibrary
                                                     }
                                                 }
                                                 break;
+                                            case "basicAuth":
+                                                for (int iSmec = 0; iSmec < countSmec; iSmec++)
+                                                {
+                                                    if (smec.Value[iSmec] is Property p)
+                                                    {
+                                                        securityUserName.Add(p.IdShort);
+                                                        securityUserPassword.Add(p.Value);
+                                                    }
+                                                }
+                                                break;
                                         }
                                     }
                                 }
-                                if (sm.idShort == "SecurityMetaModelForServer" || sm.idShort == "SecurityMetaModelForAAS")
+                                if (sm.IdShort == "SecurityMetaModelForServer" || sm.IdShort == "SecurityMetaModelForAAS")
                                 {
-                                    var smc1 = sm.submodelElements.FindFirstIdShortAs<AdminShell.SubmodelElementCollection>("accessControlPolicyPoints");
-                                    var smc2 = smc1?.value.FindFirstIdShortAs<AdminShell.SubmodelElementCollection>("policyAdministrationPoint");
-                                    var smc3 = smc2?.value.FindFirstIdShortAs<AdminShell.SubmodelElementCollection>("localAccessControl");
-                                    var smc4 = smc3?.value.FindFirstIdShortAs<AdminShell.SubmodelElementCollection>("accessPermissionRules");
+                                    //var smc1 = sm.SubmodelElements.FindFirstIdShortAs<SubmodelElementCollection>("accessControlPolicyPoints");
+                                    var smc1 = sm.FindFirstIdShortAs<SubmodelElementCollection>("accessControlPolicyPoints");
+                                    var smc2 = smc1?.FindFirstIdShortAs<SubmodelElementCollection>("policyAdministrationPoint");
+                                    var smc3 = smc2?.FindFirstIdShortAs<SubmodelElementCollection>("localAccessControl");
+                                    var smc4 = smc3?.FindFirstIdShortAs<SubmodelElementCollection>("accessPermissionRules");
                                     if (smc4 == null) continue;
 
-                                    int countSme = smc4.value.Count;
+                                    int countSme = smc4.Value.Count;
                                     for (int iSme = 0; iSme < countSme; iSme++)
                                     {
-                                        var sme = smc4.value[iSme].submodelElement; // actual rule
-                                        var smc5 = sme as AdminShell.SubmodelElementCollection;
-                                        var smc6 = smc5?.value.FindFirstIdShortAs<AdminShell.SubmodelElementCollection>("targetSubjectAttributes");
-                                        List<AdminShell.Property> role = new List<AdminShellV20.Property>();
+                                        var sme = smc4.Value[iSme]; // actual rule
+                                        var smc5 = sme as SubmodelElementCollection;
+                                        var smc6 = smc5?.FindFirstIdShortAs<SubmodelElementCollection>("targetSubjectAttributes");
+                                        List<Property> role = new List<Property>();
                                         int iRole = 0;
-                                        while (smc6?.value.Count > iRole)
+                                        while (smc6?.Value.Count > iRole)
                                         {
-                                            if (smc6?.value[iRole].submodelElement is AdminShell.Property rp)
+                                            if (smc6?.Value[iRole] is Property rp)
                                             {
                                                 role.Add(rp);
-                                                iRole++;
                                             }
+                                            iRole++;
                                         }
-                                        smc6 = smc5?.value.FindFirstIdShortAs<AdminShell.SubmodelElementCollection>("permissionsPerObject");
-                                        var smc7 = smc6?.value[0].submodelElement as AdminShell.SubmodelElementCollection;
-                                        var objProp = smc7?.value.FindFirstIdShortAs<AdminShell.Property>("object");
-                                        var objRef = smc7?.value.FindFirstIdShortAs<AdminShell.ReferenceElement>("object");
+                                        smc6 = smc5?.FindFirstIdShortAs<SubmodelElementCollection>("permissionsPerObject");
+                                        var smc7 = smc6?.Value[0] as SubmodelElementCollection;
+                                        var objProp = smc7?.FindFirstIdShortAs<Property>("object");
+                                        var objRef = smc7?.FindFirstIdShortAs<ReferenceElement>("object");
                                         object aasObject = null;
                                         if (objRef != null)
                                         {
-                                            aasObject = env.AasEnv.FindReferableByReference(objRef.value);
+                                            aasObject = env.AasEnv.FindReferableByReference(objRef.Value);
                                         }
-                                        var smc8 = smc7?.value.FindFirstIdShortAs<AdminShell.SubmodelElementCollection>("permission");
+                                        var smc8 = smc7?.FindFirstIdShortAs<SubmodelElementCollection>("permission");
+                                        var smc9 = smc7?.FindFirstIdShortAs<SubmodelElementCollection>("usage");
 
-                                        int countSmc8 = smc8.value.Count;
+                                        int countSmc8 = smc8.Value.Count;
                                         List<string> listPermission = new List<string>();
-                                        AdminShell.Property kind = null;
+                                        Property kind = null;
                                         for (int iSmc8 = 0; iSmc8 < countSmc8; iSmc8++)
                                         {
-                                            var sme9 = smc8.value[iSmc8].submodelElement;
-                                            if (sme9 is AdminShell.Property)
-                                                kind = sme9 as AdminShell.Property;
-                                            if (sme9 is AdminShell.ReferenceElement)
+                                            var sme9 = smc8.Value[iSmc8];
+                                            if (sme9 is Property)
+                                                kind = sme9 as Property;
+                                            if (sme9 is ReferenceElement)
                                             {
-                                                var refer = sme9 as AdminShell.ReferenceElement;
-                                                var permission = env.AasEnv.FindReferableByReference(refer.value);
-                                                if (!(permission is AdminShell.Property))
+                                                var refer = sme9 as ReferenceElement;
+                                                var permission = env.AasEnv.FindReferableByReference(refer.Value);
+                                                if (!(permission is Property))
                                                     continue;
-                                                var p = permission as AdminShell.Property;
-                                                listPermission.Add(p.idShort);
+                                                var p = permission as Property;
+                                                listPermission.Add(p.IdShort);
                                             }
                                         }
 
@@ -4000,20 +4561,22 @@ namespace AasxRestServerLibrary
                                             foreach (var r in role)
                                             {
                                                 securityRoleClass src = new securityRoleClass();
-                                                if (r.idShort.Contains(":"))
+                                                if (smc9 != null)
+                                                    src.usage = smc9;
+                                                if (r.IdShort.Contains(":"))
                                                 {
-                                                    split = r.idShort.Split(':');
+                                                    split = r.IdShort.Split(':');
                                                     src.condition = split[0].ToLower();
                                                     src.name = split[1];
                                                 }
                                                 else
                                                 {
                                                     src.condition = "";
-                                                    src.name = r.idShort;
+                                                    src.name = r.IdShort;
                                                 }
                                                 if (objProp != null)
                                                 {
-                                                    string value = objProp.value.ToLower();
+                                                    string value = objProp.Value.ToLower();
                                                     src.objType = value;
                                                     if (value.Contains("api"))
                                                     {
@@ -4024,36 +4587,50 @@ namespace AasxRestServerLibrary
                                                             src.apiOperation = split[1];
                                                         }
                                                     }
+                                                    if (value.Contains("semanticid"))
+                                                    {
+                                                        split = value.Split(':');
+                                                        if (split[0] == "semanticid")
+                                                        {
+                                                            src.objType = split[0];
+                                                            src.semanticId = split[1];
+                                                            for (int j = 2; j < split.Length; j++)
+                                                                src.semanticId += ":" + split[j];
+                                                        }
+                                                    }
                                                 }
                                                 else
                                                 {
                                                     if (aasObject != null)
                                                     {
                                                         src.objReference = aasObject;
-                                                        if (aasObject is AdminShell.AdministrationShell)
+                                                        if (aasObject is AssetAdministrationShell)
                                                             src.objType = "aas";
-                                                        if (aasObject is AdminShell.Submodel)
+                                                        if (aasObject is Submodel)
                                                         {
                                                             src.objType = "sm";
-                                                            src.objPath = (aasObject as AdminShell.Submodel).idShort;
+                                                            src.submodel = aasObject as Submodel;
+                                                            src.objPath = src.submodel.IdShort;
                                                         }
-                                                        if (aasObject is AdminShell.SubmodelElement smep)
+                                                        if (aasObject is ISubmodelElement smep)
                                                         {
-                                                            AdminShell.Referable rp = smep;
+                                                            IReferable rp = smep;
                                                             src.objType = "submodelElement";
-                                                            string path = rp.idShort;
-                                                            while (rp.parent != null)
+                                                            string path = rp.IdShort;
+                                                            while (rp.Parent != null)
                                                             {
-                                                                rp = rp.parent;
-                                                                path = rp.idShort + "." + path;
+                                                                rp = (IReferable)rp.Parent;
+                                                                path = rp.IdShort + "." + path;
                                                             }
+                                                            src.submodel = rp as Submodel;
                                                             src.objPath = path;
                                                         }
                                                     }
                                                 }
                                                 src.permission = l.ToUpper();
                                                 if (kind != null)
-                                                    src.kind = kind.value.ToLower();
+                                                    src.kind = kind.Value.ToLower();
+                                                src.rulePath = aas.IdShort + "." + sm.IdShort + "..." + smc4.IdShort + "." + sme.IdShort;
                                                 securityRole.Add(src);
                                             }
                                         }
@@ -4132,15 +4709,15 @@ namespace AasxRestServerLibrary
             var findAasReturn = this.FindAAS(aasid, context.Request.QueryString, context.Request.RawUrl);
             if (findAasReturn.aas == null)
             {
-                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with idShort '{aasid}' found.");
+                context.Response.SendResponse(HttpStatusCode.NotFound, $"No AAS with IdShort '{aasid}' found.");
                 return;
             }
 
             // de-serialize CD
-            AdminShell.ConceptDescription cd = null;
+            ConceptDescription cd = null;
             try
             {
-                cd = Newtonsoft.Json.JsonConvert.DeserializeObject<AdminShell.ConceptDescription>(context.Request.Payload);
+                cd = Newtonsoft.Json.JsonConvert.DeserializeObject<ConceptDescription>(context.Request.Payload);
             }
             catch (Exception ex)
             {
@@ -4149,22 +4726,22 @@ namespace AasxRestServerLibrary
             }
 
             // need id for idempotent behaviour
-            if (cd.identification == null)
+            if (cd.Id == null)
             {
                 context.Response.SendResponse(HttpStatusCode.BadRequest, $"Identification of entity is (null); PUT cannot be performed.");
                 return;
             }
 
             // datastructure update
-            if (this.Packages[findAasReturn.iPackage] == null || this.Packages[findAasReturn.iPackage].AasEnv == null || this.Packages[findAasReturn.iPackage].AasEnv.Assets == null)
+            if (this.Packages[findAasReturn.iPackage] == null || this.Packages[findAasReturn.iPackage].AasEnv == null /*|| this.Packages[findAasReturn.iPackage].AasEnv.Assets == null*/)
             {
                 context.Response.SendResponse(HttpStatusCode.InternalServerError, $"Error accessing internal data structures.");
                 return;
             }
 
             // add Submodel
-            context.Server.Logger.Debug($"Adding ConceptDescription with idShort {cd.idShort ?? "--"} and id {cd.identification?.ToString() ?? "--"}");
-            var existingCd = this.Packages[findAasReturn.iPackage].AasEnv.FindConceptDescription(cd.identification);
+            context.Server.Logger.Debug($"Adding ConceptDescription with IdShort {cd.IdShort ?? "--"} and id {cd.Id?.ToString() ?? "--"}");
+            var existingCd = this.Packages[findAasReturn.iPackage].AasEnv.FindConceptDescriptionById(cd.Id);
             if (existingCd != null)
                 this.Packages[findAasReturn.iPackage].AasEnv.ConceptDescriptions.Remove(existingCd);
             this.Packages[findAasReturn.iPackage].AasEnv.ConceptDescriptions.Add(cd);

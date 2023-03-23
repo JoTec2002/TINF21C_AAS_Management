@@ -4,10 +4,16 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AasxServerBlazor.Data;
-using IO.Swagger.Controllers;
-using IO.Swagger.Filters;
-using IO.Swagger.Helpers;
-using IO.Swagger.Services;
+using IO.Swagger.V1RC03;
+using IO.Swagger.V1RC03.APIModels.ValueOnly;
+using IO.Swagger.V1RC03.Controllers;
+using IO.Swagger.V1RC03.Filters;
+using IO.Swagger.V1RC03.Logging;
+using IO.Swagger.V1RC03.Middleware;
+using IO.Swagger.V1RC03.Services;
+//using IO.Swagger.Controllers;
+//using IO.Swagger.Filters;
+//using IO.Swagger.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
@@ -16,14 +22,17 @@ using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace AasxServerBlazor
 {
     public class Startup
     {
+        private const string _corsPolicyName = "AllowAll";
         private readonly IWebHostEnvironment _hostingEnv;
 
         /*
@@ -46,19 +55,80 @@ namespace AasxServerBlazor
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<AASService>();
-            services.AddCors();
+
+            var corsOrigins = Configuration["CorsOrigins"];
+            if (corsOrigins.Equals("*"))
+            {
+                services.AddCors(options =>
+                {
+                    options.AddPolicy(_corsPolicyName,
+                        builder =>
+                        {
+                            builder
+                            .AllowAnyOrigin()
+                            .AllowAnyMethod()
+                            .AllowAnyHeader();
+                        });
+                });
+            }
+            else if (corsOrigins.Contains(','))
+            {
+                string[] allowedOrigins = corsOrigins.Split(',');
+                services.AddCors(options =>
+                {
+                    options.AddPolicy(_corsPolicyName,
+                        builder =>
+                        {
+                            builder
+                            .WithOrigins(allowedOrigins)
+                            .AllowAnyMethod()
+                            .AllowAnyHeader();
+                        });
+                });
+            }
+            else
+            {
+                //case where only one host is defined, hence not comma separated
+                services.AddCors(options =>
+                {
+                    options.AddPolicy(_corsPolicyName,
+                        builder =>
+                        {
+                            builder
+                            .WithOrigins(corsOrigins)
+                            .AllowAnyMethod()
+                            .AllowAnyHeader();
+                        });
+                });
+            }
             services.AddScoped<BlazorSessionService>();
+            // services.AddScoped<CredentialService>();
+            services.AddSingleton<CredentialService>();
 
             services.AddControllers();
 
-            services.AddTransient<IAASXFileServerInterfaceService, AASXFileServerInterfaceService>();
+            services.AddScoped(typeof(IAppLogger<>), typeof(LoggerAdapter<>));
+            services.AddTransient<IAssetAdministrationShellEnvironmentService, AssetAdministrationShellEnvironmentService>();
+            services.AddTransient<IJsonQueryDeserializer, JsonQueryDeserializer>();
+            services.AddTransient<IBase64UrlDecoderService, Base64UrlDecoderService>();
+            services.AddTransient<IAasxFileServerInterfaceService, AasxFileServerInterfaceService>();
+            services.AddTransient<IOutputModifiersService, OutputModifiersService>();
+            services.AddTransient<IInputModifierService, InputModifierService>();
+            services.AddTransient<IGenerateSerializationService, GenerateSerializationService>();
+            services.AddTransient<IValueOnlyDeserializerService, ValueOnlyDeserializerService>();
 
             // Add framework services.
             services
+                .AddLogging(config =>
+                {
+                    config.AddConsole();
+                })
                 .AddMvc(options =>
                 {
                     options.InputFormatters.RemoveType<Microsoft.AspNetCore.Mvc.Formatters.SystemTextJsonInputFormatter>();
                     options.OutputFormatters.RemoveType<Microsoft.AspNetCore.Mvc.Formatters.SystemTextJsonOutputFormatter>();
+                    options.InputFormatters.Add(new AasCoreInputFormatter());
+                    options.OutputFormatters.Add(new AasCoreOutputFormatter());
                 })
                 .AddNewtonsoftJson(opts =>
                 {
@@ -71,15 +141,9 @@ namespace AasxServerBlazor
                         }
                     };
                     opts.SerializerSettings.Converters.Add(new StringEnumConverter(new CamelCaseNamingStrategy()));
-                })
-                .AddXmlSerializerFormatters();
-
-            //// configure DI for application services
-            //services.AddScoped<IUserService, UserService>();
-            //// configure basic authentication 
-            //services.AddAuthentication("BasicAuthentication")
-            //    .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null); services.AddAuthentication();
-
+                });
+            //TODO:jtikekar Uncomment
+            //.AddXmlSerializerFormatters();
 
             services
                 .AddSwaggerGen(c =>
@@ -97,6 +161,8 @@ namespace AasxServerBlazor
                         },
                         TermsOfService = new Uri("https://github.com/admin-shell-io/aas-specs")
                     });
+
+                    c.SchemaFilter<EnumSchemaFilter>();
 
                     //c.AddSecurityDefinition("basic", new OpenApiSecurityScheme
                     //{
@@ -124,11 +190,13 @@ namespace AasxServerBlazor
 
                     c.EnableAnnotations();
                     c.CustomSchemaIds(type => type.FullName);
-                    string swaggerCommentedAssembly = typeof(AssetAdministrationShellRepositoryApiController).Assembly.GetName().Name;
+
+                    string swaggerCommentedAssembly = typeof(AssetAdministrationShellEnvironmentAPIController).Assembly.GetName().Name;
                     c.IncludeXmlComments($"{AppContext.BaseDirectory}{Path.DirectorySeparatorChar}{swaggerCommentedAssembly}.xml");
 
                     // Include DataAnnotation attributes on Controller Action parameters as Swagger validation rules (e.g required, pattern, ..)
                     // Use [ValidateModelState] on Actions to actually validate it in C# as well!
+
                     c.OperationFilter<GeneratePathParamsValidationFilter>();
                 });
         }
@@ -145,6 +213,8 @@ namespace AasxServerBlazor
                 app.UseExceptionHandler("/Error");
             }
 
+            app.UseMiddleware<ExceptionMiddleware>();
+
             // app.UseHttpsRedirection();
 
             app.UseStaticFiles();
@@ -153,12 +223,24 @@ namespace AasxServerBlazor
             //app.UseAuthentication();
             //app.UseAuthorization();
 
+            app.UseCors(_corsPolicyName);
+
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
                 //TODO: Either use the SwaggerGen generated Swagger contract (generated from C# classes)
                 c.SwaggerEndpoint("Final-Draft/swagger.json", "DotAAS Part 2 | HTTP/REST | Asset Administration Shell Repository");
                 c.RoutePrefix = "swagger";
+                c.ConfigObject.AdditionalItems["syntaxHighlight"] = new Dictionary<string, object>
+                {
+                    ["activated"] = false
+                };
+
+                var syntaxHighlight = Configuration["SyntaxHighlight"];
+                c.ConfigObject.AdditionalItems["syntaxHighlight"] = new Dictionary<string, object>
+                {
+                    ["activated"] = syntaxHighlight
+                };
 
                 //TODO: Or alternatively use the original Swagger contract that's included in the static files
                 // c.SwaggerEndpoint("swagger-original.json", "DotAAS Part 2 | HTTP/REST | Asset Administration Shell Repository Original");
@@ -179,11 +261,6 @@ namespace AasxServerBlazor
                 endpoints.MapControllers();
             });
 
-            app.UseCors(x => x
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .SetIsOriginAllowed(origin => true) // allow any origin
-            .AllowCredentials());
         }
     }
 }

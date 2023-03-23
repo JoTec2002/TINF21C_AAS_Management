@@ -1,22 +1,27 @@
 ﻿#define MICHA
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using AasCore.Aas3_0_RC02;
 using AasxMqttClient;
 using AdminShellEvents;
 using AdminShellNS;
+using Extenstions;
 using Grapevine.Interfaces.Server;
 using Grapevine.Server;
 using Grapevine.Server.Attributes;
 using Grapevine.Shared;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
+using HttpMethod = Grapevine.Shared.HttpMethod;
 
 /* Copyright (c) 2018-2019 Festo AG & Co. KG <https://www.festo.com/net/de_de/Forms/web/contact_international>, author: Michael Hoffmeister
 
@@ -33,9 +38,1477 @@ namespace AasxRestServerLibrary
 {
     public class AasxRestServer
     {
+        static string translateURL(string url)
+        {
+            // get from environment
+            if (url.Substring(0, 1) == "$")
+            {
+                string envVar = url.Substring(1);
+                url = System.Environment.GetEnvironmentVariable(envVar);
+            }
+
+            return url;
+        }
+
         [RestResource]
         public class TestResource
         {
+            public static List<string> listofRepositories = new List<string>();
+            private static bool firstListOfRepositories = true;
+            public static void initListOfRepositories()
+            {
+                if (firstListOfRepositories)
+                {
+                    firstListOfRepositories = false;
+
+                    int aascount = AasxServer.Program.env.Length;
+                    for (int i = 0; i < aascount; i++)
+                    {
+                        var env = AasxServer.Program.env[i];
+                        if (env?.AasEnv?.AssetAdministrationShells == null)
+                            continue;
+
+                        foreach (var aas in env.AasEnv.AssetAdministrationShells)
+                        {
+                            if (aas.IdShort != "REGISTRY")
+                                continue;
+
+                            foreach (var smr in aas.Submodels)
+                            {
+                                // find Submodel
+                                var sm = env.AasEnv.FindSubmodel(smr);
+                                if (sm == null)
+                                    continue;
+
+                                if (sm.IdShort != "REPOSITORIES")
+                                    continue;
+
+                                foreach (var sme in sm.SubmodelElements)
+                                {
+                                    if (sme is Property p)
+                                    {
+                                        string repositoryURL = translateURL(p.Value);
+                                        listofRepositories.Add(repositoryURL);
+                                        Console.WriteLine("listofRepositories.Add " + repositoryURL);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // query
+            [RestRoute(HttpMethod = HttpMethod.GET, PathInfo = "^/queryregistry/([^/]+)(/|)$")]
+            [RestRoute(HttpMethod = HttpMethod.POST, PathInfo = "^/queryregistry/(/|)$")]
+            public IHttpContext Queryregistry(IHttpContext context)
+            {
+                allowCORS(context);
+
+                string result = "";
+                string restPath = context.Request.PathInfo;
+                string query = restPath.Replace("/queryregistry/", "");
+
+                var handler = new HttpClientHandler();
+                var proxy = AasxServer.AasxTask.proxy;
+                if (proxy != null)
+                    handler.Proxy = proxy;
+                else
+                    handler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;
+                var client = new HttpClient(handler);
+
+                initListOfRepositories();
+                bool error = false;
+                Task task = null;
+                HttpResponseMessage response = null;
+                foreach (var r in listofRepositories)
+                {
+                    if (r == "this")
+                    {
+                        if (query != "")
+                            result += runQuery(query, context.Request.Payload);
+                        continue;
+                    }
+
+                    string requestPath = r + "/query/";
+                    if (query != "")
+                        requestPath += query;
+                    try
+                    {
+                        if (query != "")
+                        {
+                            task = Task.Run(async () =>
+                                    {
+                                        response = await client.GetAsync(requestPath, HttpCompletionOption.ResponseHeadersRead);
+                                    }
+                                );
+                        }
+                        else
+                        {
+                            task = Task.Run(async () =>
+                                    {
+                                        response = await client.PostAsync(requestPath, new StringContent(context.Request.Payload));
+                                    }
+                                );
+                        }
+                        task.Wait();
+                        if (response.IsSuccessStatusCode)
+                        {
+                            result += response.Content.ReadAsStringAsync().Result;
+                        }
+                        else
+                            error = true;
+                    }
+                    catch
+                    {
+                        error = true;
+                    }
+                    if (error)
+                        result += "\nerror " + requestPath + "\n\n";
+                }
+
+                context.Response.SendResponse(Grapevine.Shared.HttpStatusCode.Ok, result);
+
+                return context;
+            }
+
+            private static bool comp(string op, string left, string right)
+            {
+                int leftlen = left.Length;
+                int rightlen = right.Length;
+
+                if (rightlen > 2 && right.Substring(0, 1) == "<" && right.Substring(rightlen - 1, 1) == ">")
+                {
+                    // Filter parameter
+                    right = right.Substring(1, rightlen - 2);
+                    right = right.Replace("><", " ");
+                    var split = right.Split(' ');
+                    if (split.Count() == 3 && split[0] == "right")
+                    {
+                        if (left.Contains(split[1]))
+                        {
+                            right = split[2];
+                            rightlen = right.Length;
+                            int found = left.IndexOf(split[1]);
+                            found += split[1].Length;
+                            string l = "";
+                            while (char.IsWhiteSpace(left[found]) && found < leftlen - 1)
+                                found++;
+                            while (char.IsDigit(left[found]) && found < leftlen - 1)
+                            {
+                                l += left[found];
+                                found++;
+                            }
+                            left = l;
+                            leftlen = left.Length;
+                        }
+                        else
+                            return false;
+                    }
+                }
+
+                switch (op)
+                {
+                    case "==":
+                    case "!=":
+                        if (rightlen > 0)
+                        {
+                            string check = "";
+                            int checkLen = 0;
+                            switch (right.Substring(0, 1))
+                            {
+                                case "*":
+                                    // check right string
+                                    check = right.Substring(1, rightlen - 1);
+                                    checkLen = check.Length;
+                                    if (leftlen >= checkLen)
+                                    {
+                                        left = left.Substring(leftlen - checkLen, checkLen);
+                                        right = check;
+                                    }
+                                    break;
+                                default:
+                                    if (right.Substring(rightlen - 1, 1) == "*")
+                                    {
+                                        // check left string
+                                        check = right.Substring(0, rightlen - 1);
+                                        checkLen = check.Length;
+                                        if (leftlen >= checkLen)
+                                        {
+                                            left = left.Substring(0, checkLen);
+                                            right = check;
+                                        }
+                                    }
+                                    break;
+                            }
+                        }
+                        if (op == "==")
+                            return left == right;
+                        return left != right;
+                    case "==num":
+                    case "!=num":
+                    case ">":
+                    case "<":
+                    case ">=":
+                    case "<=":
+                        if (left == "" || right == "")
+                            return false;
+
+                        if (left.Contains(".") || right.Contains(".")) // double
+                        {
+                            try
+                            {
+                                string legal = "012345679.";
+
+                                foreach (var c in left + right)
+                                {
+                                    if (Char.IsDigit(c))
+                                        continue;
+                                    if (c == '.')
+                                        continue;
+                                    if (!legal.Contains(c))
+                                        return false;
+                                }
+                                var decSep = CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator;
+                                // Console.WriteLine("seperator = " + decSep);
+                                left = left.Replace(".", decSep);
+                                left = left.Replace(",", decSep);
+                                right = right.Replace(".", decSep);
+                                right = right.Replace(",", decSep);
+                                double l = Convert.ToDouble(left);
+                                double r = Convert.ToDouble(right);
+                                switch (op)
+                                {
+                                    case "==num":
+                                        return l == r;
+                                    case "!=num":
+                                        return l != r;
+                                    case ">":
+                                        return l > r;
+                                    case "<":
+                                        return l < r;
+                                    case ">=":
+                                        return l >= r;
+                                    case "<=":
+                                        return l <= r;
+                                }
+                            }
+                            catch
+                            {
+                                return false;
+                            }
+                            return (false);
+                        }
+
+                        if (!left.All(char.IsDigit))
+                            return false;
+                        if (!right.All(char.IsDigit))
+                            return false;
+                        try
+                        {
+                            int l = Convert.ToInt32(left);
+                            int r = Convert.ToInt32(right);
+
+                            switch (op)
+                            {
+                                case "==num":
+                                    return l == r;
+                                case "!=num":
+                                    return l != r;
+                                case ">":
+                                    return l > r;
+                                case "<":
+                                    return l < r;
+                                case ">=":
+                                    return l >= r;
+                                case "<=":
+                                    return l <= r;
+                            }
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                        return (false);
+                    case "contains":
+                        return left.Contains(right);
+                    case "!contains":
+                        return !left.Contains(right);
+                }
+
+                return false;
+            }
+
+            public static string runQueryRegistryOnly(string query, string restPayload, Submodel aasRegistry, AasCore.Aas3_0_RC02.Environment envRegistry)
+            {
+                string result = "";
+
+                if (aasRegistry != null)
+                {
+                    query = Base64UrlEncoder.Decode(query);
+                    var split = query.Split('\n');
+                    foreach (var s in split)
+                        result += "# " + s + "\n";
+                    result += "#\n";
+
+                    bool error = false;
+                    if (split.Length <= 7)
+                        error = true;
+                    else
+                    {
+                        if (split[0] != "SELECT:")
+                            error = true;
+                        // if (split[1] != "aas" && split[1] != "submodel")
+                        //    error = true;
+                        if (split[2] != "FROM:")
+                            error = true;
+                        if (split[3] != "registry")
+                            error = true;
+                        if (split[4] != "WHERE:")
+                            error = true;
+                        if (split[5] != "submodelelement" && split[5] != "submodel" && split[5] != "aas")
+                            error = true;
+                        if (split[6] != "AND" && split[6] != "OR")
+                            error = true;
+                    }
+                    if (error)
+                    {
+                        result += "ERROR\n";
+                        result += "For registry query only allowed:\n";
+                        result += "SELECT:\n";
+                        result += "aas | submodel\n";
+                        result += "FROM:\n";
+                        result += "registry\n";
+                        result += "WHERE:\n";
+                        result += "aas | submodel | submodelelement\n";
+                        result += "OR | AND\n";
+                        result += "%id | %assetid | %idshort | %value | %semanticid | <space> == | != | > | >= | < | <= | contains | !contains <space> \"value\"\n";
+                        return result;
+                    }
+
+                    result += "registry endpoint " + AasxServer.Program.externalBlazor + "\n";
+
+                    var sSplit = split[1].Split(' ');
+                    string select = sSplit[0];
+                    string selectParameters = split[1].Substring(select.Length);
+                    string whereAasCondition = "";
+                    string whereSmCondition = "";
+                    string whereSmeCondition = "";
+                    List<string> whereAasOperations = new List<string>();
+                    List<string> whereSmOperations = new List<string>();
+                    List<string> whereSmeOperations = new List<string>();
+
+                    if (split[5] == "aas")
+                    {
+                        whereAasCondition = split[6].ToLower();
+                        for (int i = 7; i < split.Length; i++)
+                            whereAasOperations.Add(split[i]);
+                    }
+                    if (split[5] == "submodel")
+                    {
+                        whereSmCondition = split[6].ToLower();
+                        for (int i = 7; i < split.Length; i++)
+                            whereSmOperations.Add(split[i]);
+                    }
+                    if (split[5] == "submodelelement")
+                    {
+                        whereSmeCondition = split[6].ToLower();
+                        for (int i = 7; i < split.Length; i++)
+                            whereSmeOperations.Add(split[i]);
+                    }
+
+                    int totalFound = 0;
+                    foreach (var smer in aasRegistry.SubmodelElements)
+                    {
+                        if (smer is SubmodelElementCollection smc
+                            && smer.IdShort.Contains("Descriptor"))
+                        {
+                            string aasIdShort = "";
+                            string aasID = "";
+                            string assetID = "";
+                            string aasEndpoint = "";
+                            string descriptorJSON = "";
+                            List<SubmodelElementCollection> smDescriptors = new List<SubmodelElementCollection>();
+                            foreach (var sme2 in smc.Value)
+                            {
+                                if (sme2 is Property p)
+                                {
+                                    switch (p.IdShort)
+                                    {
+                                        case "idShort":
+                                            aasIdShort = p.Value;
+                                            break;
+                                        case "aasID":
+                                            aasID = p.Value;
+                                            break;
+                                        case "assetID":
+                                            assetID = p.Value;
+                                            break;
+                                        case "endpoint":
+                                            aasEndpoint = p.Value;
+                                            break;
+                                        case "descriptorJSON":
+                                            descriptorJSON = p.Value;
+                                            break;
+                                    }
+                                }
+                                if (sme2 is ReferenceElement r)
+                                {
+                                    if (r.IdShort.Substring(0, 4).ToLower() == "ref_")
+                                    {
+                                        var aasObject = envRegistry.FindReferableByReference(r.Value);
+                                        if (aasObject is SubmodelElementCollection c)
+                                        {
+                                            smDescriptors.Add(c);
+                                        }
+                                    }
+                                }
+                            }
+
+                            int foundInAas = 0;
+                            if (whereAasCondition != "")
+                            {
+                                int conditionsTrue = 0;
+                                foreach (var wo in whereAasOperations)
+                                {
+                                    string attr = "";
+                                    string attrValue = "";
+                                    string op = "";
+                                    split = wo.Split(' ');
+                                    if (split.Length == 3)
+                                    {
+                                        attr = split[0];
+                                        op = split[1];
+                                        attrValue = split[2].Replace("\"", "");
+                                    }
+
+                                    string compare = "";
+                                    switch (attr)
+                                    {
+                                        case "%idshort":
+                                            compare = aasIdShort;
+                                            break;
+                                        case "%id":
+                                            compare = aasID;
+                                            break;
+                                        case "%assetid":
+                                            compare = assetID;
+                                            break;
+                                    }
+                                    if (comp(op, compare, attrValue))
+                                    {
+                                        conditionsTrue++;
+                                        if (whereAasCondition == "or")
+                                            break;
+                                    }
+                                    else
+                                    {
+                                        if (whereAasCondition == "and")
+                                            break;
+                                    }
+                                }
+                                if ((whereAasCondition == "and" && conditionsTrue == whereAasOperations.Count)
+                                        || (whereAasCondition == "or" && conditionsTrue != 0))
+                                {
+                                    foundInAas++;
+                                    totalFound++;
+                                }
+                            }
+
+                            foreach (var smd in smDescriptors)
+                            {
+                                string submodelIdShort = "";
+                                string submodelID = "";
+                                string semanticID = "";
+                                string submodelEndpoint = "";
+                                descriptorJSON = "";
+                                SubmodelElementCollection federatedElements = new SubmodelElementCollection();
+                                foreach (var sme2 in smd.Value)
+                                {
+                                    if (sme2 is Property p)
+                                    {
+                                        switch (p.IdShort)
+                                        {
+                                            case "idShort":
+                                                submodelIdShort = p.Value;
+                                                break;
+                                            case "submodelID":
+                                                submodelID = p.Value;
+                                                break;
+                                            case "semanticID":
+                                                semanticID = p.Value;
+                                                break;
+                                            case "endpoint":
+                                                submodelEndpoint = p.Value;
+                                                break;
+                                            case "descriptorJSON":
+                                                descriptorJSON = p.Value;
+                                                break;
+                                        }
+                                    }
+                                    if (sme2 is SubmodelElementCollection smc2)
+                                    {
+                                        switch (smc2.IdShort)
+                                        {
+                                            case "federatedElements":
+                                                federatedElements = smc2;
+                                                break;
+                                        }
+                                    }
+                                }
+
+                                // check, if access to submodel is allowed
+                                var accessSubmodel = !AasxRestServerLibrary.AasxHttpContextHelper.withAuthentification ||
+                                    AasxRestServerLibrary.AasxHttpContextHelper.checkAccessLevel(
+                                        null, "/submodels", "READ",
+                                        submodelIdShort, "semanticid", semanticID);
+
+                                if (!accessSubmodel)
+                                    continue;
+
+                                int foundInSubmodel = 0;
+                                if (whereSmCondition != "")
+                                {
+                                    int conditionsTrue = 0;
+                                    foreach (var wo in whereSmOperations)
+                                    {
+                                        string attr = "";
+                                        string attrValue = "";
+                                        string op = "";
+                                        split = wo.Split(' ');
+                                        if (split.Length == 3)
+                                        {
+                                            attr = split[0];
+                                            op = split[1];
+                                            attrValue = split[2].Replace("\"", "");
+                                        }
+
+                                        string compare = "";
+                                        switch (attr)
+                                        {
+                                            case "%idshort":
+                                                compare = submodelIdShort;
+                                                break;
+                                            case "%id":
+                                                compare = submodelID;
+                                                break;
+                                            case "%semanticid":
+                                                compare = semanticID;
+                                                break;
+                                        }
+                                        if (comp(op, compare, attrValue))
+                                        {
+                                            conditionsTrue++;
+                                            if (whereAasCondition == "or")
+                                                break;
+                                        }
+                                        else
+                                        {
+                                            if (whereAasCondition == "and")
+                                                break;
+                                        }
+                                    }
+                                    if ((whereAasCondition == "and" && conditionsTrue == whereAasOperations.Count)
+                                            || (whereAasCondition == "or" && conditionsTrue != 0))
+                                    {
+                                        foundInSubmodel++;
+                                        totalFound++;
+                                    }
+                                }
+
+                                if (whereSmeCondition != "" &&
+                                    federatedElements.Value != null && federatedElements.Value.Count > 0)
+                                {
+                                    List<List<ISubmodelElement>> stack = new List<List<ISubmodelElement>>();
+                                    List<int> iStack = new List<int>();
+                                    int depth = 0;
+                                    List<ISubmodelElement> level = new List<ISubmodelElement>();
+                                    level.Add(federatedElements);
+                                    int iLevel = 0;
+                                    while (depth >= 0)
+                                    {
+                                        while (iLevel < level.Count)
+                                        {
+                                            var sme = level[iLevel];
+
+                                            int conditionsTrue = 0;
+                                            foreach (var wo in whereSmeOperations)
+                                            {
+                                                string attr = "";
+                                                string attrValue = "";
+                                                string op = "";
+                                                split = wo.Split(' ');
+                                                if (split.Length == 3)
+                                                {
+                                                    attr = split[0];
+                                                    op = split[1];
+                                                    attrValue = split[2].Replace("\"", "");
+                                                }
+
+                                                string compare = "";
+                                                switch (attr)
+                                                {
+                                                    case "%idshort":
+                                                        compare = sme.IdShort;
+                                                        break;
+                                                    case "%value":
+                                                        if (sme is Property p)
+                                                            compare = p.Value;
+                                                        break;
+                                                    case "%semanticid":
+                                                        if (sme.SemanticId != null && sme.SemanticId.Keys != null && sme.SemanticId.Keys.Count != 0)
+                                                            compare = sme.SemanticId.Keys[0].Value;
+                                                        break;
+                                                }
+                                                if (comp(op, compare, attrValue))
+                                                {
+                                                    conditionsTrue++;
+                                                    if (whereSmeCondition == "or")
+                                                        break;
+                                                }
+                                                else
+                                                {
+                                                    if (whereSmeCondition == "and")
+                                                        break;
+                                                }
+                                            }
+
+                                            if ((whereSmeCondition == "and" && conditionsTrue == whereSmeOperations.Count)
+                                                    || (whereSmeCondition == "or" && conditionsTrue != 0))
+                                            {
+                                                foundInAas++;
+                                                foundInSubmodel++;
+                                                totalFound++;
+
+                                                if (selectParameters.Contains("%value"))
+                                                {
+                                                    result += "submodelelement found 1 value ";
+                                                    if (sme is Property p)
+                                                        result += " " + p.Value;
+                                                    if (sme is AasCore.Aas3_0_RC02.File f)
+                                                        result += " " + f.Value;
+                                                    if (sme is MultiLanguageProperty mlp)
+                                                    {
+                                                        if (mlp.Value != null && mlp.Value != null)
+                                                        {
+                                                            for (int iMlp = 0; iMlp < mlp.Value.Count; iMlp++)
+                                                            {
+                                                                result += " [" + mlp.Value[iMlp].Language + "]" +
+                                                                    mlp.Value[iMlp].Text;
+                                                            }
+
+                                                        }
+                                                    }
+                                                    result += "\n";
+                                                }
+                                            }
+                                            if (sme is SubmodelElementCollection smc2)
+                                            {
+                                                stack.Add(level);
+                                                iStack.Add(iLevel + 1);
+                                                depth++;
+                                                string smcSemanticId = "";
+                                                if (smc2.SemanticId != null && smc2.SemanticId.Keys != null && smc2.SemanticId.Keys.Count != 0)
+                                                    smcSemanticId = smc2.SemanticId.Keys[0].Value;
+                                                level = smc2.Value;
+                                                iLevel = 0;
+                                                continue;
+                                            }
+                                            iLevel++;
+                                        }
+                                        depth--;
+                                        if (depth >= 0)
+                                        {
+                                            level = stack[depth];
+                                            stack.RemoveAt(depth);
+                                            iLevel = iStack[depth];
+                                            iStack.RemoveAt(depth);
+                                        }
+                                    }
+                                }
+                                if (select == "submodel")
+                                {
+                                    if (foundInSubmodel > 0)
+                                    {
+                                        result += "submodel" + " found " + foundInSubmodel;
+                                        if (!selectParameters.Contains("!endpoint"))
+                                        {
+                                            result += " " + "<a href=\"" + submodelEndpoint + "\" target=\"_blank\">" + submodelEndpoint + "</a>";
+                                        }
+                                        if (selectParameters.Contains("%idshort"))
+                                        {
+                                            result += " " + submodelIdShort;
+                                        }
+                                        if (selectParameters.Contains("%id"))
+                                        {
+                                            result += " " + submodelID;
+                                        }
+                                        if (selectParameters.Contains("%semanticid"))
+                                        {
+                                            result += " " + semanticID;
+                                        }
+                                        result += "\n";
+                                    }
+                                }
+                            }
+                            if (select == "aas")
+                            {
+                                if (foundInAas > 0)
+                                {
+                                    result += "aas" + " found " + foundInAas;
+                                    if (!selectParameters.Contains("!endpoint"))
+                                    {
+                                        result += " " + "<a href=\"" + aasEndpoint + "\" target=\"_blank\">" + aasEndpoint + "</a>";
+
+                                    }
+                                    if (selectParameters.Contains("%idshort"))
+                                    {
+                                        result += " " + aasIdShort;
+                                    }
+                                    if (selectParameters.Contains("%id"))
+                                    {
+                                        result += " " + aasID;
+                                    }
+                                    if (selectParameters.Contains("%aasetid"))
+                                    {
+                                        result += " " + assetID;
+                                    }
+                                    result += "\n";
+                                }
+                            }
+                        }
+                    }
+                    result += "registry totalfound " + totalFound + " " + AasxServer.Program.externalBlazor + "\n";
+                }
+
+                return result;
+            }
+
+            public static string runQuery(string query, string restPayload)
+            {
+                string result = "";
+
+                if (query == "help")
+                {
+                    result = "Please use POST or add BASE64URL coded query to /query/, e.g. use https://www.base64url.com/\n\n";
+                    result += "[ STORE: ] (result of query will be used to search inside by directly following query)\n";
+                    result += "SELECT:\n";
+                    result += "repository | aas | aasid | submodel | submodelid | submodelelement (what will be returned)\n";
+                    result += "FROM:\n";
+                    result += "repository | aas \"aasid\" | submodel \"submodelid\" (what will be searched)\n";
+                    result += "WHERE:\n";
+                    result += "aas | submodel | submodelelement (element to search for)\n";
+                    result += "OR | AND\n";
+                    result += "%id | %assetid | %idshort | %value | %semanticid | %path | %semanticidpath <space> == | != | > | >= | < | <= | contains | !contains <space> \"value\"\n";
+                    result += "(last line may be repeated after OR and AND)\n";
+                    result += "(options after SELECT: aas [ %id | %idshort | %assetid | !endpoint ])\n";
+                    result += "(options after SELECT: submodel [ %id | %idshort | %semanticid | !endpoint ])\n";
+                    result += "(options after SELECT: submodelelement [ %idshort | %semanticid | %value | !endpoint ])\n";
+                    result += "(WHERE: aas, WHERE: submodel, WHERE: submodelelement may be combined)\n";
+                    result += "\n";
+
+                    result += "EXAMPLE:\n\n";
+                    result += "SELECT:\n";
+                    result += "submodel\n";
+                    result += "FROM:\n";
+                    result += "repository\n";
+                    result += "WHERE:\n";
+                    result += "submodelelement\n";
+                    result += "OR\n";
+                    result += "%idshort contains \"ManufacturerName\"\n";
+                    result += "%idshort contains \"Weight\"\n";
+
+                    return result;
+                }
+
+                string[] split = new string[0];
+                if (query == "") // POST
+                {
+                    if (restPayload == "")
+                        return result;
+
+                    query = restPayload.Replace("\r", "");
+                    split = query.Split('\n');
+                }
+                else // GET with BASE64URL encoded string
+                {
+                    try
+                    {
+                        query = Base64UrlEncoder.Decode(query);
+                        split = query.Split('\n');
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                string last = "";
+                // extract separate queries by STORE: and SELECT:
+                List<string> nested = new List<string>();
+                string next = "";
+                foreach (string sp in split)
+                {
+                    if (sp == "")
+                        continue;
+
+                    string s = sp.ToLower();
+                    if ((s == "store:" || s == "select:") && last != "store:" && last != "")
+                    {
+                        nested.Add(next);
+                        next = "";
+                    }
+                    next += sp + "\n";
+                    last = s;
+                }
+                if (next != "")
+                    nested.Add(next);
+
+                bool storeResult = false;
+                List<AssetAdministrationShell> storeAas = new List<AssetAdministrationShell>();
+                List<Submodel> storeSubmodels = new List<Submodel>();
+                List<ISubmodelElement> storeSmes = new List<ISubmodelElement>();
+                List<AssetAdministrationShell> storeAasLast = new List<AssetAdministrationShell>();
+                List<Submodel> storeSubmodelsLast = new List<Submodel>();
+                List<ISubmodelElement> storeSmesLast = new List<ISubmodelElement>();
+
+                foreach (string n in nested)
+                {
+                    string select = "";
+                    string selectParameters = "";
+                    string from = "";
+                    string fromId = "";
+                    string whereElement = "";
+                    string whereAasCondition = "";
+                    string whereSmCondition = "";
+                    string whereSmeCondition = "";
+                    List<string> whereAasOperations = new List<string>();
+                    List<string> whereSmOperations = new List<string>();
+                    List<string> whereSmeOperations = new List<string>();
+                    int countLines = 0;
+                    last = "";
+
+                    split = n.Split('\n');
+
+                    foreach (var sp in split)
+                    {
+                        result += "# " + sp + "\n";
+
+                        if (sp == "")
+                            continue;
+
+                        string s = sp.ToLower();
+
+                        switch (s)
+                        {
+                            case "store:":
+                                storeResult = true;
+                                break;
+                            case "where:":
+                                last = "";
+                                countLines = 0;
+                                break;
+                        }
+                        switch (last)
+                        {
+                            case "select:":
+                                var sSplit = s.Split(' ');
+                                select = sSplit[0];
+                                selectParameters = s.Substring(select.Length);
+                                break;
+                            case "from:":
+                                var fromsplit = sp.Split(' ');
+                                from = fromsplit[0].ToLower();
+                                if (from == "aas" || from == "submodel")
+                                {
+                                    if (fromsplit.Length == 2)
+                                        fromId = fromsplit[1].Replace("\"", "");
+                                }
+                                break;
+                            case "where:":
+                                switch (countLines)
+                                {
+                                    case 0:
+                                        whereElement = sp.Replace("\"", "").ToLower();
+                                        break;
+                                    case 1:
+                                        switch (whereElement)
+                                        {
+                                            case "aas":
+                                                whereAasCondition = sp.Replace("\"", "").ToLower();
+                                                break;
+                                            case "submodel":
+                                                whereSmCondition = sp.Replace("\"", "").ToLower();
+                                                break;
+                                            case "submodelelement":
+                                                whereSmeCondition = sp.Replace("\"", "").ToLower();
+                                                break;
+                                        }
+                                        break;
+                                    default:
+                                        switch (whereElement)
+                                        {
+                                            case "aas":
+                                                whereAasOperations.Add(sp.Replace("\"", ""));
+                                                break;
+                                            case "submodel":
+                                                whereSmOperations.Add(sp.Replace("\"", ""));
+                                                break;
+                                            case "submodelelement":
+                                                whereSmeOperations.Add(sp.Replace("\"", ""));
+                                                break;
+                                        }
+                                        break;
+                                }
+                                countLines++;
+                                break;
+                        }
+                        if (last != "where:")
+                            last = s;
+                    }
+
+                    result += "repository endpoint " + AasxServer.Program.externalBlazor + "\n";
+                    /*
+                    if (storeResult)
+                        result += "store result\n";
+                    result += "select = \"" + select + selectParameters + "\n";
+                    result += "from = \"" + from + "\"\n";
+                    if (fromId != "")
+                        result += "fromId = \"" + fromId + "\"\n";
+                    if (whereAasCondition != "")
+                    {
+                        result += "whereAasCondition = \"" + whereAasCondition + "\"\n";
+                        foreach (var wo in whereAasOperations)
+                            result += "whereAasOperation = \"" + wo + "\"\n";
+                    }
+                    if (whereSmCondition != "")
+                    {
+                        result += "whereSmCondition = \"" + whereSmCondition + "\"\n";
+                        foreach (var wo in whereSmOperations)
+                            result += "whereSmOperation = \"" + wo + "\"\n";
+                    }
+                    if (whereSmeCondition != "")
+                    {
+                        result += "whereSmeCondition = \"" + whereSmeCondition + "\"\n";
+                        foreach (var wo in whereSmeOperations)
+                            result += "whereSmeOperation = \"" + wo + "\"\n";
+                    }
+                    result += "\n";
+                    */
+
+                    int totalFound = 0;
+                    int foundInRepository = 0;
+                    int aascount = AasxServer.Program.env.Length;
+                    for (int i = 0; i < aascount; i++)
+                    {
+                        int foundInAas = 0;
+                        var env = AasxServer.Program.env[i];
+                        if (env?.AasEnv?.AssetAdministrationShells == null)
+                            continue;
+
+                        foreach (var aas in env.AasEnv.AssetAdministrationShells)
+                        {
+                            if (aas.IdShort == "REGISTRY")
+                                continue;
+
+                            if (storeAasLast.Count != 0)
+                            {
+                                if (!storeAasLast.Contains(aas))
+                                    continue;
+                            }
+
+                            if (from == "aas")
+                            {
+                                if (aas.Id != fromId)
+                                    continue;
+                            }
+
+                            if (whereAasCondition != "")
+                            {
+                                int conditionsTrue = 0;
+                                foreach (var wo in whereAasOperations)
+                                {
+                                    string attr = "";
+                                    string attrValue = "";
+                                    string op = "";
+                                    split = wo.Split(' ');
+                                    if (split.Length == 3)
+                                    {
+                                        attr = split[0];
+                                        op = split[1];
+                                        attrValue = split[2];
+                                    }
+
+                                    string compare = "";
+                                    switch (attr)
+                                    {
+                                        case "%id":
+                                            compare = aas.Id;
+                                            break;
+                                        case "%idshort":
+                                            compare = aas.IdShort;
+                                            break;
+                                        case "%assetid":
+                                            if (aas.AssetInformation.GlobalAssetId != null &&
+                                                    aas.AssetInformation.GlobalAssetId.Keys != null && aas.AssetInformation.GlobalAssetId.Keys.Count != 0)
+                                                compare = aas.AssetInformation.GlobalAssetId.Keys[0].Value;
+                                            break;
+                                    }
+                                    if (comp(op, compare, attrValue))
+                                    {
+                                        conditionsTrue++;
+                                        if (whereAasCondition == "or")
+                                            break;
+                                    }
+                                    else
+                                    {
+                                        if (whereAasCondition == "and")
+                                            break;
+                                    }
+                                }
+                                if ((whereAasCondition == "and" && conditionsTrue == whereAasOperations.Count)
+                                        || (whereAasCondition == "or" && conditionsTrue != 0))
+                                {
+                                    if (whereSmCondition == "")
+                                    {
+                                        if (select == "aas" || select == "aasid")
+                                        {
+                                            foundInAas++;
+                                            totalFound++;
+                                            if (storeResult)
+                                            {
+                                                if (!storeAas.Contains(aas))
+                                                    storeAas.Add(aas);
+                                            }
+                                        }
+                                        if (select == "repository")
+                                        {
+                                            foundInRepository++;
+                                            totalFound++;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    continue;
+                                }
+                            }
+
+                            if (aas?.Submodels == null)
+                                continue;
+
+                            foreach (var smr in aas.Submodels)
+                            {
+                                // find Submodel
+                                var sm = env.AasEnv.FindSubmodel(smr);
+                                if (sm == null)
+                                    continue;
+
+                                if (from == "submodel")
+                                {
+                                    if (sm.Id != fromId)
+                                        continue;
+                                }
+
+                                if (storeSubmodelsLast.Count != 0)
+                                {
+                                    if (!storeSubmodelsLast.Contains(sm))
+                                        continue;
+                                }
+
+                                // check, if access to submodel is allowed
+                                var accessSubmodel = !AasxRestServerLibrary.AasxHttpContextHelper.withAuthentification ||
+                                    AasxRestServerLibrary.AasxHttpContextHelper.checkAccessLevel(
+                                        null, "/submodels", "READ",
+                                        sm.IdShort, "sm", sm);
+
+                                string smSemanticId = "";
+                                if (sm.SemanticId != null && sm.SemanticId.Keys != null && sm.SemanticId.Keys.Count != 0)
+                                    smSemanticId = sm.SemanticId.Keys[0].Value;
+
+                                int foundInSubmodel = 0;
+                                if (whereSmCondition != "" && accessSubmodel)
+                                {
+                                    int conditionsTrue = 0;
+                                    foreach (var wo in whereSmOperations)
+                                    {
+                                        string attr = "";
+                                        string attrValue = "";
+                                        string op = "";
+                                        split = wo.Split(' ');
+                                        if (split.Length == 3)
+                                        {
+                                            attr = split[0];
+                                            op = split[1];
+                                            attrValue = split[2];
+
+                                            string compare = "";
+                                            switch (attr)
+                                            {
+                                                case "%id":
+                                                    compare = sm.Id;
+                                                    break;
+                                                case "%idshort":
+                                                    compare = sm.IdShort;
+                                                    break;
+                                                case "%semanticid":
+                                                    compare = "";
+                                                    if (sm.SemanticId != null && sm.SemanticId.Keys != null && sm.SemanticId.Keys.Count != 0)
+                                                        compare = sm.SemanticId.Keys[0].Value;
+                                                    break;
+                                            }
+                                            if (comp(op, compare, attrValue))
+                                            {
+                                                conditionsTrue++;
+                                                if (whereSmCondition == "or")
+                                                    break;
+                                            }
+                                            else
+                                            {
+                                                if (whereSmCondition == "and")
+                                                    break;
+                                            }
+                                        }
+                                    }
+
+                                    if ((whereSmCondition == "and" && conditionsTrue == whereSmOperations.Count)
+                                            || (whereSmCondition == "or" && conditionsTrue != 0))
+                                    {
+                                        if (whereSmeCondition == "")
+                                        {
+                                            if (select == "submodel" || select == "submodelid")
+                                            {
+                                                if (storeResult)
+                                                {
+                                                    if (!storeSubmodels.Contains(sm))
+                                                        storeSubmodels.Add(sm);
+
+                                                }
+                                                foundInSubmodel++;
+                                                totalFound++;
+                                            }
+                                            if (select == "aas" || select == "aasid")
+                                            {
+                                                if (storeResult)
+                                                {
+                                                    if (!storeAas.Contains(aas))
+                                                        storeAas.Add(aas);
+                                                }
+                                                foundInAas++;
+                                                totalFound++;
+                                            }
+                                            if (select == "repository")
+                                            {
+                                                foundInRepository++;
+                                                totalFound++;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        continue;
+                                    }
+                                }
+
+                                if (whereSmeCondition != "")
+                                {
+                                    List<List<ISubmodelElement>> stack = new List<List<ISubmodelElement>>();
+                                    List<int> iStack = new List<int>();
+                                    List<string> pathStack = new List<string>();
+                                    List<string> semanticIdPathStack = new List<string>();
+                                    int depth = 0;
+                                    List<ISubmodelElement> level = sm.SubmodelElements;
+                                    int iLevel = 0;
+                                    string path = "";
+                                    string semanticIdPath = "";
+                                    while (depth >= 0)
+                                    {
+                                        while (iLevel < level.Count)
+                                        {
+                                            var sme = level[iLevel];
+
+                                            // check, if access to submodelelement is allowed
+                                            string _path = sm.IdShort + ".";
+                                            if (path != "")
+                                                _path += path;
+                                            _path = _path.Replace("/", ".");
+                                            var accessSme = !AasxRestServerLibrary.AasxHttpContextHelper.withAuthentification ||
+                                                AasxRestServerLibrary.AasxHttpContextHelper.checkAccessLevel(
+                                                    null, "/submodelelements", "READ",
+                                                    _path + sme.IdShort, "", sm);
+
+                                            if (accessSme)
+                                            {
+                                                int conditionsTrue = 0;
+                                                foreach (var wo in whereSmeOperations)
+                                                {
+                                                    string attr = "";
+                                                    string attrValue = "";
+                                                    string op = "";
+                                                    split = wo.Split(' ');
+                                                    if (split.Length == 3)
+                                                    {
+                                                        attr = split[0];
+                                                        op = split[1];
+                                                        attrValue = split[2];
+                                                    }
+
+                                                    string compare = "";
+                                                    switch (attr)
+                                                    {
+                                                        case "%idshort":
+                                                            compare = sme.IdShort;
+                                                            break;
+                                                        case "%value":
+                                                            if (sme is Property p)
+                                                                compare = p.Value;
+                                                            break;
+                                                        case "%semanticid":
+                                                            if (sme.SemanticId != null && sme.SemanticId.Keys != null && sme.SemanticId.Keys.Count != 0)
+                                                                compare = sme.SemanticId.Keys[0].Value;
+                                                            break;
+                                                        case "%path":
+                                                            attrValue = attrValue.Replace(".", "/");
+                                                            compare = aas.IdShort + "/" + sm.IdShort + "/" + path;
+                                                            break;
+                                                        case "%semanticidpath":
+                                                            compare = smSemanticId + "." + semanticIdPath;
+                                                            break;
+                                                    }
+                                                    if (comp(op, compare, attrValue))
+                                                    {
+                                                        conditionsTrue++;
+                                                        if (whereSmeCondition == "or")
+                                                            break;
+                                                    }
+                                                    else
+                                                    {
+                                                        if (whereSmeCondition == "and")
+                                                            break;
+                                                    }
+                                                }
+
+                                                if ((whereSmeCondition == "and" && conditionsTrue == whereSmeOperations.Count)
+                                                        || (whereSmeCondition == "or" && conditionsTrue != 0))
+                                                {
+                                                    if (storeSmesLast.Count == 0 || (storeSmesLast.Count != 0 && storeSmesLast.Contains(sme)))
+                                                    {
+                                                        if (select == "submodelelement")
+                                                        {
+                                                            if (storeResult)
+                                                            {
+                                                                if (!storeSmes.Contains(sme))
+                                                                    storeSmes.Add(sme);
+                                                            }
+                                                            result += "submodelelement found" + " 1";
+                                                            if (!selectParameters.Contains("!endpoint"))
+                                                            {
+                                                                string link = AasxServer.Program.externalBlazor +
+                                                                    "/submodels/" + Base64UrlEncoder.Encode(sm.Id) +
+                                                                    "/submodelelements/" + path.Replace("/", ".") + sme.IdShort;
+                                                                result += " " + "<a href=\"" + link + "\" target=\"_blank\">" + link + "</a>";
+                                                            }
+                                                            if (selectParameters.Contains("%idshort"))
+                                                            {
+                                                                result += " " + sme.IdShort;
+                                                            }
+                                                            if (selectParameters.Contains("%value"))
+                                                            {
+                                                                if (sme is Property p)
+                                                                    result += " " + p.Value;
+                                                                if (sme is AasCore.Aas3_0_RC02.File f)
+                                                                    result += " " + f.Value;
+                                                                if (sme is MultiLanguageProperty mlp)
+                                                                {
+                                                                    if (mlp.Value != null && mlp.Value != null)
+                                                                    {
+                                                                        for (int iMlp = 0; iMlp < mlp.Value.Count; iMlp++)
+                                                                        {
+                                                                            result += " [" + mlp.Value[iMlp].Language + "]" +
+                                                                                mlp.Value[iMlp].Text;
+                                                                        }
+
+                                                                    }
+                                                                }
+                                                            }
+                                                            if (selectParameters.Contains("%semanticid"))
+                                                            {
+                                                                if (sme.SemanticId != null && sme.SemanticId.Keys != null && sme.SemanticId.Keys.Count != 0)
+                                                                    result += " " + sme.SemanticId.Keys[0].Value;
+                                                            }
+                                                            if (selectParameters.Contains("%path"))
+                                                            {
+                                                                result += " " + aas.IdShort + "/" + sm.IdShort + "/" + path + sme.IdShort;
+                                                            }
+                                                            result += "\n";
+                                                            totalFound++;
+                                                        }
+                                                        if (select == "submodel" || select == "submodelid")
+                                                        {
+                                                            if (storeResult)
+                                                            {
+                                                                if (!storeSubmodels.Contains(sm))
+                                                                    storeSubmodels.Add(sm);
+                                                            }
+                                                            foundInSubmodel++;
+                                                            totalFound++;
+                                                        }
+                                                        if (select == "aas" || select == "aasid")
+                                                        {
+                                                            if (storeResult)
+                                                            {
+                                                                if (!storeAas.Contains(aas))
+                                                                    storeAas.Add(aas);
+                                                            }
+                                                            foundInAas++;
+                                                            totalFound++;
+                                                        }
+                                                        if (select == "repository")
+                                                        {
+                                                            foundInRepository++;
+                                                            totalFound++;
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            if (sme is SubmodelElementCollection smc)
+                                            {
+                                                stack.Add(level);
+                                                iStack.Add(iLevel + 1);
+                                                pathStack.Add(path);
+                                                semanticIdPathStack.Add(semanticIdPath);
+                                                depth++;
+                                                path += smc.IdShort + "/";
+                                                string smcSemanticId = "";
+                                                if (smc.SemanticId != null && smc.SemanticId.Keys != null && smc.SemanticId.Keys.Count != 0)
+                                                    smcSemanticId = smc.SemanticId.Keys[0].Value;
+                                                semanticIdPath += smcSemanticId + ".";
+                                                level = smc.Value;
+                                                iLevel = 0;
+                                                continue;
+                                            }
+                                            iLevel++;
+                                        }
+                                        depth--;
+                                        if (depth >= 0)
+                                        {
+                                            level = stack[depth];
+                                            stack.RemoveAt(depth);
+                                            iLevel = iStack[depth];
+                                            iStack.RemoveAt(depth);
+                                            path = pathStack[depth];
+                                            pathStack.RemoveAt(depth);
+                                            semanticIdPath = semanticIdPathStack[depth];
+                                            semanticIdPathStack.RemoveAt(depth);
+                                        }
+                                    }
+                                }
+
+                                if (select == "submodel" && foundInSubmodel != 0 && accessSubmodel)
+                                {
+                                    result += select + " found " + foundInSubmodel;
+
+                                    if (!selectParameters.Contains("!endpoint"))
+                                    {
+                                        string link = AasxServer.Program.externalBlazor +
+                                            "/submodels/" + Base64UrlEncoder.Encode(sm.Id);
+                                        result += " " + "<a href=\"" + link + "\" target=\"_blank\">" + link + "</a>";
+                                    }
+                                    if (selectParameters.Contains("%id "))
+                                    {
+                                        result += " " + sm.Id;
+                                    }
+                                    if (selectParameters.Contains("%idshort"))
+                                    {
+                                        result += " " + sm.IdShort;
+                                    }
+                                    if (selectParameters.Contains("%semanticid"))
+                                    {
+                                        if (sm.SemanticId != null && sm.SemanticId.Keys != null && sm.SemanticId.Keys.Count != 0)
+                                            result += " " + sm.SemanticId.Keys[0].Value;
+                                    }
+                                    result += "\n";
+                                }
+                                if (select == "submodelid" && foundInSubmodel != 0 && accessSubmodel)
+                                    result += "%id == \"" + sm.Id + "\"\n";
+                            } // submodels
+
+                            if (select == "aas" && foundInAas != 0)
+                            {
+                                result += select + " found " + foundInAas;
+
+                                if (!selectParameters.Contains("!endpoint"))
+                                {
+                                    string link = AasxServer.Program.externalBlazor +
+                                        "/shells/" + Base64UrlEncoder.Encode(aas.Id);
+                                    result += " " + "<a href=\"" + link + "\" target=\"_blank\">" + link + "</a>";
+                                }
+                                if (selectParameters.Contains("%id "))
+                                {
+                                    result += " " + aas.Id;
+                                }
+                                if (selectParameters.Contains("%idshort"))
+                                {
+                                    result += " " + aas.IdShort;
+                                }
+                                if (selectParameters.Contains("%assetid"))
+                                {
+                                    if (aas.AssetInformation.GlobalAssetId != null &&
+                                            aas.AssetInformation.GlobalAssetId.Keys != null && aas.AssetInformation.GlobalAssetId.Keys.Count != 0)
+                                        result += " " + aas.AssetInformation.GlobalAssetId.Keys[0].Value;
+                                }
+                                result += "\n";
+                            }
+                            if (select == "aasid" && foundInAas != 0)
+                                result += "%id == \"" + aas.Id + "\"\n";
+                        } // AAS
+                    } // AAS-ENV
+
+                    if (select == "repository" && foundInRepository != 0)
+                        result += select + " found " + foundInRepository + " " + AasxServer.Program.externalBlazor + "\n";
+                    else
+                        result += "repository totalfound " + totalFound + " " + AasxServer.Program.externalBlazor + "\n";
+                    result += "\n";
+
+                    if (storeResult)
+                    {
+                        storeResult = false;
+                        storeAasLast = storeAas;
+                        storeAas = new List<AssetAdministrationShell>();
+                        storeSubmodelsLast = storeSubmodels;
+                        storeSubmodels = new List<Submodel>();
+                        storeSmesLast = storeSmes;
+                        storeSmes = new List<ISubmodelElement>();
+                        totalFound = 0;
+                        foundInRepository = 0;
+                        result += "\n";
+                    }
+                }
+
+                return result;
+            }
+
+            // query
+            [RestRoute(HttpMethod = HttpMethod.GET, PathInfo = "^/query/([^/]+)(/|)$")]
+            [RestRoute(HttpMethod = HttpMethod.POST, PathInfo = "^/query/(/|)$")]
+
+            public IHttpContext Query(IHttpContext context)
+            {
+                allowCORS(context);
+
+                string result = "";
+
+                string restPath = context.Request.PathInfo;
+                string query = restPath.Replace("/query/", "");
+
+                result = runQuery(query, context.Request.Payload);
+
+                context.Response.SendResponse(Grapevine.Shared.HttpStatusCode.Ok, result);
+
+                // context.Response.SendResponse(Grapevine.Shared.HttpStatusCode.NotFound, $"Operation not allowed!");
+                return context;
+            }
+
             // exit application
             [RestRoute(HttpMethod = HttpMethod.POST, PathInfo = "^/exit/([^/]+)(/|)$")]
             [RestRoute(HttpMethod = HttpMethod.GET, PathInfo = "^/exit/([^/]+)(/|)$")]
@@ -121,6 +1594,7 @@ namespace AasxRestServerLibrary
                     context.Response.ContentEncoding = Encoding.UTF8;
                     context.Response.ContentLength64 = txt.Length;
                     context.Response.SendResponse(txt);
+                    return context;
                 }
 
                 context.Response.SendResponse(Grapevine.Shared.HttpStatusCode.NotFound, $"Operation not allowed!");
@@ -175,8 +1649,8 @@ namespace AasxRestServerLibrary
 
             public class DeletedListItem
             {
-                public AdminShell.Submodel sm;
-                public AdminShell.Referable rf;
+                public Submodel sm;
+                public IReferable rf;
             }
 
             public static List<DeletedListItem> deletedList = new List<DeletedListItem>();
@@ -190,10 +1664,10 @@ namespace AasxRestServerLibrary
                 public string obj = "";
                 public string data = "";
 
-                public static void add(AdminShell.Referable o, string op, AdminShell.Submodel rootSubmodel, ulong changeCount)
+                public static void add(IReferable o, string op, Submodel rootSubmodel, ulong changeCount)
                 {
-                    // if (o is AdminShell.SubmodelElementCollection smec)
-                    if (o is AdminShell.SubmodelElement smec)
+                    // if (o is SubmodelElementCollection smec)
+                    if (o is ISubmodelElement smec)
                     {
                         string json = "";
 
@@ -214,21 +1688,21 @@ namespace AasxRestServerLibrary
                         }
 
                         rootSubmodel.SetAllParents();
-                        AdminShell.KeyList keys = new AdminShellV20.KeyList();
+                        List<Key> keys = new();
 
 #if MICHA
                         // keys were in the reverse order
-                        keys = smec.GetReference()?.Keys;
-                        if (keys?.IsEmpty == false)
+                        keys = smec.GetModelReference()?.Keys;
+                        if (keys.Count != 0)
                             keys.Remove(keys.Last());
 #else
 
                         while (smec != null)
                         {
-                            keys.Add(AdminShellV20.Key.CreateNew("SMEC", false, "SMEC", smec.idShort));
-                            smec = (smec.parent as AdminShell.SubmodelElementCollection);
+                            keys.Add(AdminShellV20.Key.CreateNew("SMEC", false, "SMEC", smec.IdShort));
+                            smec = (smec.parent as SubmodelElementCollection);
                         }
-                        keys.Add(AdminShellV20.Key.CreateNew("SM", false, "SM", rootSubmodel.idShort));
+                        keys.Add(AdminShellV20.Key.CreateNew("SM", false, "SM", rootSubmodel.IdShort));
 #endif
 
 
@@ -241,15 +1715,15 @@ namespace AasxRestServerLibrary
                         if (op == "Remove")
                         {
                             o.TimeStamp = DateTime.UtcNow;
-                            AdminShell.Referable x = o;
+                            IReferable x = o;
                             /*
-                            string path = x.idShort;
+                            string path = x.IdShort;
                             while (x.parent != null && x != x.parent)
                             {
                                 x = x.parent;
-                                path = x.idShort + "." + path;
+                                path = x.IdShort + "." + path;
                             }
-                            o.idShort = path;
+                            o.IdShort = path;
                             */
                             deletedList.Add(new DeletedListItem() { sm = rootSubmodel, rf = o });
                             if (deletedList.Count > 1000 && deletedList[0].rf != null)
@@ -453,15 +1927,15 @@ namespace AasxRestServerLibrary
                         continue;
 
                     var env = AasxServer.Program.env[i];
-                    if (env?.AasEnv?.AdministrationShells == null)
+                    if (env?.AasEnv?.AssetAdministrationShells == null)
                         continue;
 
-                    foreach (var aas in env.AasEnv.AdministrationShells)
+                    foreach (var aas in env.AasEnv.AssetAdministrationShells)
                     {
-                        if (aas?.submodelRefs == null)
+                        if (aas?.Submodels == null)
                             continue;
 
-                        foreach (var smr in aas.submodelRefs)
+                        foreach (var smr in aas.Submodels)
                         {
                             // find Submodel
                             var sm = env.AasEnv.FindSubmodel(smr);
@@ -469,26 +1943,18 @@ namespace AasxRestServerLibrary
                                 continue;
 
                             // find a matching event element
-                            foreach (var bev in sm.FindDeep<AdminShell.BasicEvent>())
+                            foreach (var bev in sm.FindDeep<BasicEventElement>())
                             {
                                 // find interesting event?
-                                if (true == bev.semanticId?.MatchesExactlyOneKey(
-                                    type: AdminShell.Key.ConceptDescription,
-                                    local: false,
-                                    idType: AdminShell.Identification.IRI,
-                                    id: "https://admin-shell.io/tmp/AAS/Events/UpdateValueOutwards",
-                                    matchMode: AdminShellV20.Key.MatchMode.Relaxed))
+                                //if (true == bev.SemanticId?.MatchesExactlyOneId(
+                                //    id: "https://admin-shell.io/tmp/AAS/Events/UpdateValueOutwards",
+                                //    matchMode: Key.MatchMode.Relaxed))
+                                if (true == bev.SemanticId?.Matches(id: "https://admin-shell.io/tmp/AAS/Events/UpdateValueOutwards"))
                                 {
                                     doUpdate = true;
                                     doCreateDelete = false;
                                 }
-                                else
-                                if (true == bev.semanticId?.MatchesExactlyOneKey(
-                                    type: AdminShell.Key.ConceptDescription,
-                                    local: false,
-                                    idType: AdminShell.Identification.IRI,
-                                    id: "https://admin-shell.io/tmp/AAS/Events/StructureChangeOutwards",
-                                    matchMode: AdminShellV20.Key.MatchMode.Relaxed))
+                                else if (true == bev.SemanticId?.Matches(id: "https://admin-shell.io/tmp/AAS/Events/StructureChangeOutwards"))
                                 {
                                     doUpdate = false;
                                     doCreateDelete = true;
@@ -497,18 +1963,18 @@ namespace AasxRestServerLibrary
                                     continue;
 
                                 // find obseverved as well
-                                if (bev.observed == null && bev.observed.Count < 1)
+                                if (bev.Observed == null && bev.Observed.Keys.Count < 1)
                                     continue;
-                                var obs = env.AasEnv.FindReferableByReference(bev.observed);
+                                var obs = env.AasEnv.FindReferableByReference(bev.Observed);
                                 if (obs == null)
                                     continue;
 
                                 // obseverved semantic id is pain in the ..
-                                AdminShell.SemanticId obsSemId = null;
-                                if (obs is AdminShell.Submodel obssm)
-                                    obsSemId = obssm.semanticId;
-                                if (obs is AdminShell.SubmodelElement obssme)
-                                    obsSemId = obssme.semanticId;
+                                Reference obsSemId = null;
+                                if (obs is Submodel obssm)
+                                    obsSemId = obssm.SemanticId;
+                                if (obs is ISubmodelElement obssme)
+                                    obsSemId = obssme.SemanticId;
 
                                 //
                                 // Create event outer message
@@ -516,9 +1982,9 @@ namespace AasxRestServerLibrary
 
                                 var eventsOuter = new AasEventMsgEnvelope(
                                         DateTime.UtcNow,
-                                        source: bev.GetReference(),
-                                        sourceSemanticId: bev.semanticId,
-                                        observableReference: bev.observed,
+                                        source: bev.GetModelReference(),
+                                        sourceSemanticId: bev.SemanticId,
+                                        observableReference: bev.Observed,
                                         observableSemanticId: obsSemId);
 
                                 // directly create lists of update value and structural change events
@@ -540,17 +2006,17 @@ namespace AasxRestServerLibrary
                                         if (d.rf.TimeStamp > minimumDate)
                                         {
                                             // get the path
-                                            AdminShell.KeyList p2 = null;
-                                            if (d.rf is AdminShell.Submodel delsm)
-                                                p2 = delsm?.GetReference()?.Keys;
-                                            if (d.rf is AdminShell.SubmodelElement delsme)
-                                                p2 = delsme?.GetReference()?.Keys;
+                                            List<Key> p2 = null;
+                                            if (d.rf is Submodel delsm)
+                                                p2 = delsm?.GetModelReference()?.Keys;
+                                            if (d.rf is ISubmodelElement delsme)
+                                                p2 = delsme?.GetModelReference()?.Keys;
                                             if (p2 == null)
                                                 continue;
 
                                             // prepare p2 to be relative path to observable
-                                            if (true == p2?.StartsWith(bev.observed?.Keys, matchMode: AdminShellV20.Key.MatchMode.Relaxed))
-                                                p2.RemoveRange(0, bev.observed.Keys.Count);
+                                            if (true == p2?.StartsWith(bev.Observed?.Keys))
+                                                p2.RemoveRange(0, bev.Observed.Keys.Count);
 
                                             // make payload
                                             var pliDel = new AasPayloadStructuralChangeItem(
@@ -577,7 +2043,7 @@ namespace AasxRestServerLibrary
                                 if ((doCreateDelete || doUpdate) == false)
                                     throw new Exception("invalid flags");
 
-                                DateTime diffTimeStamp = sm.TimeStamp;
+                                DateTime? diffTimeStamp = sm.TimeStamp;
                                 var strMode = "";
                                 if (doCreateDelete)
                                     strMode = "CREATE";
@@ -587,13 +2053,13 @@ namespace AasxRestServerLibrary
                                     if (diffTimeStamp > minimumDate)
                                     {
                                         ;
-                                        foreach (var sme in sm.submodelElements)
+                                        foreach (var sme in sm.SubmodelElements)
                                             GetEventMsgRecurseDiff(
                                                 strMode,
                                                 plStruct, plUpdate,
-                                                sme.submodelElement,
+                                                sme,
                                                 minimumDate, doUpdate, doCreateDelete,
-                                                bev.observed?.Keys);
+                                                bev.Observed?.Keys);
                                     }
                                 //}
 
@@ -625,18 +2091,19 @@ namespace AasxRestServerLibrary
                 string mode,
                 AasPayloadStructuralChange plStruct,
                 AasPayloadUpdateValue plUpdate,
-                AdminShell.SubmodelElement sme, DateTime minimumDate,
+                ISubmodelElement sme, DateTime minimumDate,
                 bool doUpdate, bool doCreateDelete,
-                AdminShell.KeyList observablePath = null)
+                List<Key> observablePath = null)
             {
-                if (!(sme is AdminShell.SubmodelElementCollection))
+                if (!(sme is SubmodelElementCollection))
                 {
                     if ((mode == "CREATE" && sme.TimeStampCreate > minimumDate) ||
                         (mode != "CREATE" && sme.TimeStamp > minimumDate && sme.TimeStamp != sme.TimeStampCreate))
                     {
                         // prepare p2 to be relative path to observable
-                        var p2 = sme.GetReference()?.Keys;
-                        if (true == p2?.StartsWith(observablePath, matchMode: AdminShellV20.Key.MatchMode.Relaxed))
+                        var p2 = sme.GetModelReference()?.Keys;
+                        //if (true == p2?.StartsWith(observablePath, matchMode: AdminShell.Key.MatchMode.Relaxed))
+                        if (true == p2?.StartsWith(observablePath))
                             p2.RemoveRange(0, observablePath.Count);
 
                         if (mode == "CREATE")
@@ -655,9 +2122,9 @@ namespace AasxRestServerLibrary
                             if (/* doUpdate && */ plUpdate != null)
                             {
                                 var val = sme.ValueAsText();
-                                if (sme is AdminShell.Blob blob)
+                                if (sme is Blob blob)
                                     // take BLOB as "large" text
-                                    val = blob.value;
+                                    val = Encoding.UTF8.GetString(blob.Value);
                                 plUpdate.Values.Add(new AasPayloadUpdateValueItem(
                                     path: p2,
                                     val));
@@ -668,7 +2135,7 @@ namespace AasxRestServerLibrary
                     return;
                 }
 
-                var smec = sme as AdminShell.SubmodelElementCollection;
+                var smec = sme as SubmodelElementCollection;
                 if (mode == "CREATE" || smec.TimeStamp > minimumDate)
                 {
                     bool deeper = false;
@@ -680,7 +2147,7 @@ namespace AasxRestServerLibrary
                     else
                     //
                     {
-                        if (smec.value.Count == 1)
+                        if (smec.Value.Count == 1)
                         {
                             deeper = true;
                         }
@@ -688,10 +2155,10 @@ namespace AasxRestServerLibrary
                         {
                             // replace foreach by explicit loop for multiple threads
                             int i = 0;
-                            while (i < smec.value.Count)
+                            while (i < smec.Value.Count)
                             {
-                                var sme2 = smec.value[i];
-                                if (sme2.submodelElement.TimeStamp != smec.TimeStamp)
+                                var sme2 = smec.Value[i];
+                                if (sme2.TimeStamp != smec.TimeStamp)
                                 {
                                     deeper = true;
                                     break;
@@ -705,21 +2172,21 @@ namespace AasxRestServerLibrary
                     {
                         // replace foreach by explicit loop for multiple threads
                         int i = 0;
-                        while (i < smec.value.Count)
+                        while (i < smec.Value.Count)
                         {
-                            var sme2 = smec.value[i];
+                            var sme2 = smec.Value[i];
                             GetEventMsgRecurseDiff(
                                 mode,
                                 plStruct, plUpdate,
-                                sme2.submodelElement, minimumDate, doUpdate, doCreateDelete, observablePath);
+                                sme2, minimumDate, doUpdate, doCreateDelete, observablePath);
                             i++;
                         }
                         return;
                     }
 
                     // prepare p2 to be relative path to observable
-                    var p2 = sme.GetReference()?.Keys;
-                    if (true == p2?.StartsWith(observablePath, matchMode: AdminShellV20.Key.MatchMode.Relaxed))
+                    var p2 = sme.GetModelReference()?.Keys;
+                    if (true == p2?.StartsWith(observablePath))
                         p2.RemoveRange(0, observablePath.Count);
 
                     if (mode == "CREATE")
@@ -996,11 +2463,11 @@ namespace AasxRestServerLibrary
                             if (d.rf.TimeStamp > minimumDate)
                             {
                                 var x = d.rf;
-                                string path = x.idShort;
-                                while (x.parent != null && x != x.parent)
+                                string path = x.IdShort;
+                                while (x.Parent != null && x != x.Parent)
                                 {
-                                    x = x.parent;
-                                    path = x.idShort + "." + path;
+                                    x = (IReferable)x.Parent;
+                                    path = x.IdShort + "." + path;
                                 }
 
                                 if (searchPath == "" ||
@@ -1022,45 +2489,45 @@ namespace AasxRestServerLibrary
                         var env = AasxServer.Program.env[i];
                         if (env != null)
                         {
-                            var aas = env.AasEnv.AdministrationShells[0];
-                            if (aas.submodelRefs != null && aas.submodelRefs.Count > 0)
+                            var aas = env.AasEnv.AssetAdministrationShells[0];
+                            if (aas.Submodels != null && aas.Submodels.Count > 0)
                             {
-                                DateTime diffTimeStamp = new DateTime();
+                                DateTime diffTimeStamp = new();
                                 diffTimeStamp = aas.TimeStampCreate;
                                 if (diffTimeStamp > minimumDate)
                                 {
                                     if (mode == "CREATE" || aas.TimeStamp != aas.TimeStampCreate)
                                     {
-                                        string p = aas.idShort;
+                                        string p = aas.IdShort;
                                         if (searchPath == "" || (p.Length <= searchPathLen && p == searchPath.Substring(0, p.Length)))
                                         {
                                             addEntry(diffJson, ref diffText, ref diffList,
-                                            mode, aas.idShort, "AAS", aas.TimeStamp);
+                                            mode, aas.IdShort, "AAS", aas.TimeStamp);
                                         }
                                     }
                                 }
 
-                                foreach (var smr in aas.submodelRefs)
+                                foreach (var smr in aas.Submodels)
                                 {
                                     var sm = env.AasEnv.FindSubmodel(smr);
-                                    if (sm != null && sm.idShort != null)
+                                    if (sm != null && sm.IdShort != null)
                                     {
                                         if (sm.TimeStamp > minimumDate)
                                         {
-                                            string p = sm.idShort;
+                                            string p = sm.IdShort;
                                             if (mode == "CREATE" && sm.TimeStampCreate > minimumDate)
                                             {
-                                                // string p = aas.idShort + "." + sm.idShort;
+                                                // string p = aas.IdShort + "." + sm.IdShort;
                                                 if (searchPath == "" || (p.Length <= searchPathLen && p == searchPath.Substring(0, p.Length)))
                                                 {
                                                     addEntry(diffJson, ref diffText, ref diffList,
-                                                        mode, p, "SM", sm.TimeStamp);
+                                                        mode, p, "SM", (DateTime)sm.TimeStamp);
                                                 }
                                             }
 
-                                            foreach (var sme in sm.submodelElements)
+                                            foreach (var sme in sm.SubmodelElements)
                                                 checkDiff(diffJson, ref diffText, ref diffList,
-                                                    mode, p + ".", sme.submodelElement,
+                                                    mode, p + ".", sme,
                                                     minimumDate, deep, searchPath);
                                         }
                                     }
@@ -1088,17 +2555,17 @@ namespace AasxRestServerLibrary
             }
 
             static void checkDiff(bool diffJson, ref string diffText, ref List<diffEntry> diffList,
-                string mode, string path, AdminShell.SubmodelElement sme,
+                string mode, string path, ISubmodelElement sme,
                 DateTime minimumDate, bool deep, string searchPath)
             {
-                if (!(sme is AdminShell.SubmodelElementCollection))
+                if (!(sme is SubmodelElementCollection))
                 {
                     if ((mode == "CREATE" && sme.TimeStampCreate > minimumDate) ||
                         (mode != "CREATE" && sme.TimeStamp > minimumDate && sme.TimeStamp != sme.TimeStampCreate))
                     {
                         if (searchPath != "")
                         {
-                            string p = path + sme.idShort;
+                            string p = path + sme.IdShort;
                             if (!(searchPath.Length <= p.Length && searchPath == p.Substring(0, searchPath.Length)))
                                 return;
                         }
@@ -1106,14 +2573,14 @@ namespace AasxRestServerLibrary
                         if (mode != "CREATE")
                             value = sme.ValueAsText();
                         addEntry(diffJson, ref diffText, ref diffList,
-                            mode, path + sme.idShort, "SME", sme.TimeStamp, value);
+                            mode, path + sme.IdShort, "SME", sme.TimeStamp, value);
                         return;
                     }
 
                     return;
                 }
 
-                var smec = sme as AdminShell.SubmodelElementCollection;
+                var smec = sme as SubmodelElementCollection;
                 if (mode == "CREATE" || sme.TimeStamp > minimumDate)
                 {
                     bool deeper = false;
@@ -1123,14 +2590,14 @@ namespace AasxRestServerLibrary
                     }
                     else
                     {
-                        if (smec.value.Count == 1)
+                        if (smec.Value.Count == 1)
                         {
                             deeper = true;
                         }
                         else
                         {
-                            foreach (var sme2 in smec.value)
-                                if (sme2.submodelElement.TimeStamp != smec.TimeStamp)
+                            foreach (var sme2 in smec.Value)
+                                if (sme2.TimeStamp != smec.TimeStamp)
                                 {
                                     deeper = true;
                                     break;
@@ -1140,9 +2607,9 @@ namespace AasxRestServerLibrary
 
                     if (deeper)
                     {
-                        foreach (var sme2 in smec.value)
+                        foreach (var sme2 in smec.Value)
                             checkDiff(diffJson, ref diffText, ref diffList,
-                                mode, path + sme.idShort + ".", sme2.submodelElement,
+                                mode, path + sme.IdShort + ".", sme2,
                                 minimumDate, deep, searchPath);
                         return;
                     }
@@ -1152,13 +2619,13 @@ namespace AasxRestServerLibrary
                     {
                         if (searchPath != "")
                         {
-                            string p = path + sme.idShort;
+                            string p = path + sme.IdShort;
                             if (!(searchPath.Length <= p.Length && searchPath == p.Substring(0, searchPath.Length)))
                                 return;
                         }
 
                         addEntry(diffJson, ref diffText, ref diffList,
-                            mode, path + smec.idShort, "SMEC", smec.TimeStamp);
+                            mode, path + smec.IdShort, "SMEC", smec.TimeStamp);
                     }
                 }
 
@@ -1184,7 +2651,6 @@ namespace AasxRestServerLibrary
             }
 
             // Basic AAS + Asset 
-            //TODO:Imp
             [RestRoute(HttpMethod = HttpMethod.GET, PathInfo = "^/aas/(id|([^/]+))(|/core|/complete|/thumbnail|/aasenv|/aasenvjson)(/|)$")]
 
             public IHttpContext GetAasAndAsset(IHttpContext context)
@@ -1367,7 +2833,7 @@ namespace AasxRestServerLibrary
                             && req.Payload != null)
                         {
                             var ba = Convert.FromBase64String(req.Payload);
-                            File.WriteAllBytes("test.aasx", ba);
+                            System.IO.File.WriteAllBytes("test.aasx", ba);
                         }
                     }
                     else

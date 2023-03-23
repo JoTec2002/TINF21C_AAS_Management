@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using AasCore.Aas3_0_RC02;
 using AdminShellNS;
 using Opc.Ua;
 
@@ -24,9 +25,9 @@ namespace AasOpcUaServer
             return clean;
         }
 
-        public static string ToOpcUaReference(AdminShell.Reference refid)
+        public static string ToOpcUaReference(Reference refid)
         {
-            if (refid == null || refid.IsEmpty)
+            if (refid == null || refid.Keys == null || refid.Keys.Count == 0)
                 return null;
 
             var semstr = "";
@@ -34,47 +35,49 @@ namespace AasOpcUaServer
             {
                 if (semstr != "")
                     semstr += ",";
-                semstr += String.Format("({0})({1})[{2}]{3}", k.type, k.local ? "local" : "no-local", k.idType, k.value);
+                semstr += String.Format("({0}){1}",
+                            k.Type, k.Value);
             }
 
             return semstr;
         }
 
-        public static List<string> ToOpcUaReferenceList(AdminShell.Reference refid)
+
+        public static List<string> ToOpcUaReferenceList(Reference refid)
         {
-            if (refid == null || refid.IsEmpty)
+            if (refid == null || refid.Keys == null || refid.Keys.Count == 0)
                 return null;
 
             var res = new List<string>();
             foreach (var k in refid.Keys)
             {
-                res.Add(String.Format("({0})({1})[{2}]{3}", k.type, k.local ? "local" : "no-local", k.idType, k.value));
+                res.Add(String.Format("{0}", k.Value));
             }
 
             return res;
         }
 
-        public static LocalizedText[] GetUaLocalizedTexts(IList<AdminShell.LangStr> ls)
+        public static LocalizedText[] GetUaLocalizedTexts(List<LangString> ls)
         {
             if (ls == null || ls.Count < 1)
                 return new LocalizedText[] { new LocalizedText("", "") };
             var res = new LocalizedText[ls.Count];
             for (int i = 0; i < ls.Count; i++)
-                res[i] = new LocalizedText(ls[i].lang, ls[i].str);
+                res[i] = new LocalizedText(ls[i].Language, ls[i].Text);
             return res;
         }
 
-        public static LocalizedText GetBestUaDescriptionFromAasDescription(AdminShell.Description desc)
+        public static LocalizedText GetBestUaDescriptionFromAasDescription(List<LangString> desc)
         {
             var res = new LocalizedText("", "");
-            if (desc != null && desc.langString != null)
+            if (desc != null && desc != null)
             {
                 var found = false;
-                foreach (var ls in desc.langString)
-                    if (!found || ls.lang.Trim().ToLower().StartsWith("en"))
+                foreach (var ls in desc)
+                    if (!found || ls.Language.Trim().ToLower().StartsWith("en"))
                     {
                         found = true;
-                        res = new LocalizedText(ls.lang, ls.str);
+                        res = new LocalizedText(ls.Language, ls.Text);
                     }
             }
             return res;

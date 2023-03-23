@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="5fa4b2bc-0878-40e9-8a5d-68e9e3800831" name="Changes" comment="" />
+    <list default="true" id="5fa4b2bc-0878-40e9-8a5d-68e9e3800831" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Server2/aasx-server/src/AasxServerStandardBib/AasxHttpContextHelper.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../Server2/aasx-server/src/AasxServerStandardBib/AasxHttpContextHelper.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Server2/aasx-server/src/AasxServerStandardBib/AasxServerStandardBib.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/../Server2/aasx-server/src/AasxServerStandardBib/AasxServerStandardBib.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Server2/aasx-server/src/AasxServerWindows/Properties/launchSettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/../Server2/aasx-server/src/AasxServerWindows/Properties/launchSettings.json" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -34,17 +39,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "C:/xampp/htdocs/TINF21C_AAS_Management/SOURCE/Server2",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/xampp/htdocs/TINF21C_AAS_Management/SOURCE/Server2&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\xampp\htdocs\TINF21C_AAS_Management\SOURCE\Server\packages" />
@@ -70,6 +75,7 @@
       <workItem from="1679065556216" duration="149000" />
       <workItem from="1679140727734" duration="524000" />
       <workItem from="1679342567896" duration="45000" />
+      <workItem from="1679559513264" duration="1101000" />
     </task>
     <servers />
   </component>

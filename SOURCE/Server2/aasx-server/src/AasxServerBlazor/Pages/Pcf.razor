@@ -1,9 +1,10 @@
 ﻿@page "/pcf";
 
+@using AasCore.Aas3_0_RC02
 @using Data
 @inject AASService SubmodelService
 @using AasxServer;
-@using static AdminShellNS.AdminShellV20;
+@using Microsoft.IdentityModel.Tokens;
 @using System.Drawing;
 @using System.Globalization;
 @implements IDisposable
@@ -15,7 +16,7 @@
     float total = 0.0f;
     try
     {
-        total = (float)Convert.ToDouble(AasxTask.root.cradleToGateCombination.value, CultureInfo.InvariantCulture);
+        total = (float)Convert.ToDouble(AasxTask.root.cradleToGateCombination.Value, CultureInfo.InvariantCulture);
         total = (float)Math.Round(total, 1);
 
     }
@@ -61,7 +62,7 @@
                             {
                                 if (node.cradleToGateModule != null)
                                 {
-                                    value = node.cradleToGateModule.value;
+                                    value = node.cradleToGateModule.Value;
                                     view = true;
                                 }
                             }
@@ -71,7 +72,7 @@
                                 {
                                     if (node.cradleToGateCombination != null)
                                     {
-                                        value = node.cradleToGateCombination.value;
+                                        value = node.cradleToGateCombination.Value;
                                         //if (node != AasxTask.root)
                                         viewCombination = true;
                                         view = true;
@@ -81,7 +82,7 @@
                                 {
                                     if (node.cradleToGateModule != null)
                                     {
-                                        value = node.cradleToGateModule.value;
+                                        value = node.cradleToGateModule.Value;
                                         view = true;
                                     }
                                 }
@@ -112,7 +113,7 @@
                                 var hideClass = "hidden";
                                 var hideCircle = hideClass; //always hide circle
                                 var hideElement = hideClass; //decide hiding of elements
-
+                                var aasIdEncoded = Base64UrlEncoder.Encode(node.aas.Id);
 
                                 <div class="node mb-2 flex flex-row space-x-2">
 
@@ -193,10 +194,12 @@
                                         <div class="self-center grow">
                                             <div class="font-bold text-slate-700 dark:text-slate-500">@text</div>
                                         </div>
+                                    
+                                        int i = 0;
                                     }
                                     <div class="flex-none self-center hide-slim">
                                         <button class="btn px-3 text-white"
-                                                onclick="document.getElementById('iframe').src='/dashboard/submodelView.html?id=@node.aas.idShort'"
+                                                onclick="document.getElementById('iframe').src='/dashboard/submodelView.html?id=@node.aas.IdShort'"
                                                 style="background-color: #174a87; padding: 0.1rem 0.4rem 0.1rem 0.4rem !important;">
                                             <i class="fas fa-arrow-right" aria-hidden="true"></i>
                                         </button>
@@ -224,20 +227,24 @@
                     }
                 }
 
-            </div>
-        }
+        </div>
+    }
 
-        string getImageLink(File f, int envIndex)
+}
+
+    @code {
+
+        static string getImageLink(File f, int envIndex)
         {
             if (f == null || envIndex == -1)
                 return null;
 
-            if (f.value != "")
+            if (f.Value != "")
             {
-                string[] split = f.value.Split(new Char[] { '/' });
+                string[] split = f.Value.Split(new Char[] { '/' });
                 if (split.Length == 2 || split.Length > 1 && split[1].ToLower() == "aasx")
                 {
-                    split = f.value.Split(new Char[] { '.' });
+                    split = f.Value.Split(new Char[] { '.' });
                     switch (split.Last().ToLower())
                     {
                         case "jpg":
@@ -245,7 +252,18 @@
                         case "png":
                             try
                             {
-                                return Program.externalRest + "/server/getfile/" + envIndex + f.value;
+                                // return Program.externalRest + "/server/getfile/" + envIndex + f.Value;
+                                var sme = f;
+                                string path = sme.IdShort;
+                                var p = sme.Parent;
+                                while (!(p is Submodel))
+                                {
+                                    path = (p as ISubmodelElement).IdShort + "." + path;
+                                    p = (p as ISubmodelElement).Parent;
+                                }
+                                var idEncoded = Base64UrlEncoder.Encode((p as Submodel).Id);
+                                path = Program.externalBlazor + "/submodels/" + idEncoded + "/submodelelements/" + path;
+                                return path + "/attachment";
                             }
                             catch { }
                             break;
@@ -255,17 +273,17 @@
             return null;
         }
 
-        string getImage(File f, int envIndex)
+        static string getImage(File f, int envIndex)
         {
             if (f == null || envIndex == -1)
                 return null;
 
-            if (f.value != "")
+            if (f.Value != "")
             {
-                string[] split = f.value.Split(new Char[] { '/' });
+                string[] split = f.Value.Split(new Char[] { '/' });
                 if (split.Length == 2 || split.Length > 1 && split[1].ToLower() == "aasx")
                 {
-                    split = f.value.Split(new Char[] { '.' });
+                    split = f.Value.Split(new Char[] { '.' });
                     switch (split.Last().ToLower())
                     {
                         case "jpg":
@@ -273,7 +291,7 @@
                         case "png":
                             try
                             {
-                                using (System.IO.Stream s = Program.env[envIndex].GetLocalStreamFromPackage(f.value))
+                                using (System.IO.Stream s = Program.env[envIndex].GetLocalStreamFromPackage(f.Value))
                                 {
                                     if (s != null)
                                     {
@@ -292,9 +310,7 @@
             }
             return null;
         }
-    }
 
-    @code {
         protected override void OnInitialized()
         {
             SubmodelService.NewDataAvailable += NewData;
