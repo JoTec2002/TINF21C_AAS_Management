@@ -19,4 +19,28 @@ code {
   margin-bottom: 0.5rem;
 }
 
+.produkt{
+  width: 400px;
+  height: 40px;
+  margin-top: 5x;
+  margin-top: 5px;
+  transition: 0.3s;
+  border: 2px solid;
+  border-radius: 10px 10%;
+}
+.produkt:hover{
+  background-color: rgb(184, 174, 229);
+  cursor: pointer;
+}
+h6{
+  text-align: center;
+}
+.newprodukt{
 
+  width: 1000px;
+  height: 725px;
+
+  padding: 10px;
+  margin: auto;
+  box-shadow: rgba(49, 50, 49, 0.88) 0px 7px 29px 0px ;
+}
