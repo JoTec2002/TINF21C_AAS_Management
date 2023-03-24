@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <RootNamespace>IdentityServerHost</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Serilog.AspNetCore" />
+        <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" />
+
+        <PackageReference Include="OpenTelemetry"  />
+        <PackageReference Include="OpenTelemetry.Exporter.Console" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\AspNetIdentity\Duende.IdentityServer.AspNetIdentity.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\Configuration\Clients.cs">
+            <Link>Configuration\Clients.cs</Link>
+        </Compile>
+        <Compile Include="..\Configuration\ClientsConsole.cs">
+            <Link>Configuration\ClientsConsole.cs</Link>
+        </Compile>
+        <Compile Include="..\Configuration\ClientsWeb.cs">
+            <Link>Configuration\ClientsWeb.cs</Link>
+        </Compile>
+        <Compile Include="..\Configuration\Resources.cs">
+            <Link>Configuration\Resources.cs</Link>
+        </Compile>
+    </ItemGroup>
+</Project>

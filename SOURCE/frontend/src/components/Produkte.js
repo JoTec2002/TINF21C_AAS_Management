@@ -4,16 +4,19 @@ import { Col, ListGroup, Form, Button } from "react-bootstrap";
 import { FiSearch } from "react-icons/fi";
 import { getElement } from "bootstrap/js/src/util";
 
-/*import axios from "axios";
-import { API_URL } from "../utils/constanst";*/
+import axios from "axios";
+import { API_URL } from "../utils/constanst";
 
 export default class Produkte extends Component {
-  /*constructor(props) {
-       super(props)
-       this.state={
-           shells: []
-       }
-   }
+    constructor(props) {
+        super(props)
+        this.state={
+            shells: [],
+            choose: false
+
+        }
+    }
+
   componentDidMount() {
      axios.get(API_URL+"shells")
           .then(res => {
@@ -25,12 +28,18 @@ export default class Produkte extends Component {
           .catch(error=>{
               console.log(error);
           })
-           // {shells && shells.map((shells) => (
+    }
+      chooseProdukt=()=>{
+          this.setState({
+              choose:true
 
-                      <ListGroup.Item>{shells.idShort}</ListGroup.Item>
 
-                  ))}
-    }*/
+          })
+      }
+    render() {
+        const { shells }=this.state
+        return (
+            <Col md={4} mt="2">
 
   render() {
     //const { shells }=this.state
@@ -48,22 +57,15 @@ export default class Produkte extends Component {
     //   }
     // };
 
-    return (
-      <Col md={4} mt="2">
-        <h4>
-          <strong>Produkte</strong>
-        </h4>
-        <hr />
-        <Form className="d-flex">
-          <Form.Control
-            type="search"
-            placeholder="Search"
-            className="me-2"
-            aria-label="Search"
-            id="searchBarForProducts"
-          />
-          <Button variant="outline-success">Suche</Button>
-        </Form>
+                <div >
+                    {shells && shells.map((shells) => (
+
+                        <div class="produkt" onClick={()=>this.chooseProdukt()}><h6>{shells.idShort}</h6></div>
+
+                        ))}
+                </div>
+            </Col>
+        )
 
         {/*<ul className="list-group">
           {products.map((products, index) => (
