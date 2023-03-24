@@ -58,8 +58,6 @@ function Main
 
         $dotnetTargets = $(
         "AasxServerBlazor"
-        "AasxServerCore"
-        "AasxServerWindows"
         )
 
         foreach ($target in $dotnetTargets)

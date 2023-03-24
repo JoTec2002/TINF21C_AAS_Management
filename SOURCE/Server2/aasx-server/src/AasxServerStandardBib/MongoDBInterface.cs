@@ -38,11 +38,12 @@ public class MongoDBInterface
     {
         List<AasCore.Aas3_0_RC02.AssetAdministrationShell> shells = environment.AssetAdministrationShells;
 
-        shells.ForEach(shell => {
+        /*shells.ForEach(shell => {
             var Document = shell.ToBsonDocument;
             writeDB("shells", new BsonDocument());
                 Console.WriteLine(shell);
-            });
+            });*/
+
 
 
 
