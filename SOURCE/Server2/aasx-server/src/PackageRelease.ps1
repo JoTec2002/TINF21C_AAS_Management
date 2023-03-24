@@ -1,9 +1,3 @@
-param(
-    [Parameter(HelpMessage = "Version to be packaged", Mandatory = $true)]
-    [string]
-    $version
-)
-
 <#
 .SYNOPSIS
 This script packages files to be released.
@@ -21,8 +15,6 @@ function PackageRelease($outputDir)
 
     $targets = $(
     "AasxServerBlazor"
-    "AasxServerCore"
-    "AasxServerWindows"
     )
 
     New-Item -ItemType Directory -Force -Path $outputDir|Out-Null
@@ -55,29 +47,7 @@ function PackageRelease($outputDir)
 
 function Main
 {
-    if ($version -eq "")
-    {
-        throw "Unexpected empty version"
-    }
-
-    $versionRe = [Regex]::new(
-            '^[0-9]{4}-(0[1-9]|10|11|12)-(0[1-9]|1[0-9]|2[0-9]|3[0-1])' +
-            '(\.(alpha|beta))?$')
-
-    $latestVersionRe = [Regex]::new('^LATEST(\.(alpha|beta))?$')
-
-    if ((!$latestVersionRe.IsMatch($version)) -and
-            (!$versionRe.IsMatch($version)))
-    {
-        throw ("Unexpected version; " +
-                "expected either year-month-day (*e.g.*, 2019-10-23) " +
-                "followed by an optional maturity tag " +
-                "(*e.g.*, 2019-10-23.alpha) " +
-                "or LATEST, but got: $version")
-    }
-
-    $outputDir = Join-Path $( GetArtefactsDir ) "release" `
-        | Join-Path -ChildPath $version
+    $outputDir = Join-Path $( GetArtefactsDir ) "release" 
 
     if (Test-Path $outputDir)
     {

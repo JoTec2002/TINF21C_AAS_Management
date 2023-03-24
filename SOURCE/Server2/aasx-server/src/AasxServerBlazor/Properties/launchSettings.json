@@ -9,6 +9,17 @@
         "IFRAMEPATH": "https://dpp40-2-v2.industrialdigitaltwin.org/dashboard/submodelView.html"
       },
       "applicationUrl": "http://localhost:5001"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "launchUrl": "http://localhost:5001",
+      "environmentVariables": {
+        "AASREGISTRY": "https://registry.dpp40-2-v2.industrialdigitaltwin.org",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:5001",
+        "IFRAMEPATH": "https://dpp40-2-v2.industrialdigitaltwin.org/dashboard/submodelView.html"
+      },
+      "distributionName": ""
     }
   }
 }

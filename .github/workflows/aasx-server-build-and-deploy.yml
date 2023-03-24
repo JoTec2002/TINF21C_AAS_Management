@@ -1,0 +1,38 @@
+name: Build-and-package-release-workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  Build-and-package-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Install .NET core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: [ '3.1.x', '6.0.x' ]
+
+      - name: Build for the release
+        working-directory: SOURCE/Server2/aasx-server/src
+        run: powershell .\BuildForRelease.ps1
+
+      - name: Package the release
+        working-directory: SOURCE/Server2/aasx-server/src
+        run: |
+          Write-Host "Packaging for the Deploy version"
+          powershell .\PackageRelease.ps1
+      
+      - name: deploy file
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          local_path: '.SOURCE/Server2/aasx-server/artefacts/release'
+          remote_path: 'Server'
+
