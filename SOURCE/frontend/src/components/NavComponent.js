@@ -33,18 +33,16 @@ export default class NavComponent extends Component {
                     <Navbar.Collapse id="basic-navbar-nav">
                         <Nav className="me-auto">
                             <Nav.Link href="/">startpage</Nav.Link>
-                            <Nav.Link href="admin">Admin Dashbord</Nav.Link>
+                            <Nav.Link href="admin">Admin Dashboard</Nav.Link>
                             <Nav.Link href="home">Home</Nav.Link>
                         </Nav>
                         <Nav>
                             <Nav><Button variant="success" onClick={()=>this.handelShow()}>Login</Button></Nav>
                             <PopUpLogin handleClose={this.handleClose} { ...this.state }/>
                             <NavDropdown title=<IoSettings/> id="basic-nav-dropdown" >
-                                <NavDropdown.Item href="#action/3.1">Action</NavDropdown.Item>
-                                <NavDropdown.Item href="#action/3.2">Another action</NavDropdown.Item>
-                                <NavDropdown.Item href="#action/3.3">Something</NavDropdown.Item>
+                                <NavDropdown.Item href="#action/3.1">Profil</NavDropdown.Item>
                                 <NavDropdown.Divider/>
-                                <NavDropdown.Item href="#action/3.4">Separated link</NavDropdown.Item>
+                                <NavDropdown.Item style={{backgroundColor:"red"}} href="/">Logout</NavDropdown.Item>
                             </NavDropdown>
                         </Nav>
                     </Navbar.Collapse>

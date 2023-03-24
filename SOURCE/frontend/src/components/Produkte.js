@@ -3,19 +3,23 @@ import { Col, ListGroup,Form, Button  } from "react-bootstrap";
 
 import {FiSearch} from "react-icons/fi"
 
-/*import axios from "axios";
-import { API_URL } from "../utils/constanst";*/
+import axios from "axios";
+import { API_URL } from "../utils/constanst";
 
 
 
 
 export default class Produkte extends Component {
-    /*constructor(props) {
-       super(props)
-       this.state={
-           shells: []
-       }
-   }
+    constructor(props) {
+        super(props)
+        this.state={
+            shells: [],
+            choose: false
+
+        }
+    }
+
+
   componentDidMount() {
      axios.get(API_URL+"shells")
           .then(res => {
@@ -27,14 +31,15 @@ export default class Produkte extends Component {
           .catch(error=>{
               console.log(error);
           })
-           // {shells && shells.map((shells) => (
+    }
+      chooseProdukt=()=>{
+          this.setState({
+              choose:true
 
-                      <ListGroup.Item>{shells.idShort}</ListGroup.Item>
-
-                  ))}
-    }*/
+          })
+      }
     render() {
-        //const { shells }=this.state
+        const { shells }=this.state
         return (
             <Col md={4} mt="2">
 
@@ -54,9 +59,13 @@ export default class Produkte extends Component {
                     <Button variant="outline-success">Suche</Button>
                 </Form>
 
-                <ListGroup >
-                        <ListGroup.Item>Produkt1</ListGroup.Item>
-                </ListGroup>
+                <div >
+                    {shells && shells.map((shells) => (
+
+                        <div class="produkt" onClick={()=>this.chooseProdukt()}><h6>{shells.idShort}</h6></div>
+
+                        ))}
+                </div>
             </Col>
         )
 
