@@ -35,6 +35,6 @@ jobs:
           host: ${{ secrets.FTP_SERVER }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
-          localDir: '.SOURCE/Server2/aasx-server/artefacts/release'
+          localDir: 'SOURCE/Server2/aasx-server/artefacts/release/AasxServerBlazor.zip'
           remoteDir: 'Server'
 
