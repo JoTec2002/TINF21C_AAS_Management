@@ -4,6 +4,8 @@ import  Home from "../Pages/Home";
 import AdminDashboard from "../Pages/AdminDashboard";
 import Notfound from "../Pages/Notfound";
 import NewProdukt from "../Pages/NewProdukt";
+import AddUser from "../Pages/AddUser"
+
 
 const RouterPages =()=>{
     return (
@@ -15,7 +17,10 @@ const RouterPages =()=>{
                 <Route path='/home' element={<Home />}/>
                 <Route path='/admin' element={<AdminDashboard />}/>
                 <Route path='/new' element={<NewProdukt />}/>
+                <Route path='/adduser' element={<AddUser />}/>
                 <Route path='/*' element={<Notfound />}/>
+
+
 
             </Routes>
         </Router>
