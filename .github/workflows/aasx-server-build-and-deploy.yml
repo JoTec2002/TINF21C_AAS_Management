@@ -28,13 +28,13 @@ jobs:
           Write-Host "Packaging for the Deploy version"
           powershell .\PackageRelease.ps1
       
-      - name: deploy file
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      - name: upload file
+        uses: wangyucode/sftp-upload-action@v2.0.2
         with:
           username: ${{ secrets.FTP_USERNAME }}
-          server: ${{ secrets.FTP_SERVER }}
+          host: ${{ secrets.FTP_SERVER }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
-          local_path: '.SOURCE/Server2/aasx-server/artefacts/release'
-          remote_path: 'Server'
+          localDir: '.SOURCE/Server2/aasx-server/artefacts/release'
+          remoteDir: 'Server'
 
