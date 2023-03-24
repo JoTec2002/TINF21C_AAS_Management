@@ -461,7 +461,11 @@ namespace AasxServer
                 }
             }
 
+            Console.WriteLine("Connect to MongoDB");
+            MongoDBInterface mongoDbInterface = new MongoDBInterface();
+            mongoDbInterface.Initialize();
 
+            //Load AASX files into memory
             int envi = 0;
 
             string[] fileNames = null;
@@ -509,6 +513,10 @@ namespace AasxServer
                             }
                         }
 
+                        //Write into MongoDB
+                        mongoDbInterface.importAASCoreEnvironment(env[envi].AasEnv);
+
+
                     }
                     envi++;
                 }
@@ -539,7 +547,7 @@ namespace AasxServer
             {
                 Console.WriteLine("Connect to REST by: {0}:{1}", a.Host, a.Port);
 
-                AasxRestServer.Start(env, a.Host, a.Port, a.Https); // without Logger
+                AasxRestServer.Start(env, a.Host, a.Port, a.Https, mongoDbInterface); // without Logger
 
                 Console.WriteLine("REST Server started.");
             }

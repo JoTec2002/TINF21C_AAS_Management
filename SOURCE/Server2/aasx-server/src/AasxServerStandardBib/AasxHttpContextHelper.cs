@@ -53,6 +53,8 @@ namespace AasxRestServerLibrary
         public static String SwitchToAASX = "";
         public static String DataPath = ".";
 
+        public MongoDBInterface MongoDBInterface = null;
+
         public AdminShellPackageEnv[] Packages = null;
 
         public AasxHttpHandleStore IdRefHandleStore = new AasxHttpHandleStore();

@@ -10,6 +10,7 @@ using Grapevine.Server;
 using Grapevine.Server.Attributes;
 using Grapevine.Shared;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -3160,7 +3161,7 @@ namespace AasxRestServerLibrary
 
         private static RestServer startedRestServer = null;
 
-        public static void Start(AdminShellPackageEnv[] packages, string host, string port, bool https, GrapevineLoggerSuper logger = null)
+        public static void Start(AdminShellPackageEnv[] packages, string host, string port, bool https, MongoDBInterface mongoDBInterface, GrapevineLoggerSuper logger = null)
         {
             // if running, stop old server
             Stop();
@@ -3168,6 +3169,7 @@ namespace AasxRestServerLibrary
             var helper = new AasxHttpContextHelper();
             helper.Packages = packages;
             TestResource.helper = helper;
+            helper.MongoDBInterface = mongoDBInterface; 
 
             var serverSettings = new ServerSettings();
             serverSettings.Host = host;
