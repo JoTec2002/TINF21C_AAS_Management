@@ -6,7 +6,7 @@ import Notfound from "../Pages/Notfound";
 import NewProdukt from "../Pages/NewProdukt";
 import AddUser from "../Pages/AddUser"
 
-const basename = window.location.pathname;
+const basename = "/TINF21C_AAS_Management";
 const RouterPages =()=>{
     return (
         <Router basename={basename}>
