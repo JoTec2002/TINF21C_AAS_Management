@@ -3,9 +3,10 @@ import Guest from "../Pages/Guest";
 import  Home from "../Pages/Home";
 import AdminDashboard from "../Pages/AdminDashboard";
 import Notfound from "../Pages/Notfound";
+const basename = window.location.pathname;
 const RouterPages =()=>{
     return (
-        <Router>
+        <Router basename={basename}>
             <Routes>
                 <Route path='/' element={<Guest />}/>
                 <Route path='/home' element={<Home />}/>
