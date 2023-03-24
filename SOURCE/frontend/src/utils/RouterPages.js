@@ -6,13 +6,12 @@ import Notfound from "../Pages/Notfound";
 import NewProdukt from "../Pages/NewProdukt";
 import AddUser from "../Pages/AddUser"
 
-
+const basename = window.location.pathname;
 const RouterPages =()=>{
     return (
-
-        <Router>
+        <Router basename={basename}>
             <Routes>
-
+            
                 <Route path='/' element={<Guest />}/>
                 <Route path='/home' element={<Home />}/>
                 <Route path='/admin' element={<AdminDashboard />}/>
