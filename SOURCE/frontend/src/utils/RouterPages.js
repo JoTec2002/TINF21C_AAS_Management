@@ -4,9 +4,10 @@ import Home from "../Pages/Home";
 import AdminDashboard from "../Pages/AdminDashboard";
 import Notfound from "../Pages/Notfound";
 import NewProdukt from "../Pages/NewProdukt";
-import AddUser from "../Pages/AddUser"
+import AddAccount from "../Pages/AddAccount"
 
 const basename = "/TINF21C_AAS_Management";
+//const basename = "";
 const RouterPages =()=>{
     return (
         <Router basename={basename}>
