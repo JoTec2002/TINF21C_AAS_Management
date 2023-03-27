@@ -29,12 +29,12 @@ jobs:
           powershell .\PackageRelease.ps1
       
       - name: upload file
-        uses: wangyucode/sftp-upload-action@v2.0.2
+        uses: SamKirkland/web-deploy@v1
         with:
-          username: ${{ secrets.FTP_USERNAME }}
-          host: ${{ secrets.FTP_SERVER }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT }}
-          localDir: 'SOURCE/Server2/aasx-server/artefacts/release/AasxServerBlazor.zip'
-          remoteDir: '/home/jonas/Server'
+          remote-user: ${{ secrets.FTP_USERNAME }}
+          target-server: ${{ secrets.FTP_SERVER }}
+          private-ssh-key: ${{ secrets.FTP_KEY }}
+          ssh-port: ${{ secrets.FTP_PORT }}
+          source-path: 'SOURCE/Server2/aasx-server/artefacts/release/'
+          destination-path: '/home/jonas/Server'
 
