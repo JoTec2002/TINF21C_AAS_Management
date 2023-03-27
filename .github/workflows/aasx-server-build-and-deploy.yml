@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  Build-and-package-release:
+  Build-and-package:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@master
@@ -27,7 +27,24 @@ jobs:
         run: |
           Write-Host "Packaging for the Deploy version"
           powershell .\PackageRelease.ps1
-      
+
+      - name: Cache Build AASX Server
+        uses: actions/cache@x3.3.1
+        with:
+          path: 'SOURCE/Server2/aasx-server/artefacts/release/'
+          key: aasxServerBuild
+          enableCrossOsArchive: true
+
+  upload-AASX-Server:
+    needs: Build-and-package
+    runs-on: ubuntu-latest
+    steps:
+      - name: restore Cache
+        uses: actions/cache/restore@v3
+        with:
+          key: aasxServerBuild
+          path: 'SOURCE/Server2/aasx-server/artefacts/release/'
+
       - name: upload file
         uses: SamKirkland/web-deploy@v1
         with:
@@ -37,4 +54,6 @@ jobs:
           ssh-port: ${{ secrets.FTP_PORT }}
           source-path: 'SOURCE/Server2/aasx-server/artefacts/release/'
           destination-path: '/home/jonas/Server'
+    
+
 
