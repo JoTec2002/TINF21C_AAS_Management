@@ -29,7 +29,7 @@ jobs:
           powershell .\PackageRelease.ps1
 
       - name: Cache Build AASX Server
-        uses: actions/cache@x3.3.1
+        uses: actions/cache@v3
         with:
           path: 'SOURCE/Server2/aasx-server/artefacts/release/'
           key: aasxServerBuild
