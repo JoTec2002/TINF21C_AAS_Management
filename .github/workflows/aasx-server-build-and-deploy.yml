@@ -30,7 +30,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: 'SOURCE/Server2/aasx-server/artefacts/release/'
-          key: aasxServerBuild
+          key: aasxServerBuild-${{ github.sha }}
           enableCrossOsArchive: true
 
   upload-AASX-Server:
@@ -40,7 +40,7 @@ jobs:
       - name: restore Cache
         uses: actions/cache/restore@v3
         with:
-          key: aasxServerBuild
+          key: aasxServerBuild-${{ github.sha }}
           path: 'SOURCE/Server2/aasx-server/artefacts/release/'
 
       - name: extract and start aasx server
