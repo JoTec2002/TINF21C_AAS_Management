@@ -14,9 +14,7 @@ jobs:
       - name: Install .NET core
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: |
-            3.1.x
-            6.0.x
+          dotnet-version: 6.0.x
 
       - name: Build for the release
         working-directory: SOURCE/Server2/aasx-server/src
@@ -45,6 +43,15 @@ jobs:
           key: aasxServerBuild
           path: 'SOURCE/Server2/aasx-server/artefacts/release/'
 
+      - name: extract and start aasx server
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT }}
+          script: ./preRun.sh
+
       - name: upload file
         uses: wangyucode/sftp-upload-action@v2.0.2
         with:
@@ -54,6 +61,7 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           localDir: 'SOURCE/Server2/aasx-server/artefacts/release'
           remoteDir: '/home/jonas/Server'
+          forceUpload: true
 
       - name: extract and start aasx server
         uses: appleboy/ssh-action@v0.1.8
