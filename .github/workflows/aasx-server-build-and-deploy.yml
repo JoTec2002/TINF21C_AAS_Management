@@ -43,7 +43,7 @@ jobs:
           key: aasxServerBuild-${{ github.sha }}
           path: 'SOURCE/Server2/aasx-server/artefacts/release/'
 
-      - name: extract and start aasx server
+      - name: stop and cleanup old aasx server
         uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ secrets.FTP_SERVER }}
@@ -70,4 +70,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
-          script: ./run.sh
+          script: nohup ./run.sh

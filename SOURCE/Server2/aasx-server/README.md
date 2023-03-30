@@ -1,13 +1,9 @@
+This Project uses the AASX Server found at https://github.com/admin-shell-io/aasx-server
+
+During active development the current state (main Branch) of this Server is Deployed to https://nas.graubner-bayern.de:50001/.
+
+
 # AASX Server
-![Check-release-workflow](
-https://github.com/admin-shell-io/aasx-server/workflows/Check-release-workflow/badge.svg
-) ![Check-style-workflow](
-https://github.com/admin-shell-io/aasx-server/workflows/Check-style-workflow/badge.svg
-) ![Build-and-package-release-workflow](
-https://github.com/admin-shell-io/aasx-server/workflows/Build-and-package-release-workflow/badge.svg
-) ![Build-and-publish-docker-images-workflow](
-https://github.com/admin-shell-io/aasx-server/workflows/Build-and-publish-docker-images-workflow/badge.svg
-)
 
 AASX Server serves Industrie 4.0 AASX packages accessible by REST, OPC UA and
 MQTT protocols.
