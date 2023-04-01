@@ -8,7 +8,9 @@ import NewProdukt from "../Pages/NewProdukt";
 import AddAccount from "../Pages/AddAccount"
 
 //const basename = "/TINF21C_AAS_Management";
-const basename = "";
+//console.log(window.location);
+console.log(window.location.pathname);
+const basename = window.location.pathname;
 const RouterPages =()=>{
     return (
         <Router basename={basename}>
