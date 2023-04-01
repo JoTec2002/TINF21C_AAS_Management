@@ -37,9 +37,9 @@ export default class NavComponent extends Component {
                             <NavDropdown title=<IoSettings/> id="basic-nav-dropdown" >
                                 <NavDropdown.Item href="#action/3.1">Profil</NavDropdown.Item>
                                 <NavDropdown.Divider/>
-                                <NavDropdown.Item href="/#/admin">Admin Dashboard</NavDropdown.Item>
+                                <NavDropdown.Item href="#/admin">Admin Dashboard</NavDropdown.Item>
                                 <NavDropdown.Divider/>
-                                <NavDropdown.Item style={{backgroundColor:"red"}} href="/">Logout</NavDropdown.Item>
+                                <NavDropdown.Item style={{backgroundColor:"red"}} href="#">Logout</NavDropdown.Item>
                             </NavDropdown>
                         </Nav>
                     </Navbar.Collapse>
