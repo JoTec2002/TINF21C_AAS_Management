@@ -7,13 +7,9 @@ import Notfound from "../Pages/Notfound";
 import NewProdukt from "../Pages/NewProdukt";
 import AddAccount from "../Pages/AddAccount"
 
-//const basename = "/TINF21C_AAS_Management";
-//console.log(window.location);
-console.log(window.location.pathname);
-const basename = window.location.pathname;
 const RouterPages =()=>{
     return (
-        <Router basename={basename}>
+        <Router>
             <Routes>
                 <Route path='/' element={<Guest />}/>
                 <Route path='/home' element={<Home />}/>
