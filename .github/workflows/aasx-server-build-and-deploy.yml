@@ -70,4 +70,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
-          script: nohup ./run.sh
+          script: nohup ./run.sh > nohup.out 2> nohup.err < /dev/null &
