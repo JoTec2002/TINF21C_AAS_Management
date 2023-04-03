@@ -53,7 +53,7 @@ namespace AasxRestServerLibrary
         public static String SwitchToAASX = "";
         public static String DataPath = ".";
 
-        public MongoDBInterface MongoDBInterface = null;
+        public MongoDBInterface mongoDBInterface = null;
 
         public AdminShellPackageEnv[] Packages = null;
 
@@ -167,13 +167,14 @@ namespace AasxRestServerLibrary
         {
             FindAasReturn findAasReturn = new FindAasReturn();
 
-            if (Packages == null)
+            /*if (Packages == null)
                 return null;
+            */
 
             if (Regex.IsMatch(aasid, @"^\d+$")) // only number, i.e. index
             {
                 // Index
-                int i = Convert.ToInt32(aasid);
+                /*int i = Convert.ToInt32(aasid);
 
                 if (i > Packages.Length)
                     return null;
@@ -181,9 +182,10 @@ namespace AasxRestServerLibrary
                 if (Packages[i] == null || Packages[i].AasEnv == null || Packages[i].AasEnv.AssetAdministrationShells == null
                     || Packages[i].AasEnv.AssetAdministrationShells.Count < 1)
                     return null;
-
-                findAasReturn.aas = Packages[i].AasEnv.AssetAdministrationShells[0];
-                findAasReturn.iPackage = i;
+                */
+                findAasReturn.aas = mongoDBInterface.readDBShells(new MongoDB.Bson.BsonDocument(), new MongoDB.Driver.FindOptions()).First<AssetAdministrationShell>();
+                //findAasReturn.aas = Packages[i].AasEnv.AssetAdministrationShells[0];
+                findAasReturn.iPackage = Convert.ToInt32(findAasReturn.aas.Id); 
             }
             else
             {
@@ -352,7 +354,6 @@ namespace AasxRestServerLibrary
             // no
             return null;
         }
-
 
 
         public Submodel FindSubmodelWithoutAas(string smid, System.Collections.Specialized.NameValueCollection queryStrings = null, string rawUrl = null)
