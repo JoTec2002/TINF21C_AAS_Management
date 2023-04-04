@@ -81,6 +81,7 @@ namespace AasxServer
                 null, null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null
             };
+        public static MongoDBInterface mongoDbInterface = new MongoDBInterface();
         public static string[] envFileName = new string[100]
             {
                 null, null, null, null, null, null, null, null, null, null,
@@ -187,6 +188,7 @@ namespace AasxServer
             public bool Https { get; set; }
             public string DataPath { get; set; }
             public bool Rest { get; set; }
+            public string Mongo { get; set; }
             public bool Opc { get; set; }
             public bool Mqtt { get; set; }
             public bool DebugWait { get; set; }
@@ -460,10 +462,18 @@ namespace AasxServer
                     }
                 }
             }
+            if(a.Mongo != null)
+            {
+                Console.WriteLine("Connect to MongoDB");
+                mongoDbInterface.Initialize(a.Mongo);
+            }
+            else
+            {
+                Console.WriteLine("MongoDB Connection required");
+                System.Environment.Exit(1);
+            }
 
-            Console.WriteLine("Connect to MongoDB");
-            MongoDBInterface mongoDbInterface = new MongoDBInterface();
-            mongoDbInterface.Initialize();
+            
 
             //Load AASX files into memory
             int envi = 0;
@@ -471,6 +481,7 @@ namespace AasxServer
             string[] fileNames = null;
             if (Directory.Exists(AasxHttpContextHelper.DataPath))
             {
+                //Change Methode, só if Direktory is given Assets are written to MongoDB
                 fileNames = Directory.GetFiles(AasxHttpContextHelper.DataPath, "*.aasx");
                 Array.Sort(fileNames);
 
@@ -489,12 +500,20 @@ namespace AasxServer
 
                         Console.WriteLine("Loading {0}...", fn);
                         envFileName[envi] = fn;
-                        env[envi] = new AdminShellPackageEnv(fn, true);
-                        if (env[envi] == null)
+                        AdminShellPackageEnv localEnv = new AdminShellPackageEnv(fn, true);
+                        //Temp to Allow debugging
+                        env[envi] = localEnv;
+                        //End Temp
+                        if(env == null)
                         {
                             Console.Error.WriteLine($"Cannot open {fn}. Aborting..");
                             return 1;
                         }
+                        else
+                        {
+                            mongoDbInterface.importAASCoreEnvironment(localEnv.AasEnv);
+                        }
+
                         // check if signed
                         string fileCert = "./user/" + name + ".cer";
                         if (System.IO.File.Exists(fileCert))
@@ -513,15 +532,11 @@ namespace AasxServer
                             }
                         }
 
-                        //Write into MongoDB
-                        mongoDbInterface.importAASCoreEnvironment(env[envi].AasEnv);
-
-
                     }
                     envi++;
                 }
 
-                fileNames = Directory.GetFiles(AasxHttpContextHelper.DataPath, "*.aasx2");
+               fileNames = Directory.GetFiles(AasxHttpContextHelper.DataPath, "*.aasx2");
                 Array.Sort(fileNames);
 
                 for (int j = 0; j < fileNames.Length; j++)
@@ -587,8 +602,9 @@ namespace AasxServer
             MySampleServer server = null;
             if (a.Opc)
             {
-                server = new MySampleServer(_autoAccept: true, _stopTimeout: 0, _aasxEnv: env);
-                Console.WriteLine("OPC UA Server started..");
+                //server = new MySampleServer(_autoAccept: true, _stopTimeout: 0, _aasxEnv: env);
+                //Console.WriteLine("OPC UA Server started..");
+                Console.WriteLine("OPC UA Server not supported in this version");
             }
 
             if (a.OpcClientRate != null) // read data by OPC UA
@@ -749,6 +765,10 @@ namespace AasxServer
                 new Option<string>(
                     new[] {"--data-path"},
                     "Path to where the AASXs reside"),
+
+                new Option<string>(
+                    new[] {"--mongo"},
+                    "Connection String to your mongoDB installation"),
 
                 new Option<bool>(
                     new[] {"--rest"},
