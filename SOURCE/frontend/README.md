@@ -1,3 +1,7 @@
+# General
+
+This frontend is deployed to [gh-pages](https://jotec2002.github.io/TINF21C_AAS_Management/).
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
