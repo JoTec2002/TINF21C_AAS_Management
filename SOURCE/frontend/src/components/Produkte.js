@@ -1,50 +1,52 @@
-import React, {Component} from 'react';
-import { Col, ListGroup,Form, Button  } from "react-bootstrap";
-
-import {FiSearch} from "react-icons/fi"
-
+import React, { Component } from 'react';
+import { Col, Form, Button  } from "react-bootstrap";
 import axios from "axios";
 import { API_URL } from "../utils/constanst";
-
-
-
+import Spinner from 'react-bootstrap/Spinner';
 
 export default class Produkte extends Component {
     constructor(props) {
         super(props)
         this.state={
             shells: [],
-            choose: false
-
+            loading: true,
+            searchTerm: "",
+            activeProdukt: null
         }
     }
 
+    onSearchTermChange = (event) => {
+        const searchTerm = event.target.value;
+        this.setState({ searchTerm });
+    }
 
     componentDidMount() {
         axios.get(API_URL+"shells")
             .then(res => {
-                //Json datein, losche später!
                 console.log("Response : ", res);
                 const shells = res.data;
-                this.setState({ shells });
+                this.setState({ shells, loading: false });
             })
             .catch(error=>{
                 console.log(error);
             })
     }
-    chooseProdukt=()=>{
-        this.setState({
-            choose:true
 
-        })
+    chooseProdukt = (produktId) => {
+        this.setState({ activeProdukt: produktId });
+        this.props.onSelect(produktId);
     }
+
     render() {
-        const { shells }=this.state
+        const { shells, loading = true, searchTerm } = this.state;
+
+        const filteredShells = shells.filter((shell) =>
+            shell.idShort.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
         return (
             <Col md={4} mt="2">
-
                 <h4>
-                    <strong></strong>
                     <strong>Produkte</strong>
                 </h4>
                 <hr/>
@@ -52,23 +54,34 @@ export default class Produkte extends Component {
                 <Form className="d-flex">
                     <Form.Control
                         type="search"
-                        placeholder="Search"
+                        placeholder="Search Produkt Item ..."
                         className="me-2"
                         aria-label="Search"
+                        value={searchTerm}
+                        onChange={this.onSearchTermChange}
                     />
-                    <Button variant="outline-success">Suche</Button>
+                    <Button variant="outline-success">Search</Button>
                 </Form>
 
-                <div >
-                    {shells && shells.map((shells) => (
+                {loading ? (
+                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop:20 }}>
+                        <Spinner animation="border" role="status">
+                            <span className="visually-hidden">Loading...</span>
+                        </Spinner>
+                        <h4 style={{ marginLeft:10 }}> Loding ...</h4>
+                    </div>
+                ) : (
+                    <div>
+                        {filteredShells && filteredShells.map((shells) => (
+                            <div className={`produkt ${shells.idShort === this.state.activeProdukt ? "active" : ""}`} 
+                                onClick={() => this.chooseProdukt(shells.idShort)}>
+                                <h6 style={{ margin: 0 }}>{shells.idShort}</h6>
+                            </div>
+                        ))}
 
-                        <div class="produkt" onClick={()=>this.chooseProdukt()}><h6>{shells.idShort}</h6></div>
-
-                    ))}
-                </div>
+                    </div>
+                )}
             </Col>
         )
-
     }
-
 }

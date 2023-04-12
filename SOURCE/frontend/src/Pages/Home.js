@@ -6,7 +6,7 @@ const Home = () => {
     <div>
       <NavComponent />
       <div className="mt2">
-        <Container fluid>
+        <Container>
           <Row>
             <Produkte />
             <DetailsProdukt />

@@ -1,21 +1,23 @@
-import {DetailsProdukt, Mydocs, NavComponent, Produkte} from "../components";
-import {Component} from "react";
-import {Col,Row, Container} from "react-bootstrap";
+import React, { useState } from 'react';
+import { DetailsProdukt, Mydocs, NavComponent, Produkte } from '../components';
+import { Col, Row, Container } from 'react-bootstrap';
 
-export default class Guest extends Component{
-    render(){
-        return(
-            <div>
-            <NavComponent/>
-            <div className="mt2">
-                <Container fluid>
-                    <Row>
-                        <Produkte/>
-                        <DetailsProdukt/>
-                    </Row>
-                </Container>
-            </div>
-            </div>
-        )
-    }
+function Guest() {
+  const [selectedData, setSelectedData] = useState();
+
+  return (
+    <div>
+      <NavComponent />
+      <div style={{ paddingTop:20, paddingBottom:100 }}>
+        <Container>
+          <Row>
+            <Produkte onSelect={setSelectedData} />
+            <DetailsProdukt data={selectedData} />
+          </Row>
+        </Container>
+      </div>
+    </div>
+  );
 }
+
+export default Guest;

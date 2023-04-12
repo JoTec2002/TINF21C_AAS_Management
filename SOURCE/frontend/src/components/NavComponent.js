@@ -5,14 +5,29 @@ import PopUpLogin from "./PopUpLogin";
 
 export default class NavComponent extends Component {
 
+
     constructor(props) {
         super(props)
         this.state={
             showModal:false,
             username:'',
             password:'',
+            loggedIn: false,
         }
     }
+
+    componentDidMount() {
+        const email = localStorage.getItem("email");
+        const password = localStorage.getItem("password");
+        if (email && password) {
+          this.setState({ loggedIn: true });
+        }
+    }
+
+    handleLogin = () => {
+        this.setState({ loggedIn: true });
+    };
+
     handelShow =()=>{
         this.setState({
             showModal:true,
@@ -24,31 +39,50 @@ export default class NavComponent extends Component {
             showModal:false
         })
     }
+
+    handleLogout = () => {
+        localStorage.removeItem("email");
+        localStorage.removeItem("password");
+        this.setState({ loggedIn: false });
+    };
+    
     render() {
+        const { loggedIn } = this.state;
         return (
-            <Navbar variant="dark" expand="lg">
-                <Container>
-                    <Navbar.Brand href="#home"> <strong>AAS Management</strong></Navbar.Brand>
-                    <Navbar.Toggle aria-controls="basic-navbar-nav"/>
-                    <Navbar.Collapse id="basic-navbar-nav">
-                        <Nav className="me-auto">
-                            <Nav.Link href="/">startpage</Nav.Link>
-                            <Nav.Link href="admin">Admin Dashboard</Nav.Link>
-                            <Nav.Link href="home">Home</Nav.Link>
-                        </Nav>
-                        <Nav>
-                            <Nav><Button variant="success" onClick={()=>this.handelShow()}>Login</Button></Nav>
-                            <PopUpLogin handleClose={this.handleClose} { ...this.state }/>
-                            <NavDropdown title=<IoSettings/> id="basic-nav-dropdown" >
-                                <NavDropdown.Item href="#action/3.1">Profil</NavDropdown.Item>
-                                <NavDropdown.Divider/>
-                                <NavDropdown.Item style={{backgroundColor:"red"}} href="/">Logout</NavDropdown.Item>
-                            </NavDropdown>
-                        </Nav>
-                    </Navbar.Collapse>
-                 </Container>
-            </Navbar>
-    )
-    }
+          <Navbar variant="dark" expand="lg">
+            <Container>
+              <Navbar.Brand href="#">
+                <strong>AAS Management</strong>
+              </Navbar.Brand>
+              <Navbar.Toggle aria-controls="basic-navbar-nav" />
+              <Navbar.Collapse id="basic-navbar-nav">
+                <Nav className="ms-auto">
+                  {!loggedIn ? (
+                    <Button variant="success" onClick={() => this.handelShow()}>Login</Button>
+                  ) : (
+                    <div className="d-flex align-items-center">
+                      <p className="my-0 me-3 text-white">{localStorage.getItem('email')}</p>
+                      <Button
+                        variant="danger"
+                        onClick={() => {
+                          this.handleLogout();
+                          this.setState({ loggedIn: false });
+                        }}>Logout</Button>
+                      <Button variant="primary" style={{ marginLeft:10 }}> Add Asset </Button>
+                    </div>
+                  )}
+                  <PopUpLogin
+                    loggedIn={loggedIn}
+                    setLoggedIn={this.handleLogin}
+                    handleClose={this.handleClose}
+                    {...this.state}
+                  />
+                  
+                </Nav>
+              </Navbar.Collapse>
+            </Container>
+          </Navbar>
+        );
+      }
 
 }
