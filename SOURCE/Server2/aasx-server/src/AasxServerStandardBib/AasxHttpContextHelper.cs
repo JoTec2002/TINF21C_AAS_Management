@@ -35,6 +35,7 @@ using System.Data;
 using Opc.Ua;
 using System.Text.Json.Nodes;
 using Namotion.Reflection;
+using MongoDB.Bson;
 
 /* Copyright (c) 2018-2019 Festo AG & Co. KG <https://www.festo.com/net/de_de/Forms/web/contact_international>, author: Michael Hoffmeister
 
@@ -53,7 +54,7 @@ namespace AasxRestServerLibrary
         public static String SwitchToAASX = "";
         public static String DataPath = ".";
 
-        public MongoDBInterface MongoDBInterface = null;
+        public static MongoDBInterface mongoDBInterface = null;
 
         public AdminShellPackageEnv[] Packages = null;
 
@@ -167,13 +168,14 @@ namespace AasxRestServerLibrary
         {
             FindAasReturn findAasReturn = new FindAasReturn();
 
-            if (Packages == null)
+            /*if (Packages == null)
                 return null;
+            */
 
             if (Regex.IsMatch(aasid, @"^\d+$")) // only number, i.e. index
             {
                 // Index
-                int i = Convert.ToInt32(aasid);
+                /*int i = Convert.ToInt32(aasid);
 
                 if (i > Packages.Length)
                     return null;
@@ -181,9 +183,10 @@ namespace AasxRestServerLibrary
                 if (Packages[i] == null || Packages[i].AasEnv == null || Packages[i].AasEnv.AssetAdministrationShells == null
                     || Packages[i].AasEnv.AssetAdministrationShells.Count < 1)
                     return null;
-
-                findAasReturn.aas = Packages[i].AasEnv.AssetAdministrationShells[0];
-                findAasReturn.iPackage = i;
+                */
+                findAasReturn.aas = mongoDBInterface.readDBShells(new MongoDB.Bson.BsonDocument(), new MongoDB.Driver.FindOptions()).First<AssetAdministrationShell>();
+                //findAasReturn.aas = Packages[i].AasEnv.AssetAdministrationShells[0];
+                findAasReturn.iPackage = Convert.ToInt32(findAasReturn.aas.Id); 
             }
             else
             {
@@ -352,7 +355,6 @@ namespace AasxRestServerLibrary
             // no
             return null;
         }
-
 
 
         public Submodel FindSubmodelWithoutAas(string smid, System.Collections.Specialized.NameValueCollection queryStrings = null, string rawUrl = null)
@@ -3424,13 +3426,74 @@ namespace AasxRestServerLibrary
                 " objPath = " + objPath
                 );
 
+            //Addition
+            //Author: Jonas Graubner
+            //contact: jogithub@graubner-bayern.de
+            bool returnAllow = false;
+            foreach (var role in securityRole)
+            {
+                if((role.condition != "not" && role.name == currentRole) || (role.condition == "not" && role.name != currentRole))
+                {
+                    if (neededRights == role.permission)
+                    {
+                        if (role.objType == "aas")
+                        {
+                            if (operation == "/submodels")
+                            {
+                                // get from role.objReference Shell
+                                // get all submodels for this shell
+                                // compare if objPath is included in this list
+                                Submodel givenSubmodel = (Submodel)objectAasOrSubmodel;
+                                List<string> roleSubmodelIds = new List<string>();
+                                List<AasCore.Aas3_0_RC02.Reference> submodelReferences = mongoDBInterface.readDBShells(new BsonDocument("IdShort", "myAASwithGlobalSecurityMetaModel"))[0].Submodels;
+                                foreach (var submodelReference in submodelReferences)
+                                {
+                                    roleSubmodelIds.Add(mongoDBInterface.readDBSubmodels(new BsonDocument("_id", submodelReference.Keys[0].Value))[0].Id);
+                                    
+                                }
+                                if (roleSubmodelIds.Contains(givenSubmodel.Id))
+                                {
+                                    if(role.kind == "allow")
+                                    {
+                                        returnAllow = true;
+                                    }
+                                    else
+                                    {
+                                        error = "DENY" + role.rulePath;
+                                        return false;
+                                    }
+                                }
+                            }
+                        }
+                        if(role.objType == "api")
+                        {
+                            if(role.apiOperation == "*" || role.apiOperation == operation)
+                            {
+                                if (role.kind == "allow")
+                                {
+                                    returnAllow = true;
+                                }
+                                else
+                                {
+                                    error = "DENY" + role.rulePath;
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return returnAllow;
+
+
+            /*
             if (objPath == "")
             {
                 int iRole = 0;
                 while (securityRole != null && iRole < securityRole.Count && securityRole[iRole].name != null)
                 {
                     if (aasOrSubmodel == "aas" && securityRole[iRole].objType == "aas")
-                    /* (aasOrSubmodel == "submodel" && securityRole[iRole].objType == "sm")) */
+                    
                     {
                         if (objectAasOrSubmodel != null && securityRole[iRole].objReference == objectAasOrSubmodel &&
                         securityRole[iRole].permission == neededRights)
@@ -3468,6 +3531,7 @@ namespace AasxRestServerLibrary
                 // no objects below must have deny
                 string deepestDeny = "";
                 string deepestAllow = "";
+                bool apiRights = false;
                 foreach (var role in securityRole)
                 {
                     if (role.name != currentRole)
@@ -3551,6 +3615,47 @@ namespace AasxRestServerLibrary
                             }
                         }
                     }
+
+                    
+                    if(role.objType == "api")
+                    {
+                        if((role.apiOperation == "*" ||  role.apiOperation == operation) && neededRights == role.permission)
+                        {
+                            if(role.kind == "allow")
+                            {
+                                apiRights = true;
+                            }
+                            else
+                            {
+                                //role kind deny
+                                error = "user not allowed";
+                                return false;
+                            }
+                        }
+                    }
+                    if (aasOrSubmodel == "aas" && role.objType == "aas")
+                    {
+                        if (objectAasOrSubmodel != null && role.objReference == objectAasOrSubmodel &&
+                        role.permission == neededRights)
+                        {
+                            if ((role.condition == "" && role.name == currentRole) ||
+                                (role.condition == "not" && role.name != currentRole))
+                            {
+                                if (role.kind == "allow")
+                                    return true;
+                                if (role.kind == "deny")
+                                {
+                                    error = "DENY AAS " + (objectAasOrSubmodel as AssetAdministrationShell).Id;
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+
+                }
+                if (apiRights)
+                {
+                    return true;
                 }
                 if (deepestAllow == "")
                 {
@@ -3565,7 +3670,7 @@ namespace AasxRestServerLibrary
                 return true;
             }
 
-            error = "ALLOW not defined";
+            error = "ALLOW not defined";*/
             return false;
         }
 

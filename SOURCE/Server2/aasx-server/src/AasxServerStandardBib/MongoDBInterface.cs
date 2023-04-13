@@ -8,25 +8,41 @@ using ScottPlot;
 using Newtonsoft.Json;
 using MongoDB.Bson.Serialization.Serializers;
 
+//Author: Jonas Graubner
+//contact: jogithub@graubner-bayern.de
 public class MongoDBInterface
 {
     private MongoClient _client;
     private IMongoDatabase _database;
 
-    public void Initialize()
+    public void Initialize(String connectionString)
     {
-        _client = new MongoClient("mongodb://AAS:SefuSWE63811!@192.168.0.22:27017/?authSource=AAS");
-        /*var dbList = _client.ListDatabases().ToList();
-
-        Console.WriteLine("The list of databases on this server is: ");
-        foreach (var db in dbList)
+        //_client = new MongoClient("mongodb://AAS:SefuSWE63811!@192.168.0.22:27017/?authSource=AAS");
+        _client = new MongoClient(connectionString);
+        try
         {
-            Console.WriteLine(db);
-        }*/
+            _client.StartSession();
+        }catch (System.TimeoutException ex) {
+            System.Console.WriteLine(ex.Message);
+            System.Environment.Exit(1);
+        }
+        
         _database = _client.GetDatabase("AAS");
         _database.DropCollection("Environment");
         var objectSerializer = new ObjectSerializer(type => ObjectSerializer.DefaultAllowedTypes(type) || type.FullName.StartsWith("AasCore.Aas3_0_RC02"));
         BsonSerializer.RegisterSerializer(objectSerializer);
+    }
+    public List<AssetAdministrationShell> readDBShells(BsonDocument filter, FindOptions options = null)
+    {
+        var collection = _database.GetCollection<AssetAdministrationShell>("Shells");
+
+        return collection.Find<AssetAdministrationShell>(filter, options).ToList<AssetAdministrationShell>();
+    }
+    public List<Submodel> readDBSubmodels(BsonDocument filter, FindOptions options = null)
+    {
+        var collection = _database.GetCollection<Submodel>("Submodels");
+
+        return collection.Find<Submodel>(filter, options).ToList<Submodel>();
     }
 
     public List<BsonDocument> readDB(String Collection, BsonDocument filter, BsonDocument options) {
@@ -49,7 +65,7 @@ public class MongoDBInterface
 
     public void importAASCoreEnvironment(AasCore.Aas3_0_RC02.Environment environment)
     {
-        writeDB("Environment", environment);
+        //writeDB("Environment", environment);
         environment.AssetAdministrationShells.ForEach(shell => {
             writeDB("Shells", shell);
             });

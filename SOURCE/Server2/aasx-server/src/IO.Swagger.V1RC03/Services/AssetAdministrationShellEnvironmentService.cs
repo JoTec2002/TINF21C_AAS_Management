@@ -42,6 +42,7 @@ namespace IO.Swagger.V1RC03.Services
         {
             _logger = logger;
             _packages = AasxServer.Program.env;
+            Console.WriteLine("Env copy");
         }
 
         public void SecurityCheckInit(HttpContext _context, string _route, string _httpOperation)
