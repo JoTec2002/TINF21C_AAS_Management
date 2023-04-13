@@ -18,6 +18,9 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16
+      - name: Give Permissions to shell script
+        working-directory: SOURCE/frontend
+        run: chmod +x ./version-info.sh
       - name: install
         working-directory: SOURCE/frontend
         run: npm ci
