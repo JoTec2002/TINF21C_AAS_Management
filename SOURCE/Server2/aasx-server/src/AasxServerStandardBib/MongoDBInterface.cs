@@ -8,6 +8,8 @@ using ScottPlot;
 using Newtonsoft.Json;
 using MongoDB.Bson.Serialization.Serializers;
 
+//Author: Jonas Graubner
+//contact: jogithub@graubner-bayern.de
 public class MongoDBInterface
 {
     private MongoClient _client;
@@ -30,11 +32,17 @@ public class MongoDBInterface
         var objectSerializer = new ObjectSerializer(type => ObjectSerializer.DefaultAllowedTypes(type) || type.FullName.StartsWith("AasCore.Aas3_0_RC02"));
         BsonSerializer.RegisterSerializer(objectSerializer);
     }
-    public List<AssetAdministrationShell> readDBShells(BsonDocument filter, FindOptions options)
+    public List<AssetAdministrationShell> readDBShells(BsonDocument filter, FindOptions options = null)
     {
         var collection = _database.GetCollection<AssetAdministrationShell>("Shells");
 
         return collection.Find<AssetAdministrationShell>(filter, options).ToList<AssetAdministrationShell>();
+    }
+    public List<Submodel> readDBSubmodels(BsonDocument filter, FindOptions options = null)
+    {
+        var collection = _database.GetCollection<Submodel>("Submodels");
+
+        return collection.Find<Submodel>(filter, options).ToList<Submodel>();
     }
 
     public List<BsonDocument> readDB(String Collection, BsonDocument filter, BsonDocument options) {

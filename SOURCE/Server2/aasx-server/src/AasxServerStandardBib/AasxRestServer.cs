@@ -3169,7 +3169,7 @@ namespace AasxRestServerLibrary
             var helper = new AasxHttpContextHelper();
             //helper.Packages = packages;
             TestResource.helper = helper;
-            helper.mongoDBInterface = mongoDBInterface; 
+            AasxHttpContextHelper.mongoDBInterface = mongoDBInterface; 
 
             var serverSettings = new ServerSettings();
             serverSettings.Host = host;
