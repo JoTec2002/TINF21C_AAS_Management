@@ -44,12 +44,18 @@ public class MongoDBInterface
 
         return collection.Find<Submodel>(filter, options).ToList<Submodel>();
     }
+    public List<ConceptDescription> readDBConceptDescription(BsonDocument filter, FindOptions options = null)
+    {
+        var collection = _database.GetCollection<ConceptDescription>("ConceptDescription");
 
-    public List<BsonDocument> readDB(String Collection, BsonDocument filter, BsonDocument options) {
+        return collection.Find<ConceptDescription>(filter, options).ToList<ConceptDescription>();
+    }
+
+    /*public List<BsonDocument> readDB(String Collection, BsonDocument filter, BsonDocument options) {
         IMongoCollection<BsonDocument> collection = _database.GetCollection<BsonDocument>("Shells");
 
         return collection.Find(new BsonDocument("id", "AssetAdministrationShell---012F46AF")).ToList();     
-    }
+    }*/
 
     public void writeDB(String collectionName, object data)
     {

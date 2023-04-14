@@ -1,4 +1,5 @@
 ﻿using AasCore.Aas3_0_RC02;
+using AasxRestServerLibrary;
 using AasxServer;
 using AasxServerStandardBib.Exceptions;
 using AasxServerStandardBib.Extenstions;
@@ -10,6 +11,7 @@ using IO.Swagger.V1RC03.APIModels.ValueOnly;
 using IO.Swagger.V1RC03.Logging;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Bson;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -381,8 +383,6 @@ namespace IO.Swagger.V1RC03.Services
             }
         }
 
-
-
         public OperationResult GetOperationAsyncResult(string aasIdentifier, string submodelIdentifier, string idShortPath, string handleId)
         {
             var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
@@ -442,13 +442,13 @@ namespace IO.Swagger.V1RC03.Services
 
         public Submodel GetSubmodel(string aasIdentifier, string submodelIdentifier)
         {
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 var submodelRefs = aas.Submodels.Where(s => s.Matches(submodelIdentifier));
                 if (submodelRefs.Any())
                 {
-                    return GetSubmodelById(submodelIdentifier, out _);
+                    return GetSubmodelById(submodelIdentifier);
                 }
                 else
                 {
@@ -497,7 +497,7 @@ namespace IO.Swagger.V1RC03.Services
 
         public AssetInformation GetAssetInformationFromAas(string aasIdentifier)
         {
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 return aas.AssetInformation;
@@ -508,7 +508,7 @@ namespace IO.Swagger.V1RC03.Services
 
         public List<Reference> GetAllSubmodelReferences(string decodedAasId)
         {
-            var aas = GetAssetAdministrationShellById(decodedAasId, out _);
+            var aas = GetAssetAdministrationShellById(decodedAasId);
 
             if (aas != null)
             {
@@ -526,49 +526,21 @@ namespace IO.Swagger.V1RC03.Services
         {
             var output = new List<AssetAdministrationShell>();
 
-            //Get All AASs
-            foreach (var package in _packages)
+            //Get All AASs by filter rules
+            if (!string.IsNullOrEmpty(idShort))//Filter AASs based on IdShort
             {
-                if (package != null)
+                output = AasxHttpContextHelper.mongoDBInterface.readDBShells(new BsonDocument("IdShort", idShort));
+                if (output.IsNullOrEmpty())
                 {
-                    var env = package.AasEnv;
-                    if (env != null)
-                    {
-                        output.AddRange(env.AssetAdministrationShells);
-                    }
+                    throw new NotFoundException($"AssetAdministrationShells with IdShort {idShort} Not Found.");
                 }
-            }
-
-            if (output.Any())
+            }else if (assetIds != null && assetIds.Count != 0)//Filter based on AssetId
             {
-                //Filter AASs based on IdShort
-                if (!string.IsNullOrEmpty(idShort))
-                {
-                    output = output.Where(a => a.IdShort.Equals(idShort)).ToList();
-                    if (output.IsNullOrEmpty())
-                    {
-                        throw new NotFoundException($"AssetAdministrationShells with IdShort {idShort} Not Found.");
-                    }
-                }
-
-                //Filter based on AssetId
-                if (assetIds != null && assetIds.Count != 0)
-                {
-                    var aasList = new List<AssetAdministrationShell>();
-                    foreach (var assetId in assetIds)
-                    {
-                        aasList.AddRange(output.Where(a => a.AssetInformation.SpecificAssetIds.Contains(assetId)).ToList());
-                    }
-
-                    if (aasList.Any())
-                    {
-                        return aasList;
-                    }
-                    else
-                    {
-                        throw new NotFoundException($"AssetAdministrationShells with requested SpecificAssetIds Not Found.");
-                    }
-                }
+                //Not implemented
+                throw new NotFoundException($"AssetAdministrationShells with requested SpecificAssetIds Not Implemented.");
+            }else
+            {
+                output = AasxHttpContextHelper.mongoDBInterface.readDBShells(new BsonDocument());
             }
 
             return output;
@@ -578,7 +550,7 @@ namespace IO.Swagger.V1RC03.Services
         {
             object output = null;
             //Find AAS
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 //Check if AAS consist the requested submodel
@@ -593,6 +565,19 @@ namespace IO.Swagger.V1RC03.Services
             return output;
         }
 
+        public AssetAdministrationShell GetAssetAdministrationShellById(string aasIdentifier)
+        {
+            List<AssetAdministrationShell> shell = AasxHttpContextHelper.mongoDBInterface.readDBShells(new BsonDocument("_id", aasIdentifier));
+
+            if (shell.Count == 1)
+            {
+                return shell[0];
+            }
+            else
+            {
+                throw new NotFoundException($"AssetAdministrationShell with id {aasIdentifier} not found.");
+            }
+        }
         public AssetAdministrationShell GetAssetAdministrationShellById(string aasIdentifier, out int packageIndex)
         {
             bool found = IsAssetAdministrationShellPresent(aasIdentifier, out AssetAdministrationShell output, out packageIndex);
@@ -695,6 +680,19 @@ namespace IO.Swagger.V1RC03.Services
             }
         }
 
+        public ConceptDescription GetConceptDescriptionById(string cdIdentifier)
+        {
+            List<ConceptDescription> output = AasxHttpContextHelper.mongoDBInterface.readDBConceptDescription(new BsonDocument("_id", cdIdentifier));
+            if (output.Count == 1)
+            {
+                //TODO evtl. Security Check
+                return output[0];
+            }
+            else
+            {
+                throw new NotFoundException($"ConceptDescription with id {cdIdentifier} not found.");
+            }
+        }
         public ConceptDescription GetConceptDescriptionById(string cdIdentifier, out int packageIndex)
         {
             bool found = IsConceptDescriptionPresent(cdIdentifier, out ConceptDescription output, out packageIndex);
@@ -744,92 +742,36 @@ namespace IO.Swagger.V1RC03.Services
         public List<ConceptDescription> GetAllConceptDescriptions(string idShort = null, Reference reqIsCaseOf = null, Reference reqDataSpecificationRef = null)
         {
             var output = new List<ConceptDescription>();
+            List<ConceptDescription> conceptDescriptions = new List<ConceptDescription>();
 
-            //Get All Concept descriptions
-            foreach (var package in _packages)
+            //Get All Concept descriptions based on possible filters
+            if (!string.IsNullOrEmpty(idShort)) //Filter AASs based on IdShort
             {
-                if (package != null)
+                conceptDescriptions = AasxHttpContextHelper.mongoDBInterface.readDBConceptDescription(new BsonDocument("IdShort", idShort));
+                if (conceptDescriptions.IsNullOrEmpty())
                 {
-                    var env = package.AasEnv;
-                    if (env != null)
-                    {
-                        output.AddRange(env.ConceptDescriptions);
-                    }
+                    throw new NotFoundException($"Concept Description with IdShort {idShort} Not Found.");
                 }
+            }else if(reqIsCaseOf != null) //Filter based on IsCaseOf
+            {
+                conceptDescriptions = AasxHttpContextHelper.mongoDBInterface.readDBConceptDescription(new BsonDocument("IsCaseOf", reqIsCaseOf.ToBsonDocument()));
+                if (conceptDescriptions.IsNullOrEmpty())
+                {
+                    throw new NotFoundException($"Concept Description with requested IsCaseOf Not Found.");
+                }
+            }else if(reqDataSpecificationRef != null) //Filter based on DataSpecificationRef
+            {
+                throw new NotFoundException($"Concept Description with requested DataSpecificationReference Not Implemented.");
+            }else //no filter
+            {
+                conceptDescriptions = AasxHttpContextHelper.mongoDBInterface.readDBConceptDescription(new BsonDocument("IsCaseOf", reqIsCaseOf.ToBsonDocument()));
             }
 
-            if (output.Any())
+            //w.r.t. security filter
+            foreach (var c in conceptDescriptions)
             {
-                //Filter AASs based on IdShort
-                if (!string.IsNullOrEmpty(idShort))
-                {
-                    var cdList = output.Where(cd => cd.IdShort.Equals(idShort)).ToList();
-                    if (cdList.IsNullOrEmpty())
-                    {
-                        throw new NotFoundException($"Concept Description with IdShort {idShort} Not Found.");
-                    }
-                    else
-                    {
-                        output = cdList;
-                    }
-                }
-
-                //Filter based on IsCaseOf
-                if (reqIsCaseOf != null)
-                {
-                    var cdList = new List<ConceptDescription>();
-                    foreach (var conceptDescription in output)
-                    {
-                        if (!conceptDescription.IsCaseOf.IsNullOrEmpty())
-                        {
-                            foreach (var reference in conceptDescription.IsCaseOf)
-                            {
-                                if (reference != null && reference.Matches(reqIsCaseOf))
-                                {
-                                    cdList.Add(conceptDescription);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (cdList.IsNullOrEmpty())
-                    {
-                        throw new NotFoundException($"Concept Description with requested IsCaseOf Not Found.");
-                    }
-                    else
-                    {
-                        output = cdList;
-                    }
-
-                }
-
-                //Filter based on DataSpecificationRef
-                if (reqDataSpecificationRef != null)
-                {
-                    var cdList = new List<ConceptDescription>();
-                    foreach (var conceptDescription in output)
-                    {
-                        if (!conceptDescription.EmbeddedDataSpecifications.IsNullOrEmpty())
-                        {
-                            foreach (var reference in conceptDescription.EmbeddedDataSpecifications)
-                            {
-                                if (reference != null && reference.DataSpecification.Matches(reqDataSpecificationRef))
-                                {
-                                    cdList.Add(conceptDescription);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if (cdList.IsNullOrEmpty())
-                    {
-                        throw new NotFoundException($"Concept Description with requested DataSpecificationReference Not Found.");
-                    }
-                    else
-                    {
-                        output = cdList;
-                    }
-                }
+                if (SecurityCheckTestOnly(c.IdShort, "", c))
+                    output.Add(c);
             }
 
             return output;
@@ -1118,6 +1060,21 @@ namespace IO.Swagger.V1RC03.Services
             }
         }
 
+        public Submodel GetSubmodelById(string submodelIdentifier)
+        {
+            List<Submodel> submodels = AasxHttpContextHelper.mongoDBInterface.readDBSubmodels(new BsonDocument("_id", submodelIdentifier));
+
+            if(submodels.Count == 1)
+            {
+                Submodel submodel = submodels[0];
+                SecurityCheck(submodel.IdShort, "", submodel);  //Throws Exeption if not allowed
+                return submodel;                
+            }
+            else
+            {
+                throw new NotFoundException($"Submodel with id {submodelIdentifier} not found.");
+            }
+        }
         public Submodel GetSubmodelById(string submodelIdentifier, out int packageIndex)
         {
             bool found = IsSubmodelPresent(submodelIdentifier, out Submodel output, out packageIndex);
@@ -1198,7 +1155,7 @@ namespace IO.Swagger.V1RC03.Services
         {
             object output = null;
             //Find Submodel
-            var submodel = GetSubmodelById(submodelIdentifier, out _);
+            var submodel = GetSubmodelById(submodelIdentifier);
 
             if (submodel == null)
                 return null;
@@ -1206,7 +1163,7 @@ namespace IO.Swagger.V1RC03.Services
             output = submodel.SubmodelElements;
             if (outputModifierContext == null)
             {
-                SecurityCheck(submodel.IdShort, "submodel", submodel);
+                SecurityCheck(submodel.IdShort, "submodel", submodel);  //Throws Exeption if not allowed
             }
             else
             {
@@ -1244,54 +1201,35 @@ namespace IO.Swagger.V1RC03.Services
         public List<Submodel> GetAllSubmodels(Reference reqSemanticId = null, string idShort = null)
         {
             List<Submodel> output = new List<Submodel>();
+            List<Submodel> submodels = new List<Submodel>();
 
-            //Get All Submodels
-            foreach (var package in _packages)
+            //Get All Submodels according to given filter
+            if (!string.IsNullOrEmpty(idShort))
             {
-                if (package != null)
+                submodels = AasxHttpContextHelper.mongoDBInterface.readDBSubmodels(new BsonDocument("IdShort", idShort));
+                if(submodels.Count == 0)
                 {
-                    var env = package.AasEnv;
-                    if (env != null)
-                    {
-                        foreach (var s in env.Submodels)
-                        {
-                            if (SecurityCheckTestOnly(s.IdShort, "", s))
-                                output.Add(s);
-                        }
-                    }
+                    _logger.LogInformation($"Submodels with IdShort {idShort} Not Found.");
+                }
+            }else if (reqSemanticId != null)
+            {
+                //untested
+                submodels = AasxHttpContextHelper.mongoDBInterface.readDBSubmodels(new BsonDocument("SemanticId", reqSemanticId.ToBsonDocument()));
+                if (submodels.Count == 0)
+                {
+                    _logger.LogInformation($"Submodels with requested SemnaticId Not Found.");
                 }
             }
-
-            //Apply filters
-            if (output.Any())
+            else
             {
-                //Filter w.r.t idShort
-                if (!string.IsNullOrEmpty(idShort))
-                {
-                    var submodels = output.Where(s => s.IdShort.Equals(idShort)).ToList();
-                    if (submodels.IsNullOrEmpty())
-                    {
-                        _logger.LogInformation($"Submodels with IdShort {idShort} Not Found.");
-                    }
+                submodels = AasxHttpContextHelper.mongoDBInterface.readDBSubmodels(new BsonDocument());
+            }
 
-                    output = submodels;
-                }
-
-                //Filter w.r.t. SemanticId
-                if (reqSemanticId != null)
-                {
-                    if (output.Any())
-                    {
-                        var submodels = output.Where(s => s.SemanticId.Matches(reqSemanticId)).ToList();
-                        if (submodels.IsNullOrEmpty())
-                        {
-                            _logger.LogInformation($"Submodels with requested SemnaticId Not Found.");
-                        }
-
-                        output = submodels;
-                    }
-
-                }
+            //filter with security roles
+            foreach (Submodel s in submodels)
+            {
+                if (SecurityCheckTestOnly(s.IdShort, "", s))
+                    output.Add(s);
             }
 
             return output;
