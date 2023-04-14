@@ -287,18 +287,12 @@ namespace IO.Swagger.V1RC03.Services
                 throw new NoIdentifierException("AssetAdministrationShell");
             }
 
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out int packageIndex);
-            if (aas != null && packageIndex != -1)
-            {
-                _packages[packageIndex].AasEnv.AssetAdministrationShells.Remove(aas);
-                _packages[packageIndex].AasEnv.AssetAdministrationShells.Add(body);
-                AasxServer.Program.signalNewData(1);
-            }
+            AasxHttpContextHelper.mongoDBInterface.updateDBShells(aasIdentifier, body);
         }
 
         public Reference CreateSubmodelReference(Reference body, string aasIdentifier)
         {
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
 
             if (aas != null)
             {
@@ -325,7 +319,7 @@ namespace IO.Swagger.V1RC03.Services
                 throw new NoIdentifierException("SubmodelElement");
             }
 
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 if (IsSubmodelPresentInAAS(aas, submodelIdentifier))
@@ -344,7 +338,7 @@ namespace IO.Swagger.V1RC03.Services
                 throw new NoIdentifierException("SubmodelElement");
             }
 
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 if (IsSubmodelPresentInAAS(aas, submodelIdentifier))
@@ -370,17 +364,8 @@ namespace IO.Swagger.V1RC03.Services
                 throw new DuplicateException($"AssetAdministrationShell with id {body.Id} already exists.");
             }
 
-            if (EmptyPackageAvailable(out int emptyPackageIndex))
-            {
-
-                _packages[emptyPackageIndex].AasEnv.AssetAdministrationShells.Add(body);
-                AasxServer.Program.signalNewData(2);
-                return _packages[emptyPackageIndex].AasEnv.AssetAdministrationShells[0]; //Considering it is being added to empty package.
-            }
-            else
-            {
-                throw new Exception("No empty environment package available in the server.");
-            }
+            AasxHttpContextHelper.mongoDBInterface.writeDB("Shells", body);
+            return body; //deprecated ; was returned earlier if there was Space in Asset array
         }
 
         public OperationResult GetOperationAsyncResult(string aasIdentifier, string submodelIdentifier, string idShortPath, string handleId)
@@ -427,7 +412,7 @@ namespace IO.Swagger.V1RC03.Services
 
         public ISubmodelElement GetSubmodelElementByPath(string aasIdentifier, string submodelIdentifier, string idShortPath)
         {
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 if (IsSubmodelPresentInAAS(aas, submodelIdentifier))
@@ -1274,7 +1259,7 @@ namespace IO.Swagger.V1RC03.Services
         {
             output = null;
             smeParent = null;
-            var submodel = GetSubmodelById(submodelIdentifier, out _);
+            var submodel = GetSubmodelById(submodelIdentifier);
 
             if (submodel != null)
             {
