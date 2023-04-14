@@ -3464,6 +3464,10 @@ namespace AasxRestServerLibrary
                                     }
                                 }
                             }
+                            if(operation == "/concept-descriptions")
+                            {
+                                //can not be evaluated. role is going to be ignored for this type of operation
+                            }
                         }
                         if(role.objType == "api")
                         {
@@ -3480,8 +3484,13 @@ namespace AasxRestServerLibrary
                                 }
                             }
                         }
+
                     }
                 }
+            }
+            if (!returnAllow)
+            {
+                error = "Access not allowed";
             }
             return returnAllow;
 
