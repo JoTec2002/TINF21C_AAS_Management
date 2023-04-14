@@ -57,7 +57,7 @@ const PopUpLogin = ({ showModal, handleClose }) => {
               />
             </Form.Group>
             <Form.Group className="mb-2" controlId="formBasicCheckbox">
-              <Form.Check type="checkbox" label="Check me out" />
+              <Form.Check type="checkbox" label="Remember me" />
             </Form.Group>
             <Button variant="success" type="submit">
               Login
