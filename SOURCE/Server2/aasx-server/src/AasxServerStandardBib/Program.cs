@@ -504,14 +504,14 @@ namespace AasxServer
                         //Temp to Allow debugging
                         env[envi] = localEnv;
                         //End Temp
-                        if(env == null)
+                        if(env[envi] == null)
                         {
                             Console.Error.WriteLine($"Cannot open {fn}. Aborting..");
                             return 1;
                         }
                         else
                         {
-                            mongoDbInterface.importAASCoreEnvironment(localEnv.AasEnv);
+                            mongoDbInterface.importAASCoreEnvironment(localEnv.AasEnv, localEnv.Filename);
                         }
 
                         // check if signed

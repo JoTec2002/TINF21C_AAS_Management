@@ -4,6 +4,7 @@ using AasxServer;
 using AasxServerStandardBib.Exceptions;
 using AasxServerStandardBib.Extenstions;
 using AdminShellNS;
+using Amazon.Runtime.Internal.Endpoints.StandardLibrary;
 using Extenstions;
 using IO.Swagger.V1RC03.ApiModel;
 using IO.Swagger.V1RC03.APIModels.Core;
@@ -150,7 +151,7 @@ namespace IO.Swagger.V1RC03.Services
             string fileName = null;
             byteArray = null;
             fileSize = 0;
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out int packageIndex);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 if (aas.AssetInformation != null)
@@ -159,7 +160,8 @@ namespace IO.Swagger.V1RC03.Services
                     {
                         fileName = aas.AssetInformation.DefaultThumbnail.Path;
 
-                        Stream stream = _packages[packageIndex].GetLocalThumbnailStream();
+                        string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilename(aasIdentifier);
+                        Stream stream = new AdminShellPackageEnv(fn, true).GetLocalThumbnailStream();
                         byteArray = stream.ToByteArray();
                         fileSize = byteArray.Length;
                     }
@@ -179,7 +181,8 @@ namespace IO.Swagger.V1RC03.Services
 
         public void UpdateThumbnail(string aasIdentifier, string fileName, string contentType, Stream fileContent)
         {
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out int packageIndex);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
+            string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilename(aasIdentifier);
             if (aas != null)
             {
                 if (aas.AssetInformation != null)
@@ -201,9 +204,7 @@ namespace IO.Swagger.V1RC03.Services
                         asset.DefaultThumbnail.Path = asset.DefaultThumbnail.Path.Replace('/', Path.DirectorySeparatorChar);
                     }
 
-                    _packages[packageIndex].EmbeddAssetInformationThumbnail(asset.DefaultThumbnail, fileContent);
-                    AasxServer.Program.signalNewData(2);
-
+                    new AdminShellPackageEnv(fn, true).EmbeddAssetInformationThumbnail(asset.DefaultThumbnail, fileContent);
                 }
                 else
                 {
@@ -543,46 +544,6 @@ namespace IO.Swagger.V1RC03.Services
                 throw new NotFoundException($"AssetAdministrationShell with id {aasIdentifier} not found.");
             }
         }
-        public AssetAdministrationShell GetAssetAdministrationShellById(string aasIdentifier, out int packageIndex)
-        {
-            bool found = IsAssetAdministrationShellPresent(aasIdentifier, out AssetAdministrationShell output, out packageIndex);
-
-            if (found)
-            {
-                // SecurityCheck("", "aas", output);
-
-                return output;
-            }
-            else
-            {
-                throw new NotFoundException($"AssetAdministrationShell with id {aasIdentifier} not found.");
-            }
-        }
-
-        private bool IsAssetAdministrationShellPresent(string aasIdentifier, out AssetAdministrationShell output, out int packageIndex)
-        {
-            //TODO delete when possbile
-            output = null; packageIndex = -1;
-            foreach (var package in _packages)
-            {
-                if (package != null)
-                {
-                    var env = package.AasEnv;
-                    if (env != null)
-                    {
-                        var aas = env.AssetAdministrationShells.Where(a => a.Id.Equals(aasIdentifier));
-                        if (aas.Any())
-                        {
-                            output = aas.First();
-                            packageIndex = Array.IndexOf(_packages, package);
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
 
         #endregion
 
@@ -719,7 +680,7 @@ namespace IO.Swagger.V1RC03.Services
                 }
 
 
-                AasxServer.Program.signalNewData(1);
+                //AasxServer.Program.signalNewData(1);
             }
         }
 
@@ -751,7 +712,7 @@ namespace IO.Swagger.V1RC03.Services
                 {
                     AasxHttpContextHelper.mongoDBInterface.updateDBSubmodels(submodelIdentifier, body);
                 }
-                AasxServer.Program.signalNewData(1);
+                //AasxServer.Program.signalNewData(1);
             }
         }
 
@@ -914,11 +875,10 @@ namespace IO.Swagger.V1RC03.Services
             //Check if corresponding AAS exist. If yes, then add to the same environment
             if (!string.IsNullOrEmpty(aasIdentifier))
             {
-                var aasFound = IsAssetAdministrationShellPresent(aasIdentifier, out AssetAdministrationShell aas, out int packageIndex);
-                if (aasFound)
+                AssetAdministrationShell aas = GetAssetAdministrationShellById(aasIdentifier);
+                if (aas != null)
                 {
                     body.SetAllParents(DateTime.UtcNow);
-                    //_packages[packageIndex].AasEnv.Submodels.Add(body);
                     AasxHttpContextHelper.mongoDBInterface.writeDB("Submodels", body, true);
                     //Add reference to the aas, if not present
                     var submodelReference = body.GetReference();
@@ -1496,49 +1456,7 @@ namespace IO.Swagger.V1RC03.Services
             return null;
         }
 
-
-
-
-
         #endregion
-
-        #region Others
-
-        private bool EmptyPackageAvailable(out int emptyPackageIndex)
-        {
-            emptyPackageIndex = -1;
-
-            for (int envi = 0; envi < _packages.Length; envi++)
-            {
-                if (_packages[envi] == null)
-                {
-                    emptyPackageIndex = envi;
-                    _packages[emptyPackageIndex] = new AdminShellPackageEnv();
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-
-
-
-
-
-
-
-
-        #endregion
-
-
-
-
-
-
-
-
-
 
 
     }

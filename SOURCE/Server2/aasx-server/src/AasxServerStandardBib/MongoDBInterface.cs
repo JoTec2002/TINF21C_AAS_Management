@@ -8,6 +8,8 @@ using ScottPlot;
 using Newtonsoft.Json;
 using MongoDB.Bson.Serialization.Serializers;
 using AasxServerStandardBib.Exceptions;
+using System.Collections;
+using System.Linq;
 
 //Author: Jonas Graubner
 //contact: jogithub@graubner-bayern.de
@@ -30,7 +32,8 @@ public class MongoDBInterface
         
         _database = _client.GetDatabase("AAS");
         _database.DropCollection("Environment");
-        var objectSerializer = new ObjectSerializer(type => ObjectSerializer.DefaultAllowedTypes(type) || type.FullName.StartsWith("AasCore.Aas3_0_RC02"));
+        _database.DropCollection("Filenames");
+        var objectSerializer = new ObjectSerializer(type => ObjectSerializer.DefaultAllowedTypes(type) || type.FullName.StartsWith("AasCore.Aas3_0_RC02") || type.FullName.StartsWith("MongoDB"));
         BsonSerializer.RegisterSerializer(objectSerializer);
     }
     public List<AssetAdministrationShell> readDBShells(BsonDocument filter, FindOptions options = null)
@@ -38,6 +41,18 @@ public class MongoDBInterface
         var collection = _database.GetCollection<AssetAdministrationShell>("Shells");
 
         return collection.Find<AssetAdministrationShell>(filter, options).ToList<AssetAdministrationShell>();
+    }
+    public string readDBFilename(string aasIdentifier)
+    {
+        var collection = _database.GetCollection<BsonDocument>("Filenames");
+
+        var result = collection.Find<BsonDocument>(new BsonDocument("_id", aasIdentifier)).ToList<BsonDocument>();
+
+        if(result.Count == 0)
+        {
+            throw new Exception("File not found in DB");
+        }
+        return result[0].Elements.ToList()[1].Value.ToString();
     }
     public List<Submodel> readDBSubmodels(BsonDocument filter, FindOptions options = null)
     {
@@ -88,12 +103,25 @@ public class MongoDBInterface
             }            
         }        
     }
-
-    public void importAASCoreEnvironment(AasCore.Aas3_0_RC02.Environment environment)
+    public void writeDBFilenames(BsonDocument document)
     {
-        //writeDB("Environment", environment);
+        var collection = _database.GetCollection<BsonDocument>("Filenames");
+        try
+        {
+            collection.InsertOne(document);
+        }
+        catch (MongoWriteException ex)
+        {
+            
+        }
+    }
+
+    public void importAASCoreEnvironment(AasCore.Aas3_0_RC02.Environment environment, string filename)
+    {
+        //writeDB("Environment", environment);  
         environment.AssetAdministrationShells.ForEach(shell => {
             writeDB("Shells", shell);
+            writeDBFilenames(new BsonDocument { { "_id", shell.Id }, { "filename", filename } });
             });
 
         environment.Submodels.ForEach(submodel =>
