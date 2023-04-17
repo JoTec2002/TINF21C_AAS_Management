@@ -12,7 +12,7 @@ namespace IO.Swagger.V1RC03.Services
     public interface IAssetAdministrationShellEnvironmentService
     {
         AssetAdministrationShell GetAssetAdministrationShellById(string aasIdentifier);
-        Submodel GetSubmodelById(string submodelIdentifier, out int packageIndex);
+        Submodel GetSubmodelById(string submodelIdentifier);
         List<AssetAdministrationShell> GetAllAssetAdministrationShells(List<SpecificAssetId> assetIds = null, string idShort = null);
         List<ConceptDescription> GetAllConceptDescriptions(string idShort = null, Reference reqIsCaseOf = null, Reference reqDataSpecificationRef = null);
         object GetAllSubmodelElements(string aasIdentifier, string submodelIdentifier, APIModels.Core.OutputModifierContext outputModifierContext = null);

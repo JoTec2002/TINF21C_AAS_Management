@@ -918,7 +918,8 @@ namespace IO.Swagger.V1RC03.Services
                 if (aasFound)
                 {
                     body.SetAllParents(DateTime.UtcNow);
-                    _packages[packageIndex].AasEnv.Submodels.Add(body);
+                    //_packages[packageIndex].AasEnv.Submodels.Add(body);
+                    AasxHttpContextHelper.mongoDBInterface.writeDB("Submodels", body, true);
                     //Add reference to the aas, if not present
                     var submodelReference = body.GetReference();
                     if (submodelReference != null)
@@ -937,24 +938,17 @@ namespace IO.Swagger.V1RC03.Services
                         if (!smReffound)
                         {
                             aas.Submodels.Add(submodelReference);
+                            UpdateAssetAdministrationShellById(aas, aas.Id);
                         }
                     }
-                    AasxServer.Program.signalNewData(2);
+                    //AasxServer.Program.signalNewData(2);
                     return body; // TODO: jtikekar find proper solution
                 }
             }
 
-            if (EmptyPackageAvailable(out int emptyPackageIndex))
-            {
-                body.SetAllParents(DateTime.UtcNow);
-                _packages[emptyPackageIndex].AasEnv.Submodels.Add(body);
-                AasxServer.Program.signalNewData(2);
-                return _packages[emptyPackageIndex].AasEnv.Submodels[0]; //Considering it is being added to empty package.
-            }
-            else
-            {
-                throw new Exception("No empty environment package available in the server.");
-            }
+            body.SetAllParents(DateTime.UtcNow);
+            AasxHttpContextHelper.mongoDBInterface.writeDB("Submodels", body, true);
+            return body; //Deprecated; Considering it is being added to empty package.
         }
 
         public Submodel GetSubmodelById(string submodelIdentifier)
@@ -991,24 +985,13 @@ namespace IO.Swagger.V1RC03.Services
         {
             output = null;
             packageIndex = -1;
-            foreach (var package in _packages)
+            Submodel submodel = GetSubmodelById(submodelIdentifier);
+            if (submodel != null)
             {
-                if (package != null)
-                {
-                    var env = package.AasEnv;
-                    if (env != null)
-                    {
-                        var submodels = env.Submodels.Where(a => a.Id.Equals(submodelIdentifier));
-                        if (submodels.Any())
-                        {
-                            output = submodels.First();
-                            packageIndex = Array.IndexOf(_packages, package);
-                            return true;
-                        }
-                    }
-                }
+                output = submodel;
+                packageIndex = -1;
+                return true;    
             }
-
             return false;
         }
 
@@ -1134,23 +1117,7 @@ namespace IO.Swagger.V1RC03.Services
 
         public void DeleteSubmodelById(string submodelIdentifier)
         {
-            var submodel = GetSubmodelById(submodelIdentifier, out int packageIndex);
-            if ((submodel != null) && (packageIndex != -1))
-            {
-                _packages[packageIndex].AasEnv.Submodels.Remove(submodel);
-
-                //Delete submodel reference from AAS
-                foreach (var aas in _packages[packageIndex].AasEnv.AssetAdministrationShells)
-                {
-                    DeleteSubmodelReferenceById(aas.Id, submodelIdentifier);
-                }
-
-                AasxServer.Program.signalNewData(1);  //TODO jtikekar : may be not needed
-            }
-            else
-            {
-                throw new Exception("Unexpected error occurred.");
-            }
+            AasxHttpContextHelper.mongoDBInterface.deleteDB("Submodels", submodelIdentifier);
         }
 
         public ISubmodelElement GetSubmodelElementByPathSubmodelRepo(string submodelIdentifier, string idShortPath, out object smeParent)
@@ -1324,9 +1291,10 @@ namespace IO.Swagger.V1RC03.Services
                 {
                     parentSubmodel.SubmodelElements.Remove(submodelElement);
                     parentSubmodel.SetTimeStamp(timeStamp);
+                    AasxHttpContextHelper.mongoDBInterface.updateDBSubmodels(submodelIdentifier, parentSubmodel);
                 }
-
-                AasxServer.Program.signalNewData(1);
+                
+                //AasxServer.Program.signalNewData(1);
             }
         }
 

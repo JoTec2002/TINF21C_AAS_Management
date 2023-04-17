@@ -674,7 +674,7 @@ namespace IO.Swagger.V1RC03.Controllers
 
             var decodedSubmodelId = _decoderService.Decode("submodelIdentifier", submodelIdentifier);
 
-            var output = _aasEnvService.GetSubmodelById(decodedSubmodelId, out _);
+            var output = _aasEnvService.GetSubmodelById(decodedSubmodelId);
 
             _aasEnvService.SecurityCheck(output.IdShort, "submodel", output);
 
