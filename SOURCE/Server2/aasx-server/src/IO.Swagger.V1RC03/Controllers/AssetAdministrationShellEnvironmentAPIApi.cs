@@ -432,7 +432,7 @@ namespace IO.Swagger.V1RC03.Controllers
 
             var decodedAasId = _decoderService.Decode("aasIdentifier", aasIdentifier);
 
-            var output = _aasEnvService.GetAssetAdministrationShellById(decodedAasId, out _);
+            var output = _aasEnvService.GetAssetAdministrationShellById(decodedAasId);
 
             return new ObjectResult(output);
         }
@@ -481,7 +481,7 @@ namespace IO.Swagger.V1RC03.Controllers
 
             var decodedCdId = _decoderService.Decode("cdIdentifier", cdIdentifier);
 
-            var output = _aasEnvService.GetConceptDescriptionById(decodedCdId, out _);
+            var output = _aasEnvService.GetConceptDescriptionById(decodedCdId);
 
             return new ObjectResult(output);
         }

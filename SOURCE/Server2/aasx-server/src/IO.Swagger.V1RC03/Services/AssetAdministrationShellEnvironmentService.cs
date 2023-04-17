@@ -214,7 +214,7 @@ namespace IO.Swagger.V1RC03.Services
 
         public void UpdateFileByPath(string aasIdentifier, string submodelIdentifier, string idShortPath, string fileName, string contentType, Stream fileContent)
         {
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 if (IsSubmodelPresentInAAS(aas, submodelIdentifier))
@@ -231,7 +231,7 @@ namespace IO.Swagger.V1RC03.Services
                 throw new NoIdentifierException("SubmodelElement");
             }
 
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 if (IsSubmodelPresentInAAS(aas, submodelIdentifier))
@@ -248,7 +248,7 @@ namespace IO.Swagger.V1RC03.Services
                 throw new NoIdentifierException("Submodel");
             }
 
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 if (IsSubmodelPresentInAAS(aas, submodelIdentifier))
@@ -272,7 +272,7 @@ namespace IO.Swagger.V1RC03.Services
 
         public void UpdateAssetInformation(AssetInformation body, string aasIdentifier)
         {
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 aas.AssetInformation = body;
@@ -357,20 +357,13 @@ namespace IO.Swagger.V1RC03.Services
                 throw new NoIdentifierException("AssetAdministrationShell");
             }
 
-            //Check if AAS exists
-            var found = IsAssetAdministrationShellPresent(body.Id, out _, out _);
-            if (found)
-            {
-                throw new DuplicateException($"AssetAdministrationShell with id {body.Id} already exists.");
-            }
-
-            AasxHttpContextHelper.mongoDBInterface.writeDB("Shells", body);
-            return body; //deprecated ; was returned earlier if there was Space in Asset array
+            AasxHttpContextHelper.mongoDBInterface.writeDB("Shells", body, true);
+            return body; //deprecated ; was returned previous if there was Space in Asset array
         }
 
         public OperationResult GetOperationAsyncResult(string aasIdentifier, string submodelIdentifier, string idShortPath, string handleId)
         {
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 if (IsSubmodelPresentInAAS(aas, submodelIdentifier))
@@ -386,7 +379,7 @@ namespace IO.Swagger.V1RC03.Services
         {
             content = null;
             fileSize = 0;
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 if (IsSubmodelPresentInAAS(aas, submodelIdentifier))
@@ -400,7 +393,7 @@ namespace IO.Swagger.V1RC03.Services
 
         public void DeleteSubmodelElementByPath(string aasIdentifier, string submodelIdentifier, string idShortPath)
         {
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 if (IsSubmodelPresentInAAS(aas, submodelIdentifier))
@@ -446,7 +439,7 @@ namespace IO.Swagger.V1RC03.Services
 
         public void DeleteSubmodelReferenceById(string aasIdentifier, string submodelIdentifier)
         {
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out _);
+            var aas = GetAssetAdministrationShellById(aasIdentifier);
             if (aas != null)
             {
                 var submodelRefs = aas.Submodels.Where(s => s.Matches(submodelIdentifier));
@@ -464,20 +457,7 @@ namespace IO.Swagger.V1RC03.Services
 
         public void DeleteAssetAdministrationShellById(string aasIdentifier)
         {
-            var aas = GetAssetAdministrationShellById(aasIdentifier, out int packageIndex);
-            if ((aas != null) && (packageIndex != -1))
-            {
-                _packages[packageIndex].AasEnv.AssetAdministrationShells.Remove(aas);
-                if (_packages[packageIndex].AasEnv.AssetAdministrationShells.Count == 0)
-                {
-                    _packages[packageIndex] = null;             //TODO: jtikekar what about submodels?
-                }
-                AasxServer.Program.signalNewData(2);
-            }
-            else
-            {
-                throw new Exception("Unexpected error occurred.");
-            }
+            AasxHttpContextHelper.mongoDBInterface.deleteDB("Shells", aasIdentifier);
         }
 
         public AssetInformation GetAssetInformationFromAas(string aasIdentifier)
@@ -581,6 +561,7 @@ namespace IO.Swagger.V1RC03.Services
 
         private bool IsAssetAdministrationShellPresent(string aasIdentifier, out AssetAdministrationShell output, out int packageIndex)
         {
+            //TODO delete when possbile
             output = null; packageIndex = -1;
             foreach (var package in _packages)
             {
@@ -614,14 +595,7 @@ namespace IO.Swagger.V1RC03.Services
                 throw new NoIdentifierException("ConceptDescription");
             }
 
-            var conceptDescription = GetConceptDescriptionById(cdIdentifier, out int packageIndex);
-            if (conceptDescription != null)
-            {
-                int cdIndex = _packages[packageIndex].AasEnv.ConceptDescriptions.IndexOf(conceptDescription);
-                _packages[packageIndex].AasEnv.ConceptDescriptions.Remove(conceptDescription);
-                _packages[packageIndex].AasEnv.ConceptDescriptions.Insert(cdIndex, body);
-                AasxServer.Program.signalNewData(0);
-            }
+            AasxHttpContextHelper.mongoDBInterface.updateDBConceptDescription(cdIdentifier, body);
         }
 
         public ConceptDescription CreateConceptDescription(ConceptDescription body)
@@ -631,38 +605,13 @@ namespace IO.Swagger.V1RC03.Services
                 throw new NoIdentifierException("ConceptDescription");
             }
 
-            //Check if AAS exists
-            var found = IsConceptDescriptionPresent(body.Id, out _, out _);
-            if (found)
-            {
-                throw new DuplicateException($"ConceptDescription with id {body.Id} already exists.");
-            }
-
-            if (EmptyPackageAvailable(out int emptyPackageIndex))
-            {
-
-                _packages[emptyPackageIndex].AasEnv.ConceptDescriptions.Add(body);
-                AasxServer.Program.signalNewData(2);
-                return _packages[emptyPackageIndex].AasEnv.ConceptDescriptions[0]; //Considering it is being added to empty package.
-            }
-            else
-            {
-                throw new Exception("No empty environment package available in the server.");
-            }
+            AasxHttpContextHelper.mongoDBInterface.writeDB("ConceptDescription", body, true);
+            return body; //deprecated; needed to signal, that it is being added to empty package.
         }
 
         public void DeleteConceptDescriptionById(string cdIdentifier)
         {
-            var conceptDescription = GetConceptDescriptionById(cdIdentifier, out int packageIndex);
-            if ((conceptDescription != null) && (packageIndex != -1))
-            {
-                _packages[packageIndex].AasEnv.ConceptDescriptions.Remove(conceptDescription);
-                AasxServer.Program.signalNewData(1);
-            }
-            else
-            {
-                throw new Exception("Unexpected error occurred.");
-            }
+            AasxHttpContextHelper.mongoDBInterface.deleteDB("ConceptDescription", cdIdentifier);
         }
 
         public ConceptDescription GetConceptDescriptionById(string cdIdentifier)
@@ -677,43 +626,6 @@ namespace IO.Swagger.V1RC03.Services
             {
                 throw new NotFoundException($"ConceptDescription with id {cdIdentifier} not found.");
             }
-        }
-        public ConceptDescription GetConceptDescriptionById(string cdIdentifier, out int packageIndex)
-        {
-            bool found = IsConceptDescriptionPresent(cdIdentifier, out ConceptDescription output, out packageIndex);
-            if (found)
-            {
-                return output;
-            }
-            else
-            {
-                throw new NotFoundException($"ConceptDescription with id {cdIdentifier} not found.");
-            }
-        }
-
-        private bool IsConceptDescriptionPresent(string cdIdentifier, out ConceptDescription output, out int packageIndex)
-        {
-            output = null;
-            packageIndex = -1;
-            foreach (var package in _packages)
-            {
-                if (package != null)
-                {
-                    var env = package.AasEnv;
-                    if (env != null)
-                    {
-                        var conceptDescriptions = env.ConceptDescriptions.Where(c => c.Id.Equals(cdIdentifier));
-                        if (conceptDescriptions.Any())
-                        {
-                            output = conceptDescriptions.First();
-                            packageIndex = Array.IndexOf(_packages, package);
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
         }
 
         /// <summary>
@@ -773,7 +685,7 @@ namespace IO.Swagger.V1RC03.Services
             {
                 throw new NoIdentifierException("SubmodelElement");
             }
-
+            //TODO still unchanged
             var submodelElement = GetSubmodelElementByPathSubmodelRepo(submodelIdentifier, idShortPath, out object smeParent);
             if (submodelElement != null && smeParent != null)
             {
@@ -831,13 +743,13 @@ namespace IO.Swagger.V1RC03.Services
                 //If level = core and/or content = value/metadata, do not replace the resource, do fieldwise update
                 if (outputModifierContext != null && !outputModifierContext.IsDefault())
                 {
+                    //TODO Jonas Graubner find out what to do here mongoDB wise
                     UpdateImplementation.Update(submodel, body, outputModifierContext);
                 }
                 //Default or null modifiers, so replace the complete resource as per standard HTTP/PUT
                 else
                 {
-                    _packages[packageIndex].AasEnv.Submodels.Remove(submodel);
-                    _packages[packageIndex].AasEnv.Submodels.Add(body);
+                    AasxHttpContextHelper.mongoDBInterface.updateDBSubmodels(submodelIdentifier, body);
                 }
                 AasxServer.Program.signalNewData(1);
             }
@@ -849,7 +761,7 @@ namespace IO.Swagger.V1RC03.Services
             {
                 throw new NoIdentifierException("SubmodelElement");
             }
-
+            
             var newIdShortPath = idShortPath + "." + body.IdShort;
             var found = IsSubmodelElementPresent(submodelIdentifier, newIdShortPath, out _, out object smeParent);
             if (found)
@@ -1259,6 +1171,9 @@ namespace IO.Swagger.V1RC03.Services
         {
             output = null;
             smeParent = null;
+            //TODO optimzation
+            //new BsonDocument("SubmodelElements", new BsonDocument("$elemMatch", new BsonDocument("IdShort", "idShortPath part")))
+
             var submodel = GetSubmodelById(submodelIdentifier);
 
             if (submodel != null)

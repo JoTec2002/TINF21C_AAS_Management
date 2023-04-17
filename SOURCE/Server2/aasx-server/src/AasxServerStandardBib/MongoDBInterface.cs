@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using ScottPlot;
 using Newtonsoft.Json;
 using MongoDB.Bson.Serialization.Serializers;
+using AasxServerStandardBib.Exceptions;
 
 //Author: Jonas Graubner
 //contact: jogithub@graubner-bayern.de
@@ -53,17 +54,27 @@ public class MongoDBInterface
 
     public void updateDBShells(string aasIdentifier, AssetAdministrationShell newShell)
     {
-        deleteDBShells(aasIdentifier);
+        deleteDB("Shells", aasIdentifier);
         writeDB("Shells", newShell);
     }
-
-    public void deleteDBShells(string aasIdentifier)
+    public void updateDBSubmodels(string submodelIdentifier, Submodel newSubmodel)
     {
-        var collection = _database.GetCollection<AssetAdministrationShell>("Shells");
-        collection.DeleteOne(new BsonDocument("_id", aasIdentifier));
+        deleteDB("Submodels", submodelIdentifier);
+        writeDB("Submodels", newSubmodel);
+    }
+    public void updateDBConceptDescription(string cdIdentifier, ConceptDescription newConceptDescription)
+    {
+        deleteDB("ConceptDescription", cdIdentifier);
+        writeDB("ConceptDescription", newConceptDescription);
     }
 
-    public void writeDB(String collectionName, object data)
+    public void deleteDB(string collectionName, string Identifier)
+    {
+        var collection = _database.GetCollection<AssetAdministrationShell>(collectionName);
+        collection.DeleteOne(new BsonDocument("_id", Identifier));
+    }
+
+    public void writeDB(String collectionName, object data, bool throwError=false)
     {
         var collection = _database.GetCollection<object>(collectionName);
         try
@@ -71,7 +82,10 @@ public class MongoDBInterface
             collection.InsertOne(data);
         }catch (MongoWriteException ex)
         {
-
+            if (throwError)
+            {
+                throw new DuplicateException($"{collectionName} with id {data} already exists.");
+            }            
         }        
     }
 
