@@ -31,10 +31,16 @@ public class MongoDBInterface
         }
         
         _database = _client.GetDatabase("AAS");
-        _database.DropCollection("Environment");
         _database.DropCollection("Filenames");
+        dumpDBContent();
         var objectSerializer = new ObjectSerializer(type => ObjectSerializer.DefaultAllowedTypes(type) || type.FullName.StartsWith("AasCore.Aas3_0_RC02") || type.FullName.StartsWith("MongoDB"));
         BsonSerializer.RegisterSerializer(objectSerializer);
+    }
+    private void dumpDBContent()
+    {
+        _database.DropCollection("Shells");
+        _database.DropCollection("Submodels");
+        _database.DropCollection("ConceptDescription");
     }
     public List<AssetAdministrationShell> readDBShells(BsonDocument filter, FindOptions options = null)
     {
@@ -117,8 +123,7 @@ public class MongoDBInterface
     }
 
     public void importAASCoreEnvironment(AasCore.Aas3_0_RC02.Environment environment, string filename)
-    {
-        //writeDB("Environment", environment);  
+    { 
         environment.AssetAdministrationShells.ForEach(shell => {
             writeDB("Shells", shell);
             writeDBFilenames(new BsonDocument { { "_id", shell.Id }, { "filename", filename } });

@@ -175,7 +175,7 @@ namespace IO.Swagger.V1RC03.Services
                     throw new NotFoundException($"AssetInformation is NULL in requested AAS with id {aasIdentifier}");
                 }
             }
-
+            AasxServer.Program.signalNewData(2);
             return fileName;
         }
 
@@ -205,6 +205,7 @@ namespace IO.Swagger.V1RC03.Services
                     }
 
                     new AdminShellPackageEnv(fn, true).EmbeddAssetInformationThumbnail(asset.DefaultThumbnail, fileContent);
+                    AasxServer.Program.signalNewData(2);
                 }
                 else
                 {
@@ -636,7 +637,6 @@ namespace IO.Swagger.V1RC03.Services
         }
 
         #endregion
-
 
         #region Submodel
 
