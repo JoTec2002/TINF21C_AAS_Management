@@ -185,13 +185,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                 theDisplayName = Jsonization.Deserialize.LangStringSetFrom(nodeDisplayName);
                 if (error != null)
                 {
-                if (item == null)
-                {
-                    error = new Reporting.Error(
-                        "Expected a non-null item, but got a null");
-                    error.PrependSegment(
-                        new Reporting.IndexSegment(
-                            indexDisplayName));
                     error.PrependSegment(
                         new Reporting.NameSegment(
                             "displayName"));
@@ -202,13 +195,7 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDisplayName null when error is also null");
                 }
-                theDisplayName.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDisplayName++;
             }
-
 
             JsonNode? nodeDescription = obj["description"];
             LangStringSet? theDescription = null;
@@ -217,13 +204,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                 theDescription = Jsonization.Deserialize.LangStringSetFrom(nodeDescription);
                 if (error != null)
                 {
-                if (item == null)
-                {
-                    error = new Reporting.Error(
-                        "Expected a non-null item, but got a null");
-                    error.PrependSegment(
-                        new Reporting.IndexSegment(
-                            indexDescription));
                     error.PrependSegment(
                         new Reporting.NameSegment(
                             "description"));
@@ -234,14 +214,7 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDescription null when error is also null");
                 }
-                theDescription.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDescription++;
             }
-
-
 
             JsonNode? nodeChecksum = obj["checksum"];
             string? theChecksum = null;
@@ -637,22 +610,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDisplayName null when error is also null");
                 }
-                LangString? parsedItem = Jsonization.Deserialize.LangStringFrom(item);
-                if (error != null)
-                {
-                    error.PrependSegment(
-                        new Reporting.IndexSegment(
-                            indexDisplayName));
-                    error.PrependSegment(
-                        new Reporting.NameSegment(
-                            "displayName"));
-                    return null;
-            }
-                theDisplayName.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDisplayName++;
             }
 
             JsonNode? nodeDescription = obj["description"];
@@ -665,23 +622,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDescription null when error is also null");
                 }
-                LangString? parsedItem = Jsonization.Deserialize.LangStringFrom(item);
-
-                if (error != null)
-                {
-                    error.PrependSegment(
-                        new Reporting.IndexSegment(
-                            indexDescription));
-                    error.PrependSegment(
-                        new Reporting.NameSegment(
-                            "description"));
-                    return null;
-            }
-                theDescription.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDescription++;
             }
 
             JsonNode? nodeChecksum = obj["checksum"];
@@ -1051,22 +991,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDisplayName null when error is also null");
                 }
-                LangString? parsedItem = Jsonization.Deserialize.LangStringFrom(item);
-                if (error != null)
-                {
-                    error.PrependSegment(
-                        new Reporting.IndexSegment(
-                            indexDisplayName));
-                    error.PrependSegment(
-                        new Reporting.NameSegment(
-                            "displayName"));
-                    return null;
-            }
-                theDisplayName.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDisplayName++;
             }
 
             JsonNode? nodeDescription = obj["description"];
@@ -1079,23 +1003,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDescription null when error is also null");
                 }
-                LangString? parsedItem = Jsonization.Deserialize.LangStringFrom(item);
-
-                if (error != null)
-                {
-                    error.PrependSegment(
-                        new Reporting.IndexSegment(
-                            indexDescription));
-                    error.PrependSegment(
-                        new Reporting.NameSegment(
-                            "description"));
-                    return null;
-            }
-                theDescription.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDescription++;
             }
 
             JsonNode? nodeChecksum = obj["checksum"];
@@ -1359,22 +1266,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDisplayName null when error is also null");
                 }
-                LangString? parsedItem = Jsonization.Deserialize.LangStringFrom(item);
-                if (error != null)
-                {
-                    error.PrependSegment(
-                        new Reporting.IndexSegment(
-                            indexDisplayName));
-                    error.PrependSegment(
-                        new Reporting.NameSegment(
-                            "displayName"));
-                    return null;
-            }
-                theDisplayName.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDisplayName++;
             }
 
             JsonNode? nodeDescription = obj["description"];
@@ -1387,11 +1278,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDescription null when error is also null");
                 }
-                theDescription.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDescription++;
             }
 
             JsonNode? nodeChecksum = obj["checksum"];
@@ -1657,11 +1543,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDisplayName null when error is also null");
                 }
-                theDisplayName.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDisplayName++;
             }
 
             JsonNode? nodeDescription = obj["description"];
@@ -1674,11 +1555,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDescription null when error is also null");
                 }
-                theDescription.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDescription++;
             }
 
             JsonNode? nodeChecksum = obj["checksum"];
@@ -2040,11 +1916,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDisplayName null when error is also null");
                 }
-                theDisplayName.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDisplayName++;
             }
 
             JsonNode? nodeDescription = obj["description"];
@@ -2057,11 +1928,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDescription null when error is also null");
                 }
-                theDescription.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDescription++;
             }
 
             JsonNode? nodeChecksum = obj["checksum"];
@@ -2431,11 +2297,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDisplayName null when error is also null");
                 }
-                theDisplayName.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDisplayName++;
             }
 
             JsonNode? nodeDescription = obj["description"];
@@ -2448,11 +2309,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                     throw new System.InvalidOperationException(
                         "Unexpected theDescription null when error is also null");
                 }
-                theDescription.Add(
-                    parsedItem
-                        ?? throw new System.InvalidOperationException(
-                            "Unexpected result null when error is null"));
-                indexDescription++;
             }
 
             JsonNode? nodeChecksum = obj["checksum"];

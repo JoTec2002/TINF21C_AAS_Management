@@ -85,8 +85,25 @@
                             <span hspace=20 style="padding-right:10px; font:xx-large;" class="self-center"><strong>Product Carbon Footprint Showcase</strong></span>
                         </div>
                     </div>
+                    <div>
                         <!-- toggle -->
                         <!-- label -->
+                        <span class="ml-3 text-gray-700 font-medium">
+                            @if (loading)
+                            {
+                                <span class="loader align-middle"></span>
+                                <span style="">Loading submodels...</span>
+                            }
+                            else
+                            {
+                                 <span style="">Loaded @AasxServer.Program.submodelAPIcount submodels @watchText</span>
+                            }
+                            &nbsp&nbsp&nbsp&nbsp&nbsp
+                            Role:
+                            <!--Curr: <span style="border-width: 1px; color: blue;">@input</span>-->
+
+                            <select @bind="role" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                <!--<option selected="@role"></option>-->
                                 @{
                                     for (int i = 0; i < roleList.Count; i++)
                                     {
@@ -94,6 +111,8 @@
                                     }
                                 }
                             </select>
+                            <input class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-1 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" type="password" size="4" @bind="CurrentValue" />
+                            <button class="btn bg-blue-500 text-white p-1 text-sm" style="background-color: #174a87;" @onclick="update">Authenticate</button>&nbsp&nbsp
                             @code {
                             private string CurrentValue { get; set; }
                         }
@@ -107,6 +126,7 @@
                                     if (CurrentValue != null && CurrentValue != "")
                                     {
                                         AasxServer.Program.submodelAPIcount = 0;
+                                        if (CurrentValue == "edit")
                                         {
                                             edit = !edit;
                                             AasxServer.Program.signalNewData(2);
@@ -146,6 +166,7 @@
                                             }
                                             else if (CurrentValue.Contains("edc="))
                                             {
+                                                CurrentValue = CurrentValue.Replace("edc=", "");
                                                 AasxServer.AasxCredentials.initByEdc(cs.credentials, "someuser", "somepassword", CurrentValue);
                                                 input = CurrentValue;
                                                 role = "";
@@ -161,9 +182,11 @@
                                             var watch = System.Diagnostics.Stopwatch.StartNew();
                                             IO.Swagger.Registry.Controllers.RegistryAndDiscoveryInterfaceApiController.initRegistry(
                                                 cs.credentials, DateTime.UtcNow, true);
-                                            // AasxServer.AasxTask.once = false;
                                             watch.Stop();
                                             Console.WriteLine(watch.ElapsedMilliseconds + " ms");
+                                            watchText = "in " + ((watch.ElapsedMilliseconds + 500) / 1000).ToString() + "s";
+                                            AasxServer.AasxTask.resetTimeStamp();
+                                            loading = false;
                                         }
                                         CurrentValue = "";
                                         this.StateHasChanged();
@@ -175,7 +198,6 @@
                     <div class="self-center text-right p-2" style="margin-top:8px;">
                         <label for="toggle" class="flex items-center cursor-pointer justify-end">
                             Disclaimer: displayed PCF values are for demo purposes only
-                            </div>
                             <div class="relative ml-2">
                                 <!-- input -->
                                 <input type="checkbox" id="toggle" class="sr-only"
@@ -190,8 +212,10 @@
                     </div>
                 </div>
                 <div class="flex flex-row" style="height:92%;">
+                    <div class="content px-4 basis-1/3 expand-slim" style="height:100%; padding: 0px !important; overflow-y: scroll;">
                         @Body
                     </div>
+                    <div class="content px-4 basis-2/3 hide-slim" style="padding: 0px !important;">
                         <iframe src="@getIframePath()"
                                     id="iframe" style="width: 100%; height: 100%;"></iframe>
                     </div>
@@ -202,14 +226,69 @@
 </div>
 
 @code{
+    static List<string> roleList = new List<string>
+    {   //"norole", "role1", "role2", "role3", 
+        "Anonym", "Isabelle", "Steven", /*"Mary",*/ "Albert"
+    };
     static string role = roleList[0];
     static string input = "";
     static string watchText = "";
     static string path = "";
+    static bool loading = false;
+    static bool edit = false;
+
+    //TODO: code duplication with Pcf2.razor
+    static string getAasLink(AssetAdministrationShell aas)
+    {
+        string endpoint = null;
+        var idEncoded = Base64UrlEncoder.Encode(aas.Id);
+        if (aas.Extensions != null)
+        {
+            endpoint = aas.Extensions[0].Value;
+        }
+        else
+        {
+            endpoint = Program.externalBlazor + "/shells/" + idEncoded;
+        }
+
+        return endpoint;
+    }
 
     string getIframePath()
     {
+        var link = "";
+        //get the admin shell of the cabinet
+        foreach (var env in AasxServer.Program.env)
+        {
+            if (env != null)
+            {
+                var aas = env.AasEnv.AssetAdministrationShells[0];
+                if (aas.IdShort != "ZveiControlCabinetAas - EXTERNAL")
+                    continue;
+
+                link = "?aasUrl=" + getAasLink(aas);
+
+                var registry = IO.Swagger.Registry.Controllers.RegistryAndDiscoveryInterfaceApiController.getRegistry;
+                if (registry.Count != 0)
                 {
+                    link += "&registryURL=" + registry[0];
+                }
+
+                var queryPara = "";
+                var userPW = "";
+                var urlEdcWrapper = "";
+                if (AasxCredentials.get(cs.credentials, link, out queryPara, out userPW, out urlEdcWrapper))
+                {
+                    queryPara = Base64UrlEncoder.Encode(queryPara);
+                    link += "&query=" + queryPara;
+                    // Console.WriteLine("iframe:" + link);
+                }
+
+            }
+        }
+
+        //TODO: not passing credentials
+        var p = System.Environment.GetEnvironmentVariable("IFRAMEPATH");
         if (p != null)
         {
             p = p.Replace("\r", "");

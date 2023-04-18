@@ -2169,42 +2169,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
         {
             var result = new Nodes.JsonObject();
 
-            if (that.AssetAdministrationShells != null)
-            {
-                var arrayAssetAdministrationShells = new Nodes.JsonArray();
-                foreach (AssetAdministrationShell item in that.AssetAdministrationShells)
-                {
-                    arrayAssetAdministrationShells.Add(
-                        Transform(
-                            item));
-                }
-                result["assetAdministrationShells"] = arrayAssetAdministrationShells;
-            }
-
-            if (that.Submodels != null)
-            {
-                var arraySubmodels = new Nodes.JsonArray();
-                foreach (Submodel item in that.Submodels)
-                {
-                    arraySubmodels.Add(
-                        Transform(
-                            item));
-                }
-                result["submodels"] = arraySubmodels;
-            }
-
-            if (that.ConceptDescriptions != null)
-            {
-                var arrayConceptDescriptions = new Nodes.JsonArray();
-                foreach (ConceptDescription item in that.ConceptDescriptions)
-                {
-                    arrayConceptDescriptions.Add(
-                        Transform(
-                            item));
-                }
-                result["conceptDescriptions"] = arrayConceptDescriptions;
-            }
-
             return result;
         }
 
@@ -2229,7 +2193,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                 result["description"] = Transform(
                     that.Description);
             }
-            result["valueReferencePairs"] = arrayValueReferencePairs;
 
             return result;
         }
@@ -2285,8 +2248,6 @@ namespace IO.Swagger.V1RC03.APIModels.Metadata
                 }
                 result["dataSpecifications"] = arrayDataSpecifications;
             }
-
-            result["modelType"] = "DataSpecificationPhysicalUnit";
 
             return result;
         }

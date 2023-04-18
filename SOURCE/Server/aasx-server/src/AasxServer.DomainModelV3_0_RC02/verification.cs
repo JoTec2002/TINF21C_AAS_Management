@@ -3,10 +3,8 @@
  * Do NOT edit or append.
  */
 
-using Aas = AasCore.Aas3_0_RC02;  // renamed
 using CodeAnalysis = System.Diagnostics.CodeAnalysis;
 using Regex = System.Text.RegularExpressions.Regex;
-
 using System.Collections.Generic;  // can't alias
 using System.Linq;  // can't alias
 
@@ -79,13 +77,11 @@ namespace AasCore.Aas3_0_RC02
         /// Check that <paramref name="text" /> conforms to the pattern of an <c>xs:dateTimeStamp</c>.
         /// </summary>
         /// <remarks>
-        /// <para>
         /// The time zone must be fixed to UTC. We verify only that the <c>text</c> matches
         /// a pre-defined pattern. We <em>do not</em> verify that the day of month is
         /// correct nor do we check for leap seconds.
         ///
         /// See: https://www.w3.org/TR/xmlschema11-2/#dateTimeStamp
-        /// </para>
         /// </remarks>
         /// <param name="text">
         /// Text to be checked
@@ -138,127 +134,6 @@ namespace AasCore.Aas3_0_RC02
             return (yearEnd == 4 && value.Length == 10)
                 ? value
                 : value.Substring(yearEnd - 4, 10);
-        }
-
-            if (year % 400 > 0)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Check that the value starts with a valid date.
-        /// </summary>
-        /// <param name="value">
-        ///     an <c>xs:date</c>, an <c>xs:dateTime</c>,
-        ///     or an <c>xs:dateTimeStamp</c></param>
-        /// <returns>
-        ///     <c>true</c> if the value starts with a valid date
-        /// </returns>
-        private static bool IsPrefixedWithValidDate(string value)
-        {
-            // NOTE (mristin, 2022-11-02):
-            // We can not use System.DateTime.ParseExact since it does not handle the zero and
-            // BCE years correctly. Therefore, we have to roll out our own date validator.
-            var match = RegexDatePrefix.Match(value);
-            if (!match.Success)
-            {
-                return false;
-            }
-
-            bool ok = System.Numerics.BigInteger.TryParse(
-                match.Groups[1].Value,
-                out System.Numerics.BigInteger year);
-            if (!ok)
-            {
-                throw new System.InvalidOperationException(
-                    $"Expected to parse the year from {match.Groups[1].Value}, " +
-                    "but the parsing failed");
-            }
-
-            ok = System.SByte.TryParse(match.Groups[2].Value, out sbyte month);
-            if (!ok)
-            {
-                throw new System.InvalidOperationException(
-                    $"Expected to parse the month from {match.Groups[2].Value}, " +
-                    "but the parsing failed");
-            }
-
-            ok = System.SByte.TryParse(match.Groups[3].Value, out sbyte day);
-            if (!ok)
-            {
-                throw new System.InvalidOperationException(
-                    $"Expected to parse the day from {match.Groups[3].Value}, " +
-                    "but the parsing failed");
-            }
-
-            // Year zero does not exist, see: https://www.w3.org/TR/xmlschema-2/#dateTime
-            if (year == 0)
-            {
-                return false;
-            }
-
-            if (day <= 0 || day > 31)
-            {
-                return false;
-            }
-
-            if (month <= 0 || month >= 13)
-            {
-                return false;
-            }
-
-            sbyte maxDaysInMonth;
-            switch (month)
-            {
-                case 1:
-                    maxDaysInMonth = 31;
-                    break;
-                case 2:
-                    maxDaysInMonth = (IsLeapYear(year)) ? (sbyte)29 : (sbyte)28;
-                    break;
-                case 3:
-                    maxDaysInMonth = 31;
-                    break;
-                case 4:
-                    maxDaysInMonth = 30;
-                    break;
-                case 5:
-                    maxDaysInMonth = 31;
-                    break;
-                case 6:
-                    maxDaysInMonth = 30;
-                    break;
-                case 7:
-                    maxDaysInMonth = 31;
-                    break;
-                case 8:
-                    maxDaysInMonth = 31;
-                    break;
-                case 9:
-                    maxDaysInMonth = 30;
-                    break;
-                case 10:
-                    maxDaysInMonth = 31;
-                    break;
-                case 11:
-                    maxDaysInMonth = 30;
-                    break;
-                case 12:
-                    maxDaysInMonth = 31;
-                    break;
-                default:
-                    throw new System.InvalidOperationException($"Unexpected month: {month}");
-            }
-
-            if (day > maxDaysInMonth)
-            {
-                return false;
-            }
-
-            return true;
         }
 
         /// <summary>
@@ -2329,9 +2204,6 @@ namespace AasCore.Aas3_0_RC02
             "VARIABLE"
         };
 
-            return true;
-        }
-
         /// <summary>
         /// Check that <paramref name="category" /> is a valid
         /// category of a data element.
@@ -2342,11 +2214,6 @@ namespace AasCore.Aas3_0_RC02
         {
             return DataElementCategories.Contains(
                 category);
-        }
-                }
-            }
-
-            return true;
         }
 
         /// <summary>
@@ -2362,42 +2229,15 @@ namespace AasCore.Aas3_0_RC02
         {
             if (that.Keys.Count != other.Keys.Count)
             {
-                var iec61360 = (
-                    embeddedDataSpecification.DataSpecificationContent
-                        as DataSpecificationIec61360
-                );
-                if (iec61360 != null)
-                {
-                    if (
-                        iec61360.DataType == null
-                        || !Constants.DataTypeIec61360ForReference.Contains(
-                            iec61360.DataType)
-                    )
-                    {
                 return false;
-            }
-                }
             }
 
             for (int i = 0; i < that.Keys.Count; i++)
             {
                 if (that.Keys[i].Value != other.Keys[i].Value)
                 {
-                var iec61360 = (
-                    embeddedDataSpecification.DataSpecificationContent
-                        as DataSpecificationIec61360
-                );
-                if (iec61360 != null)
-                {
-                    if (
-                        iec61360.DataType == null
-                        || !Constants.DataTypeIec61360ForDocument.Contains(
-                            iec61360.DataType)
-                    )
-                    {
                     return false;
                 }
-            }
             }
 
             return true;
@@ -2410,18 +2250,6 @@ namespace AasCore.Aas3_0_RC02
         {
             internal static readonly HashSet<int> ForModelingKind = new HashSet<int>
             {
-                var iec61360 = (
-                    embeddedDataSpecification.DataSpecificationContent
-                        as DataSpecificationIec61360
-                );
-                if (iec61360 != null)
-                {
-                    if (iec61360.DataType == null)
-                    {
-                        return false;
-                    }
-                }
-            }
 
                 (int)Aas.ModelingKind.Template,
                 (int)Aas.ModelingKind.Instance
@@ -2429,20 +2257,6 @@ namespace AasCore.Aas3_0_RC02
 
             internal static readonly HashSet<int> ForQualifierKind = new HashSet<int>
             {
-            foreach (var embeddedDataSpecification in embeddedDataSpecifications)
-            {
-                var iec61360 = (
-                    embeddedDataSpecification.DataSpecificationContent
-                        as DataSpecificationIec61360
-                );
-                if (iec61360 != null)
-                {
-                    if (iec61360.Value == null)
-                    {
-                        return false;
-                    }
-                }
-            }
 
                 (int)Aas.QualifierKind.ValueQualifier,
                 (int)Aas.QualifierKind.ConceptQualifier,
@@ -2451,18 +2265,6 @@ namespace AasCore.Aas3_0_RC02
 
             internal static readonly HashSet<int> ForAssetKind = new HashSet<int>
             {
-            foreach (var embeddedDataSpecification in embeddedDataSpecifications)
-            {
-                var iec61360 = (
-                    embeddedDataSpecification.DataSpecificationContent
-                        as DataSpecificationIec61360
-                );
-                if (iec61360 != null)
-                {
-                    if (iec61360.Definition == null)
-                    {
-                        return false;
-                    }
 
                 (int)Aas.AssetKind.Type,
                 (int)Aas.AssetKind.Instance
@@ -2470,12 +2272,6 @@ namespace AasCore.Aas3_0_RC02
 
             internal static readonly HashSet<int> ForEntityType = new HashSet<int>
             {
-                        if (IsBcp47ForEnglish(langString.Language))
-                        {
-                            noDefinitionInEnglish = false;
-                            break;
-                        }
-                    }
 
                 (int)Aas.EntityType.CoManagedEntity,
                 (int)Aas.EntityType.SelfManagedEntity
@@ -2483,10 +2279,6 @@ namespace AasCore.Aas3_0_RC02
 
             internal static readonly HashSet<int> ForDirection = new HashSet<int>
             {
-                        return false;
-                    }
-                }
-            }
 
                 (int)Aas.Direction.Input,
                 (int)Aas.Direction.Output
@@ -2494,7 +2286,6 @@ namespace AasCore.Aas3_0_RC02
 
             internal static readonly HashSet<int> ForStateOfEvent = new HashSet<int>
             {
-            var pattern = "^(en|EN)(-.*)?$";
 
                 (int)Aas.StateOfEvent.On,
                 (int)Aas.StateOfEvent.Off
@@ -2502,16 +2293,12 @@ namespace AasCore.Aas3_0_RC02
 
             internal static readonly HashSet<int> ForReferenceTypes = new HashSet<int>
             {
-            return RegexIsBcp47ForEnglish.IsMatch(text);
-        }
 
                 (int)Aas.ReferenceTypes.GlobalReference,
                 (int)Aas.ReferenceTypes.ModelReference
             };
 
             internal static readonly HashSet<int> ForGenericFragmentKeys = new HashSet<int>
-            {
-            internal static readonly HashSet<int> ForModelingKind = new HashSet<int>
             {
 
                 (int)Aas.GenericFragmentKeys.FragmentReference
@@ -2661,7 +2448,6 @@ namespace AasCore.Aas3_0_RC02
                 (int)Aas.KeyTypes.Range,
                 (int)Aas.KeyTypes.Referable,
                 (int)Aas.KeyTypes.ReferenceElement,
-                (int)Aas.KeyTypes.Referable,
                 (int)Aas.KeyTypes.RelationshipElement,
                 (int)Aas.KeyTypes.Submodel,
                 (int)Aas.KeyTypes.SubmodelElement,
@@ -2766,16 +2552,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.SupplementalSemanticIds != null)
-                    || (that.SupplementalSemanticIds.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Supplemental semantic IDs must be either not set or have at " +
-                        "least one item");
-                }
-
-                if (!(
-                    !(that.SupplementalSemanticIds != null)
                     || (that.SemanticId != null)))
                 {
                     yield return new Reporting.Error(
@@ -2876,16 +2652,6 @@ namespace AasCore.Aas3_0_RC02
                 Aas.AdministrativeInformation that)
             {
                 if (!(
-                    !(that.EmbeddedDataSpecifications != null)
-                    || (that.EmbeddedDataSpecifications.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Embedded data specifications must be either not set or have " +
-                        "at least one item");
-                }
-
-                if (!(
                     !(that.Revision != null)
                     || (that.Version != null)))
                 {
@@ -2945,16 +2711,6 @@ namespace AasCore.Aas3_0_RC02
             public override IEnumerable<Reporting.Error> Transform(
                 Aas.Qualifier that)
             {
-                if (!(
-                    !(that.SupplementalSemanticIds != null)
-                    || (that.SupplementalSemanticIds.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Supplemental semantic IDs must be either not set or have at " +
-                        "least one item");
-                }
-
                 if (!(
                     !(that.SupplementalSemanticIds != null)
                     || (that.SemanticId != null)))
@@ -3068,15 +2824,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -3085,62 +2832,6 @@ namespace AasCore.Aas3_0_RC02
                         "Has-Extensions needs to be unique.\n" +
                         "!(that.Extensions != null)\n" +
                         "|| Verification.ExtensionNamesAreUnique(that.Extensions)");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || (that.Description.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.Description)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || (that.DisplayName.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name must be either not set or have at least one " +
-                        "item");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.DisplayName)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.EmbeddedDataSpecifications != null)
-                    || (that.EmbeddedDataSpecifications.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Embedded data specifications must be either not set or have " +
-                        "at least one item");
-                }
-
-                if (!(
-                    !(that.Submodels != null)
-                    || (that.Submodels.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Submodels must be either not set or have at least one item");
                 }
 
                 if (!(
@@ -3218,36 +2909,22 @@ namespace AasCore.Aas3_0_RC02
                 {
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
                     }
-                        indexDisplayName++;
-                }
                 }
 
                 if (that.Description != null)
                 {
                     foreach (var error in Verification.Verify(that.Description))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
                     }
-                        indexDescription++;
-                }
                 }
 
                 if (that.Checksum != null)
@@ -3342,16 +3019,6 @@ namespace AasCore.Aas3_0_RC02
             public override IEnumerable<Reporting.Error> Transform(
                 Aas.AssetInformation that)
             {
-                if (!(
-                    !(that.SpecificAssetIds != null)
-                    || (that.SpecificAssetIds.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Specific asset IDs must be either not set or have at least " +
-                        "one item");
-                }
-
                 foreach (var error in Verification.VerifyAssetKind(that.AssetKind))
                 {
                     error.PrependSegment(
@@ -3432,16 +3099,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.SupplementalSemanticIds != null)
-                    || (that.SupplementalSemanticIds.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Supplemental semantic IDs must be either not set or have at " +
-                        "least one item");
-                }
-
-                if (!(
-                    !(that.SupplementalSemanticIds != null)
                     || (that.SemanticId != null)))
                 {
                     yield return new Reporting.Error(
@@ -3513,15 +3170,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -3530,53 +3178,6 @@ namespace AasCore.Aas3_0_RC02
                         "Has-Extensions needs to be unique.\n" +
                         "!(that.Extensions != null)\n" +
                         "|| Verification.ExtensionNamesAreUnique(that.Extensions)");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || (that.Description.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.Description)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || (that.DisplayName.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name must be either not set or have at least one " +
-                        "item");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.DisplayName)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.SupplementalSemanticIds != null)
-                    || (that.SupplementalSemanticIds.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Supplemental semantic IDs must be either not set or have at " +
-                        "least one item");
                 }
 
                 if (!(
@@ -3593,15 +3194,6 @@ namespace AasCore.Aas3_0_RC02
 
                 if (!(
                     !(that.Qualifiers != null)
-                    || (that.Qualifiers.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Qualifiers must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Qualifiers != null)
                     || Verification.QualifierTypesAreUnique(that.Qualifiers)))
                 {
                     yield return new Reporting.Error(
@@ -3610,26 +3202,6 @@ namespace AasCore.Aas3_0_RC02
                         "qualifier with the same type.\n" +
                         "!(that.Qualifiers != null)\n" +
                         "|| Verification.QualifierTypesAreUnique(that.Qualifiers)");
-                }
-
-                if (!(
-                    !(that.EmbeddedDataSpecifications != null)
-                    || (that.EmbeddedDataSpecifications.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Embedded data specifications must be either not set or have " +
-                        "at least one item");
-                }
-
-                if (!(
-                    !(that.SubmodelElements != null)
-                    || (that.SubmodelElements.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Submodel elements must be either not set or have at least " +
-                        "one item");
                 }
 
                 if (!(
@@ -3733,14 +3305,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
-                    }
-                        indexDisplayName++;
                     }
                 }
 
@@ -3749,14 +3316,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.Description))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
-                    }
-                        indexDescription++;
                     }
                 }
 
@@ -3898,15 +3460,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -4013,14 +3566,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
-                    }
-                        indexDisplayName++;
                     }
                 }
 
@@ -4029,14 +3577,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.Description))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
-                    }
-                        indexDescription++;
                     }
                 }
 
@@ -4154,15 +3697,6 @@ namespace AasCore.Aas3_0_RC02
             public override IEnumerable<Reporting.Error> Transform(
                 Aas.SubmodelElementList that)
             {
-                if (!(
-                    !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
                 if (!(
                     !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
@@ -4379,14 +3913,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
-                    }
-                        indexDisplayName++;
                     }
                 }
 
@@ -4395,14 +3924,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.Description))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
-                    }
-                        indexDescription++;
                     }
                 }
 
@@ -4560,15 +4084,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -4702,14 +4217,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
-                    }
-                        indexDisplayName++;
                     }
                 }
 
@@ -4718,14 +4228,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.Description))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
-                    }
-                        indexDescription++;
                     }
                 }
 
@@ -4846,15 +4351,6 @@ namespace AasCore.Aas3_0_RC02
             public override IEnumerable<Reporting.Error> Transform(
                 Aas.Property that)
             {
-                if (!(
-                    !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
                 if (!(
                     !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
@@ -4985,14 +4481,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
-                    }
-                        indexDisplayName++;
                     }
                 }
 
@@ -5001,14 +4492,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.Description))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
-                    }
-                        indexDescription++;
                     }
                 }
 
@@ -5142,15 +4628,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -5269,14 +4746,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
-                    }
-                        indexDisplayName++;
                     }
                 }
 
@@ -5285,14 +4757,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.Description))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
-                    }
-                        indexDescription++;
                     }
                 }
 
@@ -5394,14 +4861,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.Value))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexValue));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "value"));
                         yield return error;
-                    }
-                        indexValue++;
                     }
                 }
 
@@ -5421,15 +4883,6 @@ namespace AasCore.Aas3_0_RC02
             public override IEnumerable<Reporting.Error> Transform(
                 Aas.Range that)
             {
-                if (!(
-                    !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
                 if (!(
                     !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
@@ -5570,14 +5023,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
-                    }
-                        indexDisplayName++;
                     }
                 }
 
@@ -5586,14 +5034,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.Description))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
-                    }
-                        indexDescription++;
                     }
                 }
 
@@ -5727,15 +5170,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -5853,36 +5287,22 @@ namespace AasCore.Aas3_0_RC02
                 {
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
                     }
-                        indexDisplayName++;
-                }
                 }
 
                 if (that.Description != null)
                 {
                     foreach (var error in Verification.Verify(that.Description))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
                     }
-                        indexDescription++;
-                }
                 }
 
                 if (that.Checksum != null)
@@ -5996,15 +5416,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -6013,53 +5424,6 @@ namespace AasCore.Aas3_0_RC02
                         "Has-Extensions needs to be unique.\n" +
                         "!(that.Extensions != null)\n" +
                         "|| Verification.ExtensionNamesAreUnique(that.Extensions)");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || (that.Description.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.Description)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || (that.DisplayName.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name must be either not set or have at least one " +
-                        "item");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.DisplayName)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.SupplementalSemanticIds != null)
-                    || (that.SupplementalSemanticIds.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Supplemental semantic IDs must be either not set or have at " +
-                        "least one item");
                 }
 
                 if (!(
@@ -6076,15 +5440,6 @@ namespace AasCore.Aas3_0_RC02
 
                 if (!(
                     !(that.Qualifiers != null)
-                    || (that.Qualifiers.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Qualifiers must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Qualifiers != null)
                     || Verification.QualifierTypesAreUnique(that.Qualifiers)))
                 {
                     yield return new Reporting.Error(
@@ -6093,16 +5448,6 @@ namespace AasCore.Aas3_0_RC02
                         "qualifier with the same type.\n" +
                         "!(that.Qualifiers != null)\n" +
                         "|| Verification.QualifierTypesAreUnique(that.Qualifiers)");
-                }
-
-                if (!(
-                    !(that.EmbeddedDataSpecifications != null)
-                    || (that.EmbeddedDataSpecifications.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Embedded data specifications must be either not set or have " +
-                        "at least one item");
                 }
 
                 if (!(
@@ -6188,36 +5533,22 @@ namespace AasCore.Aas3_0_RC02
                 {
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
                     }
-                        indexDisplayName++;
-                }
                 }
 
                 if (that.Description != null)
                 {
                     foreach (var error in Verification.Verify(that.Description))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
                     }
-                        indexDescription++;
-                }
                 }
 
                 if (that.Checksum != null)
@@ -6339,15 +5670,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -6356,53 +5678,6 @@ namespace AasCore.Aas3_0_RC02
                         "Has-Extensions needs to be unique.\n" +
                         "!(that.Extensions != null)\n" +
                         "|| Verification.ExtensionNamesAreUnique(that.Extensions)");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || (that.Description.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.Description)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || (that.DisplayName.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name must be either not set or have at least one " +
-                        "item");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.DisplayName)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.SupplementalSemanticIds != null)
-                    || (that.SupplementalSemanticIds.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Supplemental semantic IDs must be either not set or have at " +
-                        "least one item");
                 }
 
                 if (!(
@@ -6419,15 +5694,6 @@ namespace AasCore.Aas3_0_RC02
 
                 if (!(
                     !(that.Qualifiers != null)
-                    || (that.Qualifiers.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Qualifiers must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Qualifiers != null)
                     || Verification.QualifierTypesAreUnique(that.Qualifiers)))
                 {
                     yield return new Reporting.Error(
@@ -6436,16 +5702,6 @@ namespace AasCore.Aas3_0_RC02
                         "qualifier with the same type.\n" +
                         "!(that.Qualifiers != null)\n" +
                         "|| Verification.QualifierTypesAreUnique(that.Qualifiers)");
-                }
-
-                if (!(
-                    !(that.EmbeddedDataSpecifications != null)
-                    || (that.EmbeddedDataSpecifications.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Embedded data specifications must be either not set or have " +
-                        "at least one item");
                 }
 
                 if (!(
@@ -6531,36 +5787,22 @@ namespace AasCore.Aas3_0_RC02
                 {
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
                     }
-                        indexDisplayName++;
-                }
                 }
 
                 if (that.Description != null)
                 {
                     foreach (var error in Verification.Verify(that.Description))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
                     }
-                        indexDescription++;
-                }
                 }
 
                 if (that.Checksum != null)
@@ -6682,15 +5924,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -6699,53 +5932,6 @@ namespace AasCore.Aas3_0_RC02
                         "Has-Extensions needs to be unique.\n" +
                         "!(that.Extensions != null)\n" +
                         "|| Verification.ExtensionNamesAreUnique(that.Extensions)");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || (that.Description.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.Description)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || (that.DisplayName.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name must be either not set or have at least one " +
-                        "item");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.DisplayName)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.SupplementalSemanticIds != null)
-                    || (that.SupplementalSemanticIds.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Supplemental semantic IDs must be either not set or have at " +
-                        "least one item");
                 }
 
                 if (!(
@@ -6762,15 +5948,6 @@ namespace AasCore.Aas3_0_RC02
 
                 if (!(
                     !(that.Qualifiers != null)
-                    || (that.Qualifiers.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Qualifiers must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Qualifiers != null)
                     || Verification.QualifierTypesAreUnique(that.Qualifiers)))
                 {
                     yield return new Reporting.Error(
@@ -6779,16 +5956,6 @@ namespace AasCore.Aas3_0_RC02
                         "qualifier with the same type.\n" +
                         "!(that.Qualifiers != null)\n" +
                         "|| Verification.QualifierTypesAreUnique(that.Qualifiers)");
-                }
-
-                if (!(
-                    !(that.EmbeddedDataSpecifications != null)
-                    || (that.EmbeddedDataSpecifications.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Embedded data specifications must be either not set or have " +
-                        "at least one item");
                 }
 
                 if (!(
@@ -6815,15 +5982,6 @@ namespace AasCore.Aas3_0_RC02
                         "    )\n" +
                         "    || (that.KindOrDefault() == ModelingKind.Template)\n" +
                         ")");
-                }
-
-                if (!(
-                    !(that.Annotations != null)
-                    || (that.Annotations.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Annotations must be either not set or have at least one item");
                 }
 
                 if (that.Extensions != null)
@@ -6871,36 +6029,22 @@ namespace AasCore.Aas3_0_RC02
                 {
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
                     }
-                        indexDisplayName++;
-                }
                 }
 
                 if (that.Description != null)
                 {
                     foreach (var error in Verification.Verify(that.Description))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
                     }
-                        indexDescription++;
-                }
                 }
 
                 if (that.Checksum != null)
@@ -7038,15 +6182,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -7055,53 +6190,6 @@ namespace AasCore.Aas3_0_RC02
                         "Has-Extensions needs to be unique.\n" +
                         "!(that.Extensions != null)\n" +
                         "|| Verification.ExtensionNamesAreUnique(that.Extensions)");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || (that.Description.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.Description)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || (that.DisplayName.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name must be either not set or have at least one " +
-                        "item");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.DisplayName)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.SupplementalSemanticIds != null)
-                    || (that.SupplementalSemanticIds.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Supplemental semantic IDs must be either not set or have at " +
-                        "least one item");
                 }
 
                 if (!(
@@ -7118,15 +6206,6 @@ namespace AasCore.Aas3_0_RC02
 
                 if (!(
                     !(that.Qualifiers != null)
-                    || (that.Qualifiers.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Qualifiers must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Qualifiers != null)
                     || Verification.QualifierTypesAreUnique(that.Qualifiers)))
                 {
                     yield return new Reporting.Error(
@@ -7135,16 +6214,6 @@ namespace AasCore.Aas3_0_RC02
                         "qualifier with the same type.\n" +
                         "!(that.Qualifiers != null)\n" +
                         "|| Verification.QualifierTypesAreUnique(that.Qualifiers)");
-                }
-
-                if (!(
-                    !(that.EmbeddedDataSpecifications != null)
-                    || (that.EmbeddedDataSpecifications.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Embedded data specifications must be either not set or have " +
-                        "at least one item");
                 }
 
                 if (!(
@@ -7171,15 +6240,6 @@ namespace AasCore.Aas3_0_RC02
                         "    )\n" +
                         "    || (that.KindOrDefault() == ModelingKind.Template)\n" +
                         ")");
-                }
-
-                if (!(
-                    !(that.Statements != null)
-                    || (that.Statements.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Statements must be either not set or have at least one item");
                 }
 
                 if (!(
@@ -7270,36 +6330,22 @@ namespace AasCore.Aas3_0_RC02
                 {
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
                     }
-                        indexDisplayName++;
-                }
                 }
 
                 if (that.Description != null)
                 {
                     foreach (var error in Verification.Verify(that.Description))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
                     }
-                        indexDescription++;
-                }
                 }
 
                 if (that.Checksum != null)
@@ -7551,15 +6597,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -7568,53 +6605,6 @@ namespace AasCore.Aas3_0_RC02
                         "Has-Extensions needs to be unique.\n" +
                         "!(that.Extensions != null)\n" +
                         "|| Verification.ExtensionNamesAreUnique(that.Extensions)");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || (that.Description.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.Description)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || (that.DisplayName.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name must be either not set or have at least one " +
-                        "item");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.DisplayName)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.SupplementalSemanticIds != null)
-                    || (that.SupplementalSemanticIds.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Supplemental semantic IDs must be either not set or have at " +
-                        "least one item");
                 }
 
                 if (!(
@@ -7631,15 +6621,6 @@ namespace AasCore.Aas3_0_RC02
 
                 if (!(
                     !(that.Qualifiers != null)
-                    || (that.Qualifiers.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Qualifiers must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Qualifiers != null)
                     || Verification.QualifierTypesAreUnique(that.Qualifiers)))
                 {
                     yield return new Reporting.Error(
@@ -7648,16 +6629,6 @@ namespace AasCore.Aas3_0_RC02
                         "qualifier with the same type.\n" +
                         "!(that.Qualifiers != null)\n" +
                         "|| Verification.QualifierTypesAreUnique(that.Qualifiers)");
-                }
-
-                if (!(
-                    !(that.EmbeddedDataSpecifications != null)
-                    || (that.EmbeddedDataSpecifications.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Embedded data specifications must be either not set or have " +
-                        "at least one item");
                 }
 
                 if (!(
@@ -7760,36 +6731,22 @@ namespace AasCore.Aas3_0_RC02
                 {
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
                     }
-                        indexDisplayName++;
-                }
                 }
 
                 if (that.Description != null)
                 {
                     foreach (var error in Verification.Verify(that.Description))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
                     }
-                        indexDescription++;
-                }
                 }
 
                 if (that.Checksum != null)
@@ -7971,15 +6928,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -7988,53 +6936,6 @@ namespace AasCore.Aas3_0_RC02
                         "Has-Extensions needs to be unique.\n" +
                         "!(that.Extensions != null)\n" +
                         "|| Verification.ExtensionNamesAreUnique(that.Extensions)");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || (that.Description.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.Description)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || (that.DisplayName.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name must be either not set or have at least one " +
-                        "item");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.DisplayName)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.SupplementalSemanticIds != null)
-                    || (that.SupplementalSemanticIds.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Supplemental semantic IDs must be either not set or have at " +
-                        "least one item");
                 }
 
                 if (!(
@@ -8051,15 +6952,6 @@ namespace AasCore.Aas3_0_RC02
 
                 if (!(
                     !(that.Qualifiers != null)
-                    || (that.Qualifiers.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Qualifiers must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Qualifiers != null)
                     || Verification.QualifierTypesAreUnique(that.Qualifiers)))
                 {
                     yield return new Reporting.Error(
@@ -8068,16 +6960,6 @@ namespace AasCore.Aas3_0_RC02
                         "qualifier with the same type.\n" +
                         "!(that.Qualifiers != null)\n" +
                         "|| Verification.QualifierTypesAreUnique(that.Qualifiers)");
-                }
-
-                if (!(
-                    !(that.EmbeddedDataSpecifications != null)
-                    || (that.EmbeddedDataSpecifications.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Embedded data specifications must be either not set or have " +
-                        "at least one item");
                 }
 
                 if (!(
@@ -8104,36 +6986,6 @@ namespace AasCore.Aas3_0_RC02
                         "    )\n" +
                         "    || (that.KindOrDefault() == ModelingKind.Template)\n" +
                         ")");
-                }
-
-                if (!(
-                    !(that.InputVariables != null)
-                    || (that.InputVariables.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Input variables must be either not set or have at least one " +
-                        "item");
-                }
-
-                if (!(
-                    !(that.OutputVariables != null)
-                    || (that.OutputVariables.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Output variables must be either not set or have at least " +
-                        "one item");
-                }
-
-                if (!(
-                    !(that.InoutputVariables != null)
-                    || (that.InoutputVariables.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Inoutput variables must be either not set or have at least " +
-                        "one item");
                 }
 
                 if (that.Extensions != null)
@@ -8181,36 +7033,22 @@ namespace AasCore.Aas3_0_RC02
                 {
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
                     }
-                        indexDisplayName++;
-                }
                 }
 
                 if (that.Description != null)
                 {
                     foreach (var error in Verification.Verify(that.Description))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
                     }
-                        indexDescription++;
-                }
                 }
 
                 if (that.Checksum != null)
@@ -8383,15 +7221,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -8400,53 +7229,6 @@ namespace AasCore.Aas3_0_RC02
                         "Has-Extensions needs to be unique.\n" +
                         "!(that.Extensions != null)\n" +
                         "|| Verification.ExtensionNamesAreUnique(that.Extensions)");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || (that.Description.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Description != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.Description)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Description specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || (that.DisplayName.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name must be either not set or have at least one " +
-                        "item");
-                }
-
-                if (!(
-                    !(that.DisplayName != null)
-                    || Verification.LangStringsHaveUniqueLanguages(that.DisplayName)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Display name specifies no duplicate languages");
-                }
-
-                if (!(
-                    !(that.SupplementalSemanticIds != null)
-                    || (that.SupplementalSemanticIds.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Supplemental semantic IDs must be either not set or have at " +
-                        "least one item");
                 }
 
                 if (!(
@@ -8463,15 +7245,6 @@ namespace AasCore.Aas3_0_RC02
 
                 if (!(
                     !(that.Qualifiers != null)
-                    || (that.Qualifiers.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Qualifiers must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Qualifiers != null)
                     || Verification.QualifierTypesAreUnique(that.Qualifiers)))
                 {
                     yield return new Reporting.Error(
@@ -8480,16 +7253,6 @@ namespace AasCore.Aas3_0_RC02
                         "qualifier with the same type.\n" +
                         "!(that.Qualifiers != null)\n" +
                         "|| Verification.QualifierTypesAreUnique(that.Qualifiers)");
-                }
-
-                if (!(
-                    !(that.EmbeddedDataSpecifications != null)
-                    || (that.EmbeddedDataSpecifications.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Embedded data specifications must be either not set or have " +
-                        "at least one item");
                 }
 
                 if (!(
@@ -8563,36 +7326,22 @@ namespace AasCore.Aas3_0_RC02
                 {
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
                     }
-                        indexDisplayName++;
-                }
                 }
 
                 if (that.Description != null)
                 {
                     foreach (var error in Verification.Verify(that.Description))
                     {
-                        foreach (var error in Verification.Verify(item))
-                        {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
                     }
-                        indexDescription++;
-                }
                 }
 
                 if (that.Checksum != null)
@@ -8695,15 +7444,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 if (!(
                     !(that.Extensions != null)
-                    || (that.Extensions.Count >= 1)))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Extensions must be either not set or have at least one item");
-                }
-
-                if (!(
-                    !(that.Extensions != null)
                     || Verification.ExtensionNamesAreUnique(that.Extensions)))
                 {
                     yield return new Reporting.Error(
@@ -8775,14 +7515,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.DisplayName))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDisplayName));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "displayName"));
                         yield return error;
-                    }
-                        indexDisplayName++;
                     }
                 }
 
@@ -8791,14 +7526,9 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.Description))
                     {
                         error.PrependSegment(
-                                new Reporting.IndexSegment(
-                                    indexDescription));
-                            error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
-                    }
-                        indexDescription++;
                     }
                 }
 
@@ -9015,7 +7745,6 @@ namespace AasCore.Aas3_0_RC02
                             "dataSpecificationContent"));
                     yield return error;
                 }
-            }
 
                 if (that.Administration != null)
                 {
@@ -9026,17 +7755,6 @@ namespace AasCore.Aas3_0_RC02
                                 "administration"));
                         yield return error;
                     }
-            }
-
-            [CodeAnalysis.SuppressMessage("ReSharper", "NegativeEqualityExpression")]
-            public override IEnumerable<Reporting.Error> Transform(
-                Aas.ValueList that)
-            {
-                if (!(that.ValueReferencePairs.Count >= 1))
-                {
-                    yield return new Reporting.Error(
-                        "Invariant violated:\n" +
-                        "Value reference pair types must contain at least one item.");
                 }
 
                 if (that.Description != null)
@@ -9044,14 +7762,10 @@ namespace AasCore.Aas3_0_RC02
                     foreach (var error in Verification.Verify(that.Description))
                     {
                         error.PrependSegment(
-                            new Reporting.IndexSegment(
-                                indexValueReferencePairs));
-                        error.PrependSegment(
                             new Reporting.NameSegment(
                                 "description"));
                         yield return error;
                     }
-                    indexValueReferencePairs++;
                 }
             }
 
@@ -9114,13 +7828,6 @@ namespace AasCore.Aas3_0_RC02
                         }
                         indexConceptDescriptions++;
                     }
-
-                foreach (var error in Verification.VerifyNonEmptyString(that.UnitName))
-                {
-                    error.PrependSegment(
-                        new Reporting.NameSegment(
-                            "unitName"));
-                    yield return error;
                 }
 
                 if (that.DataSpecifications != null)
@@ -9362,20 +8069,6 @@ namespace AasCore.Aas3_0_RC02
             {
                 yield return new Reporting.Error(
                     $"Invalid AssetKind: {that}");
-            }
-        }
-
-        /// <summary>
-        /// Verify that <paramref name="that" /> is a valid enumeration value.
-        /// </summary>
-        public static IEnumerable<Reporting.Error> VerifyAasSubmodelElements(
-            Aas.AasSubmodelElements that)
-        {
-            if (!EnumValueSet.ForAasSubmodelElements.Contains(
-                (int)that))
-            {
-                yield return new Reporting.Error(
-                    $"Invalid AasSubmodelElements: {that}");
             }
         }
 

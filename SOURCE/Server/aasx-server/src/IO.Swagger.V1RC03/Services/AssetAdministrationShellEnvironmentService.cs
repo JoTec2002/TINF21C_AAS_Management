@@ -72,12 +72,12 @@ namespace IO.Swagger.V1RC03.Services
 
             checkAccessRights(_securityContext.accessRights, _securityContext.route, _securityContext.neededRights,
                 objPath, aasOrSubmodel, objectAasOrSubmodel);
-       }
+        }
 
         public bool SecurityCheckTestOnly(string objPath = "", string aasOrSubmodel = null, object objectAasOrSubmodel = null)
         {
             if (!AasxRestServerLibrary.AasxHttpContextHelper.withAuthentification)
-                return(true);
+                return (true);
 
             return checkAccessRights(_securityContext.accessRights, _securityContext.route, _securityContext.neededRights,
                 objPath, aasOrSubmodel, objectAasOrSubmodel, true);
@@ -94,17 +94,13 @@ namespace IO.Swagger.V1RC03.Services
             string objPath = "", string aasOrSubmodel = null, object objectAasOrSubmodel = null, bool testOnly = false)
         {
             string error = "Access not allowed";
-            withAllow= false;
+            withAllow = false;
 
             if (Program.secretStringAPI != null)
             {
-                /*
                 if (neededRights == "READ")
                     return true;
                 if ((neededRights == "UPDATE" || neededRights == "DELETE") && currentRole == "UPDATE")
-                    return true;
-                */
-                if (currentRole == "CREATE")
                     return true;
             }
             else
@@ -112,7 +108,7 @@ namespace IO.Swagger.V1RC03.Services
                 if (AasxRestServerLibrary.AasxHttpContextHelper.checkAccessLevelWithError(
                     out error, currentRole, operation, neededRights, out withAllow,
                     objPath, aasOrSubmodel, objectAasOrSubmodel))
-                        return true;
+                    return true;
 
                 if (currentRole == null)
                 {
@@ -365,7 +361,7 @@ namespace IO.Swagger.V1RC03.Services
 
             AasxHttpContextHelper.mongoDBInterface.writeDB("Shells", body, true);
             return body; //deprecated ; was returned previous if there was Space in Asset array
-            }
+        }
 
         public OperationResult GetOperationAsyncResult(string aasIdentifier, string submodelIdentifier, string idShortPath, string handleId)
         {
@@ -464,7 +460,6 @@ namespace IO.Swagger.V1RC03.Services
         public void DeleteAssetAdministrationShellById(string aasIdentifier)
         {
             AasxHttpContextHelper.mongoDBInterface.deleteDB("Shells", aasIdentifier);
-            }
         }
 
         public AssetInformation GetAssetInformationFromAas(string aasIdentifier)
@@ -502,18 +497,20 @@ namespace IO.Swagger.V1RC03.Services
             if (!string.IsNullOrEmpty(idShort))//Filter AASs based on IdShort
             {
                 output = AasxHttpContextHelper.mongoDBInterface.readDBShells(new BsonDocument("IdShort", idShort));
-                    if (output.IsNullOrEmpty())
-                    {
-                        throw new NotFoundException($"AssetAdministrationShells with IdShort {idShort} Not Found.");
-                    }
-            }else if (assetIds != null && assetIds.Count != 0)//Filter based on AssetId
+                if (output.IsNullOrEmpty())
                 {
+                    throw new NotFoundException($"AssetAdministrationShells with IdShort {idShort} Not Found.");
+                }
+            }
+            else if (assetIds != null && assetIds.Count != 0)//Filter based on AssetId
+            {
                 //Not implemented
                 throw new NotFoundException($"AssetAdministrationShells with requested SpecificAssetIds Not Implemented.");
-            }else
-                    {
+            }
+            else
+            {
                 output = AasxHttpContextHelper.mongoDBInterface.readDBShells(new BsonDocument());
-                    }
+            }
 
             return output;
         }
@@ -563,7 +560,6 @@ namespace IO.Swagger.V1RC03.Services
             }
 
             AasxHttpContextHelper.mongoDBInterface.updateDBConceptDescription(cdIdentifier, body);
-            }
         }
 
         public ConceptDescription CreateConceptDescription(ConceptDescription body)
@@ -575,7 +571,7 @@ namespace IO.Swagger.V1RC03.Services
 
             AasxHttpContextHelper.mongoDBInterface.writeDB("ConceptDescription", body, true);
             return body; //deprecated; needed to signal, that it is being added to empty package.
-            }
+        }
 
         public void DeleteConceptDescriptionById(string cdIdentifier)
         {
@@ -615,35 +611,37 @@ namespace IO.Swagger.V1RC03.Services
                 conceptDescriptions = AasxHttpContextHelper.mongoDBInterface.readDBConceptDescription(new BsonDocument("IdShort", idShort));
                 if (conceptDescriptions.IsNullOrEmpty())
                 {
-                        throw new NotFoundException($"Concept Description with IdShort {idShort} Not Found.");
-                    }
-            }else if(reqIsCaseOf != null) //Filter based on IsCaseOf
-                    {
+                    throw new NotFoundException($"Concept Description with IdShort {idShort} Not Found.");
+                }
+            }
+            else if (reqIsCaseOf != null) //Filter based on IsCaseOf
+            {
                 conceptDescriptions = AasxHttpContextHelper.mongoDBInterface.readDBConceptDescription(new BsonDocument("IsCaseOf", reqIsCaseOf.ToBsonDocument()));
                 if (conceptDescriptions.IsNullOrEmpty())
                 {
-                        throw new NotFoundException($"Concept Description with requested IsCaseOf Not Found.");
-                    }
-            }else if(reqDataSpecificationRef != null) //Filter based on DataSpecificationRef
-                    {
+                    throw new NotFoundException($"Concept Description with requested IsCaseOf Not Found.");
+                }
+            }
+            else if (reqDataSpecificationRef != null) //Filter based on DataSpecificationRef
+            {
                 throw new NotFoundException($"Concept Description with requested DataSpecificationReference Not Implemented.");
-            }else //no filter
+            }
+            else //no filter
             {
                 conceptDescriptions = AasxHttpContextHelper.mongoDBInterface.readDBConceptDescription(new BsonDocument("IsCaseOf", reqIsCaseOf.ToBsonDocument()));
-                    }
+            }
 
             //w.r.t. security filter
             foreach (var c in conceptDescriptions)
-                {
+            {
                 if (SecurityCheckTestOnly(c.IdShort, "", c))
                     output.Add(c);
-                                }
+            }
 
             return output;
         }
 
         #endregion
-
 
         #region Submodel
 
@@ -687,7 +685,7 @@ namespace IO.Swagger.V1RC03.Services
                 }
 
 
-                AasxServer.Program.signalNewData(1);
+                //AasxServer.Program.signalNewData(1);
             }
         }
 
@@ -719,7 +717,7 @@ namespace IO.Swagger.V1RC03.Services
                 {
                     AasxHttpContextHelper.mongoDBInterface.updateDBSubmodels(submodelIdentifier, body);
                 }
-                AasxServer.Program.signalNewData(1);
+                //AasxServer.Program.signalNewData(1);
             }
         }
 
@@ -899,11 +897,11 @@ namespace IO.Swagger.V1RC03.Services
                             {
                                 smReffound = true;
                                 break;
-                }
-            }
+                            }
+                        }
 
                         if (!smReffound)
-            {
+                        {
                             aas.Submodels.Add(submodelReference);
                             UpdateAssetAdministrationShellById(aas, aas.Id);
                         }
@@ -913,7 +911,7 @@ namespace IO.Swagger.V1RC03.Services
                 }
             }
 
-                body.SetAllParents(DateTime.UtcNow);
+            body.SetAllParents(DateTime.UtcNow);
             AasxHttpContextHelper.mongoDBInterface.writeDB("Submodels", body, true);
             return body; //Deprecated; Considering it is being added to empty package.
         }
@@ -922,18 +920,17 @@ namespace IO.Swagger.V1RC03.Services
         {
             List<Submodel> submodels = AasxHttpContextHelper.mongoDBInterface.readDBSubmodels(new BsonDocument("_id", submodelIdentifier));
 
-            if(submodels.Count == 1)
+            if (submodels.Count == 1)
             {
                 Submodel submodel = submodels[0];
                 SecurityCheck(submodel.IdShort, "", submodel);  //Throws Exeption if not allowed
-                return submodel;                
+                return submodel;
             }
             else
             {
                 throw new NotFoundException($"Submodel with id {submodelIdentifier} not found.");
             }
         }
-
         public Submodel GetSubmodelById(string submodelIdentifier, out int packageIndex)
         {
             bool found = IsSubmodelPresent(submodelIdentifier, out Submodel output, out packageIndex);
@@ -955,11 +952,11 @@ namespace IO.Swagger.V1RC03.Services
             packageIndex = -1;
             Submodel submodel = GetSubmodelById(submodelIdentifier);
             if (submodel != null)
-                        {
+            {
                 output = submodel;
                 packageIndex = -1;
-                            return true;
-                        }
+                return true;
+            }
             return false;
         }
 
@@ -1052,26 +1049,27 @@ namespace IO.Swagger.V1RC03.Services
             List<Submodel> submodels = new List<Submodel>();
 
             //Get All Submodels according to given filter
-                if (!string.IsNullOrEmpty(idShort))
-                {
+            if (!string.IsNullOrEmpty(idShort))
+            {
                 submodels = AasxHttpContextHelper.mongoDBInterface.readDBSubmodels(new BsonDocument("IdShort", idShort));
-                if(submodels.Count == 0)
-                    {
-                        _logger.LogInformation($"Submodels with IdShort {idShort} Not Found.");
-                    }
-            }else if (reqSemanticId != null)
-                    {
+                if (submodels.Count == 0)
+                {
+                    _logger.LogInformation($"Submodels with IdShort {idShort} Not Found.");
+                }
+            }
+            else if (reqSemanticId != null)
+            {
                 //untested
                 submodels = AasxHttpContextHelper.mongoDBInterface.readDBSubmodels(new BsonDocument("SemanticId", reqSemanticId.ToBsonDocument()));
                 if (submodels.Count == 0)
-                        {
-                            _logger.LogInformation($"Submodels with requested SemnaticId Not Found.");
-                        }
+                {
+                    _logger.LogInformation($"Submodels with requested SemnaticId Not Found.");
+                }
             }
             else
             {
                 submodels = AasxHttpContextHelper.mongoDBInterface.readDBSubmodels(new BsonDocument());
-                    }
+            }
 
             //filter with security roles
             foreach (Submodel s in submodels)
@@ -1262,7 +1260,7 @@ namespace IO.Swagger.V1RC03.Services
                     AasxHttpContextHelper.mongoDBInterface.updateDBSubmodels(submodelIdentifier, parentSubmodel);
                 }
 
-                AasxServer.Program.signalNewData(1);
+                //AasxServer.Program.signalNewData(1);
             }
         }
 
@@ -1329,7 +1327,7 @@ namespace IO.Swagger.V1RC03.Services
                             {
                                 sourcePath = Path.Combine(file.Value);
                             }
-                           
+
                             var targetFile = Path.Combine(sourcePath, fileName);
                             targetFile = targetFile.Replace('/', Path.DirectorySeparatorChar);
                             Task task = _packages[packageIndex].ReplaceSupplementaryFileInPackageAsync(file.Value, targetFile, contentType, fileContent);
@@ -1353,7 +1351,7 @@ namespace IO.Swagger.V1RC03.Services
                         file.Value = FormatFileName(targetFile);
                         AasxServer.Program.signalNewData(2);
                     }
-                    
+
                 }
                 else
                 {
@@ -1464,45 +1462,7 @@ namespace IO.Swagger.V1RC03.Services
             return null;
         }
 
-
-
-
-
         #endregion
-
-        #region Others
-
-        private bool EmptyPackageAvailable(out int emptyPackageIndex)
-        {
-            emptyPackageIndex = -1;
-
-            for (int envi = 0; envi < _packages.Length; envi++)
-            {
-                if (_packages[envi] == null)
-                {
-                    emptyPackageIndex = envi;
-                    _packages[emptyPackageIndex] = new AdminShellPackageEnv();
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-
-
-
-
-        #endregion
-
-
-
-
-
-
-
-
-
 
 
     }

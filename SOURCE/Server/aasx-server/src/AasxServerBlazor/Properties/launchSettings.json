@@ -2,7 +2,7 @@
   "profiles": {
     "AasxServerBlazor": {
       "commandName": "Project",
-      "commandLineArgs": "--rest --data-path C:\\xampp\\htdocs\\TINF21C_AAS_Management\\SOURCE\\Server2\\aasx-server\\content-for-demo\\aasxs --mongo mongodb://AAS:SefuSWE63811!@192.168.0.22:27017/?authSource=AAS",
+      "commandLineArgs": "--rest --data-path C:\\xampp\\htdocs\\TINF21C_AAS_Management\\SOURCE\\Server\\aasx-server\\content-for-demo\\aasxs --mongo mongodb://AAS:SefuSWE63811!@192.168.0.22:27017/?authSource=AAS",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "AASREGISTRY": "https://registry.dpp40-2-v2.industrialdigitaltwin.org",

@@ -55,10 +55,6 @@ namespace AasxServerBlazor
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<AASService>();
-
-            var corsOrigins = Configuration["CorsOrigins"];
-            if (corsOrigins.Equals("*"))
-            {
             services.AddCors(options =>
             {
                 options.AddPolicy(_corsPolicyName,
