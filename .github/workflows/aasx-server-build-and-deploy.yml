@@ -17,11 +17,11 @@ jobs:
           dotnet-version: 6.0.x
 
       - name: Build for the release
-        working-directory: SOURCE/Server2/aasx-server/src
+        working-directory: SOURCE/Server/aasx-server/src
         run: powershell .\BuildForRelease.ps1
 
       - name: Package the release
-        working-directory: SOURCE/Server2/aasx-server/src
+        working-directory: SOURCE/Server/aasx-server/src
         run: |
           Write-Host "Packaging for the Deploy version"
           powershell .\PackageRelease.ps1
@@ -29,7 +29,7 @@ jobs:
       - name: Cache Build AASX Server
         uses: actions/cache@v3
         with:
-          path: 'SOURCE/Server2/aasx-server/artefacts/release/'
+          path: 'SOURCE/Server/aasx-server/artefacts/release/'
           key: aasxServerBuild-${{ github.sha }}
           enableCrossOsArchive: true
 
@@ -41,7 +41,7 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           key: aasxServerBuild-${{ github.sha }}
-          path: 'SOURCE/Server2/aasx-server/artefacts/release/'
+          path: 'SOURCE/Server/aasx-server/artefacts/release/'
 
       - name: stop and cleanup old aasx server
         uses: appleboy/ssh-action@v0.1.8
@@ -59,7 +59,7 @@ jobs:
           host: ${{ secrets.FTP_SERVER }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
-          localDir: 'SOURCE/Server2/aasx-server/artefacts/release'
+          localDir: 'SOURCE/Server/aasx-server/artefacts/release'
           remoteDir: '/home/jonas/Server'
           forceUpload: true
 
