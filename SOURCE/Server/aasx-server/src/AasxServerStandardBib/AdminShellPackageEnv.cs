@@ -203,15 +203,14 @@ namespace AdminShellNS
             }
 
             // read V3.0?
-            if (nsuri != null && nsuri.Trim() == Xmlization.NS)
+            if (nsuri != null && nsuri.Trim() == "http://www.admin-shell.io/aas/3/0")
             {
                 //XmlSerializer serializer = new XmlSerializer(
                 //    typeof(AasCore.Aas3_0_RC02.Environment), "http://www.admin-shell.io/aas/3/0");
                 //res = serializer.Deserialize(s) as AasCore.Aas3_0_RC02.Environment;
+
                 XmlReader xmlReader = XmlReader.Create(s);
-                //res = Xmlization.Deserialize.EnvironmentFrom(xmlReader, "http://www.admin-shell.io/aas/3/0");
-                xmlReader.MoveToContent();
-                res = Xmlization.Deserialize.EnvironmentFrom(xmlReader);
+                res = Xmlization.Deserialize.EnvironmentFrom(xmlReader, "http://www.admin-shell.io/aas/3/0");
                 return res;
             }
 
@@ -288,7 +287,7 @@ namespace AdminShellNS
 
         private string _tempFn = null;
 
-        private AasCore.Aas3_0_RC02.Environment _aasEnv = new AasCore.Aas3_0_RC02.Environment(new List<AssetAdministrationShell>(), new List<Submodel>(), new List<ConceptDescription>());
+        private AasCore.Aas3_0_RC02.Environment _aasEnv = new AasCore.Aas3_0_RC02.Environment(new List<AssetAdministrationShell>(), new List<Submodel>(), new List<ConceptDescription>(), new List<DataSpecification>());
         private Package _openPackage = null;
         private readonly ListOfAasSupplementaryFile _pendingFilesToAdd = new ListOfAasSupplementaryFile();
         private readonly ListOfAasSupplementaryFile _pendingFilesToDelete = new ListOfAasSupplementaryFile();
@@ -844,7 +843,7 @@ namespace AdminShellNS
                             };
                             using XmlWriter writer = XmlWriter.Create(s, settings);
                             string ns = "http://www.admin-shell.io/aas/3/0";
-                            Xmlization.Serialize.To((IClass)_aasEnv, writer);
+                            Xmlization.Serialize.To((IClass)_aasEnv, writer, ns: ns);
                         }
                     }
 
@@ -1170,7 +1169,7 @@ namespace AdminShellNS
             {
                 _openPackage.DeletePart(new Uri(sourceUri, UriKind.RelativeOrAbsolute));
 
-            }
+            }            
             var targetUri = PackUriHelper.CreatePartUri(new Uri(targetFile, UriKind.RelativeOrAbsolute));
             PackagePart packagePart = _openPackage.CreatePart(targetUri, targetContentType);
             fileContent.Position = 0;
@@ -1514,9 +1513,9 @@ namespace AdminShellNS
             using (Stream dest = packagePart.GetStream())
             {
                 fileContent.CopyTo(dest);
-            }
-
-
         }
+
+
     }
+}
 }

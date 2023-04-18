@@ -134,10 +134,10 @@ namespace Extenstions
             {
                 property.Qualifiers = sourceProperty.Qualifiers;
             }
-            //if (sourceProperty.DataSpecifications != null)
-            //{
-            //    property.DataSpecifications = sourceProperty.DataSpecifications;
-            //}
+            if (sourceProperty.DataSpecifications != null)
+            {
+                property.DataSpecifications = sourceProperty.DataSpecifications;
+            }
             if (sourceProperty.ValueType != null)
             {
                 property.ValueType = sourceProperty.ValueType;

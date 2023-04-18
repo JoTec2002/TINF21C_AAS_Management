@@ -1,8 +1,32 @@
 ﻿@inherits LayoutComponentBase
 @inject NavigationManager NavMan
-@inject Data.CredentialService cs
+@inject Data.AASService SubmodelService
+@* @inject Data.CredentialService cs *@
+@using AasCore.Aas3_0_RC02;
+@using AasxServer
 @using System
+@using Microsoft.IdentityModel.Tokens;
+<style>
+    .loader {
+    width: 28px;
+    height: 28px;
+    border: 5px solid #AAA;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+    }
 
+    @@keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+    } 
+</style>
 @*<div class="sidebar">
     <NavMenu />
 </div>*@
@@ -13,6 +37,7 @@
             input = "anonymous";
             AasxServer.AasxCredentials.initAnonymous(cs.credentials);
             IO.Swagger.Registry.Controllers.RegistryAndDiscoveryInterfaceApiController.initRegistry(cs.credentials, DateTime.UtcNow);
+            AasxServer.AasxTask.resetTimeStamp();
         }
         bool isPcf = NavMan.Uri.EndsWith("/pcf") || NavMan.Uri.EndsWith("/pcf/")
         || NavMan.Uri.EndsWith("/pcf2") || NavMan.Uri.EndsWith("/pcf2/")
@@ -38,58 +63,67 @@
         }
         else
         {
-                <style>
+            <style>
                 input:checked ~ .dot {
-                    transform: translateX(100%);
-                    background-color: #174a87 !important; /* zvei blau */
+                transform: translateX(100%);
+                background-color: #174a87 !important; /* zvei blau */
                 }
                 @@media (max-width: 600px) { /* hide iframe in low widths - mobile phones*/
-                    .hide-slim {display: none;}
-                    .expand-slim {overflow-y: visible !important;}
-                    .node {
-                        padding-left: 1.2rem !important;
-                        padding-right: 0.5rem !important;
-                    }
+                .hide-slim {display: none;}
+                .expand-slim {overflow-y: visible !important;}
+                .node {
+                padding-left: 1.2rem !important;
+                padding-right: 0.5rem !important;
                 }
-                </style>
-                <div style="height:100%; flex; padding:0px !important; overflow-y: visible;">
-                    <div class="top-row flex justify-between" style="justify-content: space-between; padding: 0px; min-height: 8%;">
-                        <div class="self-center">
-                            <div class="flex items-stretch">
-                                <img src="zvei_2021_RZ_RGB.png" style="max-width: 100px; display: inline; object-fit: contain;" />
-                                <span hspace=20 style="padding-right:10px; font:xx-large;" class="self-center"><strong>Product Carbon Footprint Showcase</strong></span>
-                            </div>
+                }
+            </style>
+            <div style="height:100%; flex; padding:0px !important; overflow-y: visible;">
+                <div class="top-row flex justify-between" style="justify-content: space-between; padding: 0px; min-height: 8%;">
+                    <div class="self-center">
+                        <div class="flex items-stretch">
+                            <img src="zvei_2021_RZ_RGB.png" style="max-width: 100px; display: inline; object-fit: contain;" />
+                            <span hspace=20 style="padding-right:10px; font:xx-large;" class="self-center"><strong>Product Carbon Footprint Showcase</strong></span>
                         </div>
-                        <div class="self-center text-right p-2">
-                            <label for="toggle" class="flex items-center cursor-pointer justify-end">
-                                <!-- toggle -->
-                                <!-- label -->
-                                <div class="ml-3 text-gray-700 font-medium">
-                                    <span style="border-width: 1px; color: blue;">API-SM#:@AasxServer.Program.submodelAPIcount &nbsp @watchText</span>&nbsp&nbsp
-                                    <select @bind="role">
-                                        <option selected="@role"></option>
-                                        @{
-                                            for (int i = 0; i < roleList.Count; i++)
-                                            {
-                                                <option value="@roleList[i]">@roleList[i]</option>
-                                            }
-                                        }
-                                    </select>
-                                    <input @bind="CurrentValue" /> <span style="border-width: 1px; color: blue;">@input</span>&nbsp&nbsp
-                                @code {
-                                private string CurrentValue { get; set; }
-}
-                                    @{
+                    </div>
+                        <!-- toggle -->
+                        <!-- label -->
+                                @{
+                                    for (int i = 0; i < roleList.Count; i++)
+                                    {
+                                        <option value="@roleList[i]">@roleList[i]</option>
+                                    }
+                                }
+                            </select>
+                            @code {
+                            private string CurrentValue { get; set; }
+                        }
+                        @{
+                                if (edit)
+                                {
+                                    <span style="color:red;">edit&nbsp&nbsp</span>
+                                }
+                                async Task update()
+                                {
                                     if (CurrentValue != null && CurrentValue != "")
                                     {
                                         AasxServer.Program.submodelAPIcount = 0;
-                                        if (CurrentValue == "count=0")
+                                        {
+                                            edit = !edit;
+                                            AasxServer.Program.signalNewData(2);
+                                        }
+                                        else if (CurrentValue == "count=0")
                                         {
                                             AasxServer.Program.submodelAPIcount = 0;
                                         }
                                         else if (CurrentValue.Contains("get="))
                                         {
                                             CurrentValue = CurrentValue.Replace("get=", "");
+                                            AasxServer.Program.getUrl = CurrentValue;
+                                            AasxServer.Program.signalNewData(2);
+                                        }
+                                        else if (CurrentValue.Contains("secret="))
+                                        {
+                                            CurrentValue = CurrentValue.Replace("secret=", "");
                                             AasxServer.Program.getUrl = CurrentValue;
                                             AasxServer.Program.signalNewData(2);
                                         }
@@ -112,7 +146,6 @@
                                             }
                                             else if (CurrentValue.Contains("edc="))
                                             {
-                                                CurrentValue= CurrentValue.Replace("edc=", "");
                                                 AasxServer.AasxCredentials.initByEdc(cs.credentials, "someuser", "somepassword", CurrentValue);
                                                 input = CurrentValue;
                                                 role = "";
@@ -122,19 +155,26 @@
                                                 AasxServer.AasxCredentials.initByUserPW(cs.credentials, role, CurrentValue);
                                                 input = role;
                                             }
+                                            loading = true;
+                                            StateHasChanged();
+                                            await Task.Delay(1); //hack to let frontend update
                                             var watch = System.Diagnostics.Stopwatch.StartNew();
                                             IO.Swagger.Registry.Controllers.RegistryAndDiscoveryInterfaceApiController.initRegistry(
                                                 cs.credentials, DateTime.UtcNow, true);
                                             // AasxServer.AasxTask.once = false;
                                             watch.Stop();
                                             Console.WriteLine(watch.ElapsedMilliseconds + " ms");
-                                            watchText = ((watch.ElapsedMilliseconds + 500) / 1000).ToString() + "s";
                                         }
                                         CurrentValue = "";
                                         this.StateHasChanged();
                                     }
                                 }
-                                Disclaimer: displayed PCF values are for demo purposes only
+                            }
+                        </span>
+                    </div>
+                    <div class="self-center text-right p-2" style="margin-top:8px;">
+                        <label for="toggle" class="flex items-center cursor-pointer justify-end">
+                            Disclaimer: displayed PCF values are for demo purposes only
                             </div>
                             <div class="relative ml-2">
                                 <!-- input -->
@@ -150,10 +190,8 @@
                     </div>
                 </div>
                 <div class="flex flex-row" style="height:92%;">
-                    <div class="content px-4 basis-1/2 expand-slim" style="height:100%; padding: 0px !important; overflow-y: scroll;">
                         @Body
                     </div>
-                    <div class="content px-4 basis-1/2 hide-slim" style="padding: 0px !important;">
                         <iframe src="@getIframePath()"
                                     id="iframe" style="width: 100%; height: 100%;"></iframe>
                     </div>
@@ -164,23 +202,49 @@
 </div>
 
 @code{
-    static List<string> roleList = new List<string> { "norole", "role1", "role2", "role3" };
     static string role = roleList[0];
     static string input = "";
     static string watchText = "";
     static string path = "";
-    static bool pathIntit = true;
 
     string getIframePath()
     {
-        if (pathIntit)
+                {
+        if (p != null)
         {
-            pathIntit = false;
-            var p = Environment.GetEnvironmentVariable("IFRAMEPATH");
-            if (p != null)
-                path = p;
+            p = p.Replace("\r", "");
+            p = p.Replace("\n", "");
+            path = p;
         }
 
+        path += link;
+ 
+
         return path;
+    }
+
+    protected override void OnInitialized()
+    {
+        SubmodelService.NewDataAvailable += NewData;
+    }
+
+    public void Dispose()
+    {
+        SubmodelService.NewDataAvailable -= NewData;
+    }
+
+    void NewData(object source, EventArgs args)
+    {
+        if (Program.isLoading)
+            return;
+
+        if (args is Program.NewDataAvailableArgs newArgs)
+        {
+            int newDataMode = newArgs.signalNewDataMode;
+            if (newDataMode != 0)
+            {
+                InvokeAsync(() => this.StateHasChanged());
+            }
+        }
     }
 }

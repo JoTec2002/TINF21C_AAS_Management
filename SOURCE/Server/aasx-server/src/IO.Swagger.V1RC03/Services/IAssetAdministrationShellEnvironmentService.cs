@@ -11,8 +11,8 @@ namespace IO.Swagger.V1RC03.Services
 {
     public interface IAssetAdministrationShellEnvironmentService
     {
-        AssetAdministrationShell GetAssetAdministrationShellById(string aasIdentifier);
-        Submodel GetSubmodelById(string submodelIdentifier);
+        AssetAdministrationShell GetAssetAdministrationShellById(string aasIdentifier, out int packageIndex);
+        Submodel GetSubmodelById(string submodelIdentifier, out int packageIndex);
         List<AssetAdministrationShell> GetAllAssetAdministrationShells(List<SpecificAssetId> assetIds = null, string idShort = null);
         List<ConceptDescription> GetAllConceptDescriptions(string idShort = null, Reference reqIsCaseOf = null, Reference reqDataSpecificationRef = null);
         object GetAllSubmodelElements(string aasIdentifier, string submodelIdentifier, APIModels.Core.OutputModifierContext outputModifierContext = null);
@@ -20,7 +20,7 @@ namespace IO.Swagger.V1RC03.Services
         List<Reference> GetAllSubmodelReferences(string aasIdentifier);
         List<Submodel> GetAllSubmodels(Reference reqSemanticId = null, string idShort = null);
         AssetInformation GetAssetInformationFromAas(string aasIdentifier);
-        ConceptDescription GetConceptDescriptionById(string cdIdentifier);
+        ConceptDescription GetConceptDescriptionById(string cdIdentifier, out int packageIndex);
         void DeleteAssetAdministrationShellById(string aasIdentifier);
         void DeleteConceptDescriptionById(string cdIdentifier);
         void DeleteSubmodelById(string submodelIdentifier);

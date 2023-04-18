@@ -610,6 +610,7 @@ namespace IO.Swagger.Registry.Controllers
                 var client = new HttpClient(handler);
                 if (accessToken != null)
                     client.SetBearerToken(accessToken);
+                client.Timeout = TimeSpan.FromSeconds(20);
 
                 if (json != "")
                 {
@@ -875,6 +876,8 @@ namespace IO.Swagger.Registry.Controllers
             {
                 string envVar = url.Substring(1);
                 url = System.Environment.GetEnvironmentVariable(envVar);
+                url = url.Replace("\r", "");
+                url = url.Replace("\n", "");
             }
 
             return url;
@@ -1005,6 +1008,7 @@ namespace IO.Swagger.Registry.Controllers
                         //
 
                         var client = new HttpClient(handler);
+                        client.Timeout = TimeSpan.FromSeconds(3);
                         if (accessToken != null)
                             client.SetBearerToken(accessToken);
 
@@ -1049,17 +1053,19 @@ namespace IO.Swagger.Registry.Controllers
                             initiallyEmpty = i;
                             foreach (var ad in aasDescriptors)
                             {
-                                if (ad.IdShort == "ZveiControlCabinetAas")
+                                if (ad.IdShort == "myAASwithGlobalSecurityMetaModel")
                                     continue;
 
                                 var watch = System.Diagnostics.Stopwatch.StartNew();
 
                                 // check, if AAS is exisiting and must be replaced
-                                var aas = new AssetAdministrationShell(ad.Identification, new AssetInformation(AssetKind.Instance));
+                                var aas = new AssetAdministrationShell();
                                 aas.Extensions = new List<Extension> { new Extension("endpoint", value: ad.Endpoints[0].ProtocolInformation.EndpointAddress) };
                                 aas.TimeStamp = timestamp;
                                 aas.TimeStampCreate = timestamp;
+                                aas.Id = ad.Identification;
                                 aas.IdShort = ad.IdShort + " - EXTERNAL";
+                                aas.AssetInformation = new AssetInformation(AssetKind.Instance);
                                 string gid = ad.GlobalAssetId.Value[0];
                                 aas.AssetInformation.GlobalAssetId = new AasCore.Aas3_0_RC02.Reference(AasCore.Aas3_0_RC02.ReferenceTypes.GlobalReference,
                                             new List<Key>() { new Key(KeyTypes.GlobalReference, gid) });
@@ -1108,6 +1114,7 @@ namespace IO.Swagger.Registry.Controllers
                                         case "ProductCarbonFootprint":
                                         case "CarbonFootprint":
                                         case "TechnicalData":
+                                        case "Nameplate":
                                             // copy specific submodels locally
                                             try
                                             {
@@ -1243,6 +1250,42 @@ namespace IO.Swagger.Registry.Controllers
             lock (Program.changeAasxFile)
             {
                 addAasDescriptorToRegistry(body, timestamp);
+            }
+
+            AasxServer.Program.signalNewData(2);
+
+            // return new ObjectResult(example);
+            return new ObjectResult("ok");
+        }
+
+        /// <summary>
+        /// Deletes all and writes multiple Asset Administration Shell Descriptors, i.e. registers an AAS
+        /// </summary>
+        /// <param name="body">Asset Administration Shell Descriptor List</param>
+        /// <response code="201">Asset Administration Shell Descriptors created successfully</response>
+        [HttpPost]
+        [Route("/registry/overwrite-shell-descriptors")]
+        [ValidateModelState]
+        [SwaggerOperation("PostMultipleAssetAdministrationShellDescriptors")]
+        [SwaggerResponse(statusCode: 201, type: typeof(AssetAdministrationShellDescriptor), description: "Asset Administration Shell Descriptors created successfully")]
+        public virtual IActionResult PostMultipleAssetAdministrationShellDescriptor([FromBody] List<AssetAdministrationShellDescriptor> body)
+        {
+            var timestamp = DateTime.UtcNow;
+
+            Console.WriteLine("POST /registry/multiple-shell-descriptors");
+
+            if (aasRegistry != null)
+                aasRegistry.SubmodelElements.Clear();
+            if (submodelRegistry != null)
+                submodelRegistry.SubmodelElements.Clear();
+            foreach (var ad in body)
+            {
+                if (ad == null)
+                    continue;
+                lock (Program.changeAasxFile)
+                {
+                    addAasDescriptorToRegistry(ad, timestamp);
+                }
             }
 
             AasxServer.Program.signalNewData(2);

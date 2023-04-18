@@ -3,12 +3,13 @@
 @using AasCore.Aas3_0_RC02
 @using Data
 @inject AASService SubmodelService
-@inject CredentialService cs
+@* @inject CredentialService cs *@
 @using AasxServer;
 @using Extenstions;
 @using Microsoft.IdentityModel.Tokens;
 @using System.Drawing;
 @using System.Globalization;
+@using static AasxServer.AasxTask;
 @implements IDisposable
 
 @{
@@ -26,8 +27,20 @@
         }
         catch { }
     }
+
+    float h_total = 0.0f;
+    if (AasxTask.asbuilt_total != null)
+    {
+        try
+        {
+            h_total = (float)Convert.ToDouble(AasxTask.asbuilt_total, CultureInfo.InvariantCulture);
+            h_total = (float)Math.Round(h_total, 1);
+        }
+        catch { }                          
+    }
+                        
 }
-<div class="relative flex min-h-screen flex-col justify-center overflow-hidden bg-gray-50">
+<div class="relative flex min-h-screen flex-col overflow-hidden bg-gray-50 break-all">
     <img src="https://play.tailwindcss.com/img/beams.jpg" alt="" class="absolute top-1/2 left-1/2 max-w-none -translate-x-1/2 -translate-y-1/2" width="1308" />
     <div style="background-color: #174a87; margin-left:1px; margin-top:2px;" class="node w-full mb-2 relative px-6 pt-4 pb-2 shadow-xl ring-1 ring-gray-900/5 sm:mx-auto sm:rounded-lg sm:px-8">
         <div  class="node mb-2 flex flex-row space-x-2">
@@ -36,8 +49,16 @@
                     <font>
                         <span style="color: white; font-size:250%;">@total</span>
                         <span style="color: #EFEFEF; font-size:130%">
-                            kg CO<sub>2</sub>e
+                            kg CO<sub>2</sub>e as-is
                         </span>
+                        <span style="color: white; font-size:100%;" class="absolute left-2 top-2">@h_total kg CO<sub>2</sub>e as-built</span>
+
+                        @{
+                            if (!AasxTask.cfpValid)
+                            {
+                                <div style="color: red; margin-bottom: -8px;">incomplete due to insufficient access rights</div>
+                            }
+                        }
                     </font>
                 </div>
             </div>
@@ -51,19 +72,39 @@
     @{
         void nextLevel(AasxTask.cfpNode nextNode, float total, DateTime timeStamp, bool moduleOnly = false)
         {
-            <div class="node mb-2 relative bg-white px-6 pt-4 pb-2 shadow-xl ring-1 ring-gray-900/5 sm:mx-auto sm:rounded-lg sm:px-8">
+            <div class="node w-full mb-2 relative bg-white px-6 pt-4 pb-2 shadow-xl ring-1 ring-gray-900/5 sm:mx-auto sm:rounded-lg sm:px-8">
 
-                @{
-                    AasxTask.cfpNode node = nextNode;
-                    while (node != null)
+            @{
+                AasxTask.cfpNode node = nextNode;
+                while (node != null)
+                {
+                    if (node.iChild == 0)
                     {
-                        if (node.iChild == 0)
-                        {
 
-                            bool view = false;
-                            bool viewCombination = false;
-                            string value = "";
-                            if (moduleOnly)
+                        bool view = false;
+                        bool viewCombination = false;
+                        string value = "";
+                        if (moduleOnly)
+                        {
+                            if (node.cradleToGateModule != null)
+                            {
+                                value = node.cradleToGateModule.Value;
+                                view = true;
+                            }
+                        }
+                        else
+                        {
+                            if (node.children.Count != 0)
+                            {
+                                if (node.cradleToGateCombination != null)
+                                {
+                                    value = node.cradleToGateCombination.Value;
+                                    //if (node != AasxTask.root)
+                                    viewCombination = true;
+                                    view = true;
+                                }
+                            }
+                            else
                             {
                                 if (node.cradleToGateModule != null)
                                 {
@@ -71,35 +112,27 @@
                                     view = true;
                                 }
                             }
-                            else
-                            {
-                                if (node.children.Count != 0)
-                                {
-                                    if (node.cradleToGateCombination != null)
-                                    {
-                                        value = node.cradleToGateCombination.Value;
-                                        //if (node != AasxTask.root)
-                                        viewCombination = true;
-                                        view = true;
-                                    }
-                                }
-                                else
-                                {
-                                    if (node.cradleToGateModule != null)
-                                    {
-                                        value = node.cradleToGateModule.Value;
-                                        view = true;
-                                    }
-                                }
-                            }
-                            float actual = 0.0f;
-                            try
-                            {
-                                actual = (float)Convert.ToDouble(value, CultureInfo.InvariantCulture);
-                            }
-                            catch { }
+                        }
+                        float actual = 0.0f;
+                        try
+                        {
+                            actual = (float)Convert.ToDouble(value, CultureInfo.InvariantCulture);
+                        }
+                        catch { }
 
-                            if (view)
+                        if (!view)
+                        {
+                            string text = "";
+                            if (node.asset != null)
+                                text += "assetid=" + node.asset + " ";
+                            if (node.aas != null && node.aas.Id != null)
+                                text += "aasid=" + node.aas.Id;
+                            if (text != "")
+                            {
+                                <span align=left style="color:red;font-size:80%;">@text</span>
+                            }
+                        }
+                        if (view)
                             {
                                 string email2 = "";
                                 // string productImage = getImage(node.productImage, node.envIndex);
@@ -115,7 +148,7 @@
                                     percent = Convert.ToInt32(p).ToString();
                                 }
                                 catch { }
-                                value = Math.Round(actual, 3).ToString(CultureInfo.InvariantCulture);
+                                value = Math.Round(actual, 2).ToString(CultureInfo.InvariantCulture);
 
                                 //hide all pcf values except for root
                                 var hideClass = "hidden";
@@ -239,9 +272,30 @@
                                             <div class="font-bold text-slate-700 dark:text-slate-500">@text</div>
                                         @{
                                             string link = "";
+                                            string smlink = "";
                                             string queryPara = "";
                                             string userPW = "";
                                             string urlEdcWrapper = "";
+                                            bool moreDotsToPrint = false;
+                                            string iframePath = getIframePath();
+                                            link = getAasLink(@node.aas);
+                                            var registry = IO.Swagger.Registry.Controllers.RegistryAndDiscoveryInterfaceApiController.getRegistry;
+                                            if (registry.Count != 0)
+                                            {
+                                                link += "&registryURL=" + registry[0];
+                                            }
+                                            queryPara = "";
+                                            userPW = "";
+                                            urlEdcWrapper = "";
+                                            if (AasxCredentials.get(cs.credentials, link, out queryPara, out userPW, out urlEdcWrapper))
+                                            {
+                                                if (queryPara != "")
+                                                {
+                                                    queryPara = Base64UrlEncoder.Encode(queryPara);
+                                                    link += "&query=" + queryPara;
+                                                }
+                                                // Console.WriteLine("iframe:" + link);
+                                            }
 
                                             if (node.aas != null)
                                             {
@@ -249,8 +303,41 @@
                                                 // List<string> colorList = new List<string>();
                                                 string id = null;
                                                 string color = null;
-
-                                                foreach (var smr in node.aas.Submodels)
+                                                string filter = "";
+                                                //custom ordering of references to achieve same rendering of all AASs
+                                                int order(String IdShort)
+                                                {
+                                                    switch (IdShort)
+                                                    {
+                                                        case "Nameplate": return 1;
+                                                        case "BillOfMaterial": return 2;
+                                                        case "ProductCarbonFootprint": return 3;
+                                                        case "CarbonFootprint": return 4;
+                                                        case "Documentation": return 5;
+                                                        case "HandoverDocumentation": return 6;
+                                                        case "TechnicalData": return 7;
+                                                        default: return int.MaxValue;
+                                                    }
+                                                }
+                                                String cleanupIdShort(String text)
+                                                {
+                                                    if(text.Contains(" - EXTERNAL"))
+                                                        text = text.Replace(" - EXTERNAL", "");
+                                                    if (text.Contains(" - NO ACCESS"))
+                                                        text = text.Replace(" - NO ACCESS", "");
+                                                    if (text.Contains(" - COPY"))
+                                                        text = text.Replace(" - COPY", "");
+                                                    return text;
+                                                }
+                                                node.aas.Submodels.Sort(delegate(Reference a, Reference b)
+                                                 {
+                                                     var idA = new string(Program.env?[node.envIndex].AasEnv.FindSubmodel(a)?.IdShort);
+                                                     idA = cleanupIdShort(idA);
+                                                     var idB = new string(Program.env?[node.envIndex].AasEnv.FindSubmodel(b)?.IdShort);
+                                                     idB = cleanupIdShort(idB);
+                                                     return order(idA).CompareTo(order(idB));
+                                                 });
+                                                foreach (var smr in node.aas.Submodels) //foreach (var smr in node.aas.Submodels)
                                                 {
                                                     if (Program.env == null)
                                                         continue;
@@ -283,54 +370,70 @@
                                                         // textList.Add(id);
                                                         if (id != null && color != null)
                                                         {
-                                                            link = getSmLink(sm);
+                                                            smlink = getSmLink(sm);
                                                             queryPara = "";
                                                             userPW = "";
                                                             urlEdcWrapper = "";
-                                                            if (AasxCredentials.get(cs.credentials, link, out queryPara, out userPW, out urlEdcWrapper))
+                                                            switch (id)
+                                                            {
+                                                                case "BillOfMaterial":
+                                                                    id = "BOM";
+                                                                    break;
+                                                                case "Nameplate":
+                                                                    id = "NP";
+                                                                    break;
+                                                                case "ProductCarbonFootprint":
+                                                                    id = "PCF";
+                                                                    break;
+                                                                case "CarbonFootprint":
+                                                                    id = "PCF v1.0";
+                                                                    break;
+                                                                case "TechnicalData":
+                                                                    id = "TECH";
+                                                                    break;
+                                                                case "Documentation":
+                                                                    id = "DOC";
+                                                                    break;
+                                                                case "HandoverDocumentation":
+                                                                    id = "DOC";
+                                                                    break;
+                                                                default:
+                                                                    moreDotsToPrint = true;
+                                                                    continue;
+                                                            }
+                                                        
+                                                            var icon = id;
+                                                            if (AasxCredentials.get(cs.credentials, smlink, out queryPara, out userPW, out urlEdcWrapper))
                                                             {
                                                                 if (queryPara != "")
                                                                 {
-                                                                    link += "?" + queryPara;
+                                                                    smlink += "?" + queryPara;
                                                                 }
                                                                 if (userPW != "")
                                                                 {
-                                                                    link = link.Replace("https://", "https://" + userPW + "@");
-                                                                    link = link.Replace("http://", "http://" + userPW + "@");
+                                                                    smlink = smlink.Replace("https://", "https://" + userPW + "@");
+                                                                    smlink = smlink.Replace("http://", "http://" + userPW + "@");
                                                                 }
                                                             }
-                                                            <a href="@link" target="_blank"><span style="font-size:8pt; color:@color;">@(id + " ")</span></a>
+                                                            if(color == "red")
+                                                            {
+                                                                filter = "invert(0.5) sepia(1) saturate(100) hue-rotate(0deg)";
+                                                            }
+                                                            if (color == "green")
+                                                            {
+                                                                filter = "invert(0.5) sepia(1) saturate(100) hue-rotate(120deg)";
+                                                            }
+                                                            <a href="@link" target="_blank" onclick="document.getElementById('iframe').src='@iframePath?aasUrl=@link&smUrl=@System.Net.WebUtility.UrlEncode(sm.Id)'; return false;" style="margin-right: 2px;"><img src="/sm_icons/@(icon.ToLower()).svg" style="height:22px; display: inline; filter: @filter;" /><span style="font-size:8pt; color:@color;">@(id)</span></a>
                                                         }
-                                                    }
-                                                }
-
-                                                link = getAasLink(@node.aas);
-                                                queryPara = "";
-                                                userPW = "";
-                                                urlEdcWrapper = "";
-                                                if (AasxCredentials.get(cs.credentials, link, out queryPara, out userPW, out urlEdcWrapper))
-                                                {
-                                                    if (queryPara != "")
-                                                    {
-                                                        link += "?" + queryPara;
-                                                    }
-                                                    if (userPW != "")
-                                                    {
-                                                        link = link.Replace("https://", "https://" + userPW + "@");
-                                                        link = link.Replace("http://", "http://" + userPW + "@");
-                                                    }
-                                                }
 
                                                 <a href="@link" target="_blank"><span style="font-size:8pt; color:blue;">aas</span></a>
-                                            }
-                                        }
-                                    </div>
-                                    link = getAasLink(@node.aas);
-                                    var registry = IO.Swagger.Registry.Controllers.RegistryAndDiscoveryInterfaceApiController.getRegistry;
-                                    if (registry.Count != 0)
-                                    {
-                                        link += "&registryURL=" + registry[0];
-                                    }
+                                                    }
+                                                }
+
+                                                if (moreDotsToPrint)
+                                                {
+                                                    <span style="font-size:16pt;"> ...</span>
+                                                }
                                     queryPara = "";
                                     userPW = "";
                                     urlEdcWrapper = "";
@@ -340,10 +443,11 @@
                                         {
                                             queryPara = Base64UrlEncoder.Encode(queryPara);
                                             link += "&query=" + queryPara;
-                                        }
+                                            }
                                         Console.WriteLine("iframe:" + link);
-                                    }
-                                    string iframePath = getIframePath();
+                                        }
+                                    </div>
+
                                     <div class="flex-none self-center hide-slim">
                                         <button class="btn px-3 text-white"
                                             onclick="document.getElementById('iframe').src='@iframePath?aasUrl=@link'"

@@ -168,6 +168,7 @@ namespace AasxServer
         public static string redirectServer = "";
         public static string authType = "";
         public static string getUrl = "";
+        public static string getSecret = "";
 
         public static bool isLoading = true;
         public static int count = 0;
@@ -228,6 +229,8 @@ namespace AasxServer
                 string v = System.Environment.GetEnvironmentVariable(ev);
                 if (v != null)
                 {
+                    v = v.Replace("\r", "");
+                    v = v.Replace("\n", "");
                     Console.WriteLine("Variable: " + ev + " = " + v);
                     envVariables.Add(ev, v);
                 }
@@ -317,6 +320,7 @@ namespace AasxServer
             Program.htmlId = a.HtmlId;
             if (a.SecretStringAPI != null && a.SecretStringAPI != "")
             {
+                secretStringAPI = a.SecretStringAPI;
                 Console.WriteLine("secretStringAPI = " + secretStringAPI);
                 secretStringAPI = a.SecretStringAPI;
             }
@@ -429,7 +433,7 @@ namespace AasxServer
                 }
             }
 
-            if (!Directory.Exists("./temp"))
+            if (!Directory.Exists("./temp")) 
                 Directory.CreateDirectory("./temp");
 
             string fn = null;
@@ -473,7 +477,7 @@ namespace AasxServer
                 System.Environment.Exit(1);
             }
 
-            
+
 
             //Load AASX files into memory
             int envi = 0;
@@ -536,7 +540,7 @@ namespace AasxServer
                     envi++;
                 }
 
-               fileNames = Directory.GetFiles(AasxHttpContextHelper.DataPath, "*.aasx2");
+                fileNames = Directory.GetFiles(AasxHttpContextHelper.DataPath, "*.aasx2");
                 Array.Sort(fileNames);
 
                 for (int j = 0; j < fileNames.Length; j++)
@@ -926,7 +930,7 @@ namespace AasxServer
             [XmlElement(ElementName = "description")]
             [JsonIgnore]
             //public AdminShell.Description description = null;
-            public List<LangString> description = null;
+            public LangStringSet description = null;
 
             [XmlElement(ElementName = "idShort")]
             [JsonIgnore]
@@ -954,7 +958,7 @@ namespace AasxServer
             [XmlElement(ElementName = "description")]
             [JsonIgnore]
             //public AdminShell.Description description = new AdminShell.Description();
-            public List<LangString> description = new(new List<LangString>());
+            public LangStringSet description = new(new List<LangString>());
 
             [XmlElement(ElementName = "idShort")]
             public string idShort = "";

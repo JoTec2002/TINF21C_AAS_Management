@@ -357,6 +357,7 @@ namespace AasxRestServerLibrary
         }
 
 
+
         public Submodel FindSubmodelWithoutAas(string smid, System.Collections.Specialized.NameValueCollection queryStrings = null, string rawUrl = null)
         {
             // trivial
@@ -731,12 +732,12 @@ namespace AasxRestServerLibrary
             }
 
             //TODO:jtikekar remove
-            if (context.Request.RawUrl.Equals("/aas/0/core") && obj is ExpandoObject findAasReturn)
+            if(context.Request.RawUrl.Equals("/aas/0/core") && obj is ExpandoObject findAasReturn)
             {
                 var value = new JsonObject();
                 foreach (KeyValuePair<string, object> kvp in findAasReturn)
                 {
-                    if (kvp.Key.Equals("AAS"))
+                    if(kvp.Key.Equals("AAS"))
                     {
                         value["AAS"] = Jsonization.Serialize.ToJsonObject((AssetAdministrationShell)kvp.Value);
                     }
@@ -3408,11 +3409,16 @@ namespace AasxRestServerLibrary
         {
             error = "";
             withAllow = false;
+            
             if (Program.secretStringAPI != null)
             {
+                /*
                 if (neededRights == "READ")
                     return true;
                 if ((neededRights == "UPDATE" || neededRights == "DELETE") && currentRole == "UPDATE")
+                    return true;
+                */
+                if (currentRole == "CREATE")
                     return true;
             }
 
@@ -3501,7 +3507,7 @@ namespace AasxRestServerLibrary
                 int iRole = 0;
                 while (securityRole != null && iRole < securityRole.Count && securityRole[iRole].name != null)
                 {
-                    if (aasOrSubmodel == "aas" && securityRole[iRole].objType == "aas")
+                    if (aasOrSubmodel == "aas" && securityRole[iRole].objType == "aas") 
                     
                     {
                         if (objectAasOrSubmodel != null && securityRole[iRole].objReference == objectAasOrSubmodel &&
@@ -3661,7 +3667,7 @@ namespace AasxRestServerLibrary
                         }
                     }
 
-                }
+                    }
                 if (apiRights)
                 {
                     return true;
@@ -3782,16 +3788,20 @@ namespace AasxRestServerLibrary
         {
             if (Program.secretStringAPI != null)
             {
+                /*
                 if (neededRights == "READ")
                     return true;
                 if ((neededRights == "UPDATE" || neededRights == "DELETE") && currentRole == "UPDATE")
+                    return true;
+                */
+                if (currentRole == "CREATE")
                     return true;
             }
             else
             {
                 if (checkAccessLevel(currentRole, operation, neededRights,
                     objPath, aasOrSubmodel, objectAasOrSubmodel))
-                    return true;
+                        return true;
 
                 if (currentRole == null)
                 {
@@ -3821,7 +3831,7 @@ namespace AasxRestServerLibrary
         {
             return SecurityCheck(context.Request.QueryString, context.Request.Headers, ref index);
         }
-
+        
         static string checkUserPW(string userPW64)
         {
             var credentialBytes = Convert.FromBase64String(userPW64);
@@ -3864,32 +3874,22 @@ namespace AasxRestServerLibrary
             string[] split = null;
 
             // check for secret
-            if (Program.secretStringAPI != null)
-            {
-                accessrights = "READ";
 
-                // Query string with Secret?
-                string s = queryString["s"];
-                if (s != null && s != "")
+            string s = queryString["s"];
+            if (s != null && s != "")
+            {
+                if (Program.secretStringAPI != null)
                 {
-                    if (s == Program.secretStringAPI)
-                        accessrights = "UPDATE";
-                }
-                /*
-                split = request.Url.ToString().Split(new char[] { '?' });
-                if (split != null && split.Length > 1 && split[1] != null)
-                {
-                    Console.WriteLine("Received query string = " + split[1]);
-                    string secret = split[1];
-                    if (secret.Length > 2 && secret.Substring(0, 2) == "s=")
+                    // accessrights = "READ";
+
+                    // Query string with Secret?
                     {
-                        secret = secret.Replace("s=", "");
-                        if (secret == Program.secretStringAPI)
-                            accessrights = "UPDATE";
+                        if (s == Program.secretStringAPI)
+                            accessrights = "CREATE";
                     }
+
+                    return accessrights;
                 }
-                */
-                return accessrights;
             }
 
             // string headers = request.Headers.ToString();
@@ -3910,6 +3910,26 @@ namespace AasxRestServerLibrary
                     {
                         try
                         {
+                            if (Program.secretStringAPI != null)
+                            {
+                                var credentialBytes = Convert.FromBase64String(split[1]);
+                                var credentials = Encoding.UTF8.GetString(credentialBytes).Split(new[] { ':' }, 2);
+                                string u = credentials[0];
+                                string p = credentials[1];
+                                Console.WriteLine("Received username+password http header = " + u + " : " + p);
+
+                                if (u == "secret")
+                                {
+                                    // accessrights = "READ";
+                                    {
+                                        if (p == Program.secretStringAPI)
+                                            accessrights = "CREATE";
+                                    }
+                                    Console.WriteLine("accessrights " + accessrights);
+                                    return accessrights;
+                                }
+                            }
+
                             string username = checkUserPW(split[1]);
                             if (username != null)
                             {

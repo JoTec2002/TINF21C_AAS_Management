@@ -165,7 +165,7 @@ namespace IO.Swagger.V1RC03.Controllers
 
             // return new ObjectResult(result);
         }
-
+        
         [ApiExplorerSettings(IgnoreApi = true)]
         [HttpPost]
         [Route("/queryregistry")]
@@ -222,7 +222,13 @@ namespace IO.Swagger.V1RC03.Controllers
             result = result.Replace("\r\n", "\n");
             result = result.Replace("\n", "<br>");
 
-            return new ObjectResult(result);
+            return new ContentResult()
+            {
+                Content = result,
+                ContentType = "text/html",
+            };
+
+            // return new ObjectResult(result);
 
             // return NoContent();
         }

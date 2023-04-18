@@ -8,6 +8,8 @@ using CodeAnalysis = System.Diagnostics.CodeAnalysis;
 
 using System.Collections.Generic;  // can't alias
 
+using Aas = AasCore.Aas3_0_RC02;
+
 namespace AasCore.Aas3_0_RC02
 {
     /// <summary>
@@ -94,9 +96,9 @@ namespace AasCore.Aas3_0_RC02
         }
 
         /// <summary>
-        /// Escape special characters for XPath.
+        /// Escape special characters according to XML.
         /// </summary>
-        private static string EscapeForXPath(
+        private static string EscapeXmlCharacters(
             string text)
         {
             // Mind the order, as we need to replace '&' first.
@@ -133,7 +135,7 @@ namespace AasCore.Aas3_0_RC02
                 switch (segment)
                 {
                     case NameSegment nameSegment:
-                        part = EscapeForXPath(nameSegment.Name);
+                        part = EscapeXmlCharacters(nameSegment.Name);
                         break;
                     case IndexSegment indexSegment:
                         part = $"*[{indexSegment.Index}]";
