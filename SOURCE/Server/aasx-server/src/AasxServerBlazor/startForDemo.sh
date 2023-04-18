@@ -1,0 +1,1 @@
+dotnet AasxServerBlazor.dll --rest --data-path ./aasxs --mongo mongodb://AAS:SefuSWE63811!@192.168.0.22:27017/?authSource=AAS $OPTIONSAASXSERVER
