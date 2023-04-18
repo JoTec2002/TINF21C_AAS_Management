@@ -485,7 +485,6 @@ namespace AasxServer
             string[] fileNames = null;
             if (Directory.Exists(AasxHttpContextHelper.DataPath))
             {
-                //Change Methode, só if Direktory is given Assets are written to MongoDB
                 fileNames = Directory.GetFiles(AasxHttpContextHelper.DataPath, "*.aasx");
                 Array.Sort(fileNames);
 
@@ -508,7 +507,7 @@ namespace AasxServer
                         //Temp to Allow debugging
                         env[envi] = localEnv;
                         //End Temp
-                        if(env[envi] == null)
+                        if(localEnv == null)
                         {
                             Console.Error.WriteLine($"Cannot open {fn}. Aborting..");
                             return 1;

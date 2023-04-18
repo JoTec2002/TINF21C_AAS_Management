@@ -3403,7 +3403,7 @@ namespace AasxRestServerLibrary
             return checkAccessLevelWithError(out error, currentRole, operation, neededRights, out withAllow,
                 objPath, aasOrSubmodel, objectAasOrSubmodel);
         }
-        public static bool checkAccessLevelWithError(out string error, string currentRole, string operation,
+        public static bool checkAccessLevelWithErrorOWN(out string error, string currentRole, string operation,
             string neededRights, out bool withAllow,
             string objPath = "", string aasOrSubmodel = null, object objectAasOrSubmodel = null)
         {
@@ -3490,7 +3490,28 @@ namespace AasxRestServerLibrary
                                 }
                             }
                         }
-
+                        if(role.objType == "semanticid")
+                        {
+                            if(operation == "/submodels")
+                            {
+                                Submodel givenSubmodel = (Submodel)objectAasOrSubmodel;
+                                for(int i = 0; i<givenSubmodel.SemanticId.Keys.Count; i++)
+                                {
+                                    if (givenSubmodel.SemanticId.Keys[i].Value.ToLower() == role.semanticId.ToLower())
+                                    {
+                                        if (role.kind == "allow")
+                                        {
+                                            returnAllow = true;
+                                        }
+                                        else
+                                        {
+                                            error = "DENY" + role.rulePath;
+                                            return false;
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -3686,6 +3707,180 @@ namespace AasxRestServerLibrary
             }
 
             error = "ALLOW not defined";*/
+            return false;
+        }
+        public static bool checkAccessLevelWithError(out string error, string currentRole, string operation,
+            string neededRights, out bool withAllow,
+            string objPath = "", string aasOrSubmodel = null, object objectAasOrSubmodel = null)
+        {
+            //TODO Join with checkAccessLevelWithErrorOWN
+            error = "";
+            withAllow = false;
+
+            if (Program.secretStringAPI != null)
+            {
+                /*
+                if (neededRights == "READ")
+                    return true;
+                if ((neededRights == "UPDATE" || neededRights == "DELETE") && currentRole == "UPDATE")
+                    return true;
+                */
+                if (currentRole == "CREATE")
+                    return true;
+            }
+
+            if (currentRole == null)
+                currentRole = "isNotAuthenticated";
+
+            Console.WriteLine("checkAccessLevel: " +
+                " currentRole = " + currentRole +
+                " operation = " + operation +
+                " neededRights = " + neededRights +
+                " objPath = " + objPath
+                );
+
+            if (objPath == "")
+            {
+                int iRole = 0;
+                while (securityRole != null && iRole < securityRole.Count && securityRole[iRole].name != null)
+                {
+                    if (aasOrSubmodel == "aas" && securityRole[iRole].objType == "aas")
+                    /* (aasOrSubmodel == "submodel" && securityRole[iRole].objType == "sm")) */
+                    {
+                        if (objectAasOrSubmodel != null && securityRole[iRole].objReference == objectAasOrSubmodel &&
+                        securityRole[iRole].permission == neededRights)
+                        {
+                            if ((securityRole[iRole].condition == "" && securityRole[iRole].name == currentRole) ||
+                                (securityRole[iRole].condition == "not" && securityRole[iRole].name != currentRole))
+                            {
+                                if (securityRole[iRole].kind == "allow")
+                                    return true;
+                                if (securityRole[iRole].kind == "deny")
+                                {
+                                    error = "DENY AAS " + (objectAasOrSubmodel as AssetAdministrationShell).Id;
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                    if (securityRole[iRole].name == currentRole && securityRole[iRole].objType == "api" &&
+                        securityRole[iRole].permission == neededRights)
+                    {
+                        if (securityRole[iRole].apiOperation == "*" || securityRole[iRole].apiOperation == operation)
+                        {
+                            if (securityRole[iRole].permission == neededRights)
+                            {
+                                return checkUsage(out error, securityRole[iRole]);
+                            }
+                        }
+                    }
+                    iRole++;
+                }
+            }
+            if (objPath != "" && (operation == "/submodels" || operation == "/submodelelements"))
+            {
+                // next object with rule must have allow
+                // no objects below must have deny
+                string deepestDeny = "";
+                string deepestAllow = "";
+                foreach (var role in securityRole)
+                {
+                    if (role.name != currentRole)
+                        continue;
+
+                    if (role.objType == "semanticid")
+                    {
+                        if (objectAasOrSubmodel is Submodel s)
+                        {
+                            if (role.semanticId == "*" || (s.SemanticId != null && s.SemanticId.Keys != null && s.SemanticId.Keys.Count != 0))
+                            {
+                                if (role.semanticId == "*" || (role.semanticId.ToLower() == s.SemanticId.Keys[0].Value.ToLower()))
+                                {
+                                    if (role.kind == "allow")
+                                    {
+                                        if (deepestAllow == "")
+                                        {
+                                            deepestAllow = s.IdShort;
+                                            withAllow = true;
+                                        }
+                                    }
+                                    if (role.kind == "deny")
+                                    {
+                                        if (deepestDeny == "")
+                                            deepestDeny = s.IdShort;
+                                    }
+                                }
+                            }
+                        }
+                        if (objectAasOrSubmodel is string s2)
+                        {
+                            if (s2 != null && s2 != "")
+                            {
+                                if (role.semanticId == s2)
+                                {
+                                    if (role.kind == "allow")
+                                    {
+                                        if (deepestAllow == "")
+                                        {
+                                            deepestAllow = objPath;
+                                            withAllow = true;
+                                        }
+                                    }
+                                    if (role.kind == "deny")
+                                    {
+                                        if (deepestDeny == "")
+                                            deepestDeny = objPath;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if ((role.objType == "sm" || role.objType == "submodelElement") &&
+                        role.submodel == objectAasOrSubmodel && role.permission == neededRights)
+                    {
+                        if (role.kind == "deny")
+                        {
+                            if (objPath.Length >= role.objPath.Length) // deny in tree above
+                            {
+                                if (role.objPath == objPath.Substring(0, role.objPath.Length))
+                                    deepestDeny = role.objPath;
+                            }
+                            if (role.objPath.Length >= objPath.Length) // deny in tree below
+                            {
+                                if (objPath == role.objPath.Substring(0, objPath.Length))
+                                {
+                                    error = "DENY " + role.objPath;
+                                    return false;
+                                }
+                            }
+                        }
+                        if (role.kind == "allow")
+                        {
+                            if (objPath.Length >= role.objPath.Length) // allow in tree above
+                            {
+                                if (role.objPath == objPath.Substring(0, role.objPath.Length))
+                                {
+                                    deepestAllow = role.objPath;
+                                    withAllow = true;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (deepestAllow == "")
+                {
+                    error = "ALLOW not defined";
+                    return false;
+                }
+                if (deepestDeny.Length > deepestAllow.Length)
+                {
+                    error = "DENY " + deepestDeny;
+                    return false;
+                }
+                return true;
+            }
+
+            error = "ALLOW not defined";
             return false;
         }
 
@@ -4661,116 +4856,121 @@ namespace AasxRestServerLibrary
                                             iRole++;
                                         }
                                         smc6 = smc5?.FindFirstIdShortAs<SubmodelElementCollection>("permissionsPerObject");
-                                        var smc7 = smc6?.Value[0] as SubmodelElementCollection;
-                                        var objProp = smc7?.FindFirstIdShortAs<Property>("object");
-                                        var objRef = smc7?.FindFirstIdShortAs<ReferenceElement>("object");
-                                        object aasObject = null;
-                                        if (objRef != null)
+                                        //added support for multiple permissionsPerObject
+                                        for (int smcC = 0; smcC < smc6?.Value.Count; smcC++)
                                         {
-                                            aasObject = env.AasEnv.FindReferableByReference(objRef.Value);
-                                        }
-                                        var smc8 = smc7?.FindFirstIdShortAs<SubmodelElementCollection>("permission");
-                                        var smc9 = smc7?.FindFirstIdShortAs<SubmodelElementCollection>("usage");
-
-                                        int countSmc8 = smc8.Value.Count;
-                                        List<string> listPermission = new List<string>();
-                                        Property kind = null;
-                                        for (int iSmc8 = 0; iSmc8 < countSmc8; iSmc8++)
-                                        {
-                                            var sme9 = smc8.Value[iSmc8];
-                                            if (sme9 is Property)
-                                                kind = sme9 as Property;
-                                            if (sme9 is ReferenceElement)
+                                            var smc7 = smc6?.Value[smcC] as SubmodelElementCollection;
+                                            var objProp = smc7?.FindFirstIdShortAs<Property>("object");
+                                            var objRef = smc7?.FindFirstIdShortAs<ReferenceElement>("object");
+                                            object aasObject = null;
+                                            if (objRef != null)
                                             {
-                                                var refer = sme9 as ReferenceElement;
-                                                var permission = env.AasEnv.FindReferableByReference(refer.Value);
-                                                if (!(permission is Property))
-                                                    continue;
-                                                var p = permission as Property;
-                                                listPermission.Add(p.IdShort);
+                                                aasObject = env.AasEnv.FindReferableByReference(objRef.Value);
                                             }
-                                        }
+                                            var smc8 = smc7?.FindFirstIdShortAs<SubmodelElementCollection>("permission");
+                                            var smc9 = smc7?.FindFirstIdShortAs<SubmodelElementCollection>("usage");
 
-                                        string[] split = null;
-                                        foreach (var l in listPermission)
-                                        {
-                                            foreach (var r in role)
+                                            int countSmc8 = smc8.Value.Count;
+                                            List<string> listPermission = new List<string>();
+                                            Property kind = null;
+                                            for (int iSmc8 = 0; iSmc8 < countSmc8; iSmc8++)
                                             {
-                                                securityRoleClass src = new securityRoleClass();
-                                                if (smc9 != null)
-                                                    src.usage = smc9;
-                                                if (r.IdShort.Contains(":"))
+                                                var sme9 = smc8.Value[iSmc8];
+                                                if (sme9 is Property)
+                                                    kind = sme9 as Property;
+                                                if (sme9 is ReferenceElement)
                                                 {
-                                                    split = r.IdShort.Split(':');
-                                                    src.condition = split[0].ToLower();
-                                                    src.name = split[1];
+                                                    var refer = sme9 as ReferenceElement;
+                                                    var permission = env.AasEnv.FindReferableByReference(refer.Value);
+                                                    if (!(permission is Property))
+                                                        continue;
+                                                    var p = permission as Property;
+                                                    listPermission.Add(p.IdShort);
                                                 }
-                                                else
+                                            }
+
+                                            string[] split = null;
+                                            foreach (var l in listPermission)
+                                            {
+                                                foreach (var r in role)
                                                 {
-                                                    src.condition = "";
-                                                    src.name = r.IdShort;
-                                                }
-                                                if (objProp != null)
-                                                {
-                                                    string value = objProp.Value.ToLower();
-                                                    src.objType = value;
-                                                    if (value.Contains("api"))
+                                                    securityRoleClass src = new securityRoleClass();
+                                                    if (smc9 != null)
+                                                        src.usage = smc9;
+                                                    if (r.IdShort.Contains(":"))
                                                     {
-                                                        split = value.Split(':');
-                                                        if (split[0] == "api")
-                                                        {
-                                                            src.objType = split[0];
-                                                            src.apiOperation = split[1];
-                                                        }
+                                                        split = r.IdShort.Split(':');
+                                                        src.condition = split[0].ToLower();
+                                                        src.name = split[1];
                                                     }
-                                                    if (value.Contains("semanticid"))
+                                                    else
                                                     {
-                                                        split = value.Split(':');
-                                                        if (split[0] == "semanticid")
-                                                        {
-                                                            src.objType = split[0];
-                                                            src.semanticId = split[1];
-                                                            for (int j = 2; j < split.Length; j++)
-                                                                src.semanticId += ":" + split[j];
-                                                        }
+                                                        src.condition = "";
+                                                        src.name = r.IdShort;
                                                     }
-                                                }
-                                                else
-                                                {
-                                                    if (aasObject != null)
+                                                    if (objProp != null)
                                                     {
-                                                        src.objReference = aasObject;
-                                                        if (aasObject is AssetAdministrationShell)
-                                                            src.objType = "aas";
-                                                        if (aasObject is Submodel)
+                                                        string value = objProp.Value.ToLower();
+                                                        src.objType = value;
+                                                        if (value.Contains("api"))
                                                         {
-                                                            src.objType = "sm";
-                                                            src.submodel = aasObject as Submodel;
-                                                            src.objPath = src.submodel.IdShort;
-                                                        }
-                                                        if (aasObject is ISubmodelElement smep)
-                                                        {
-                                                            IReferable rp = smep;
-                                                            src.objType = "submodelElement";
-                                                            string path = rp.IdShort;
-                                                            while (rp.Parent != null)
+                                                            split = value.Split(':');
+                                                            if (split[0] == "api")
                                                             {
-                                                                rp = (IReferable)rp.Parent;
-                                                                path = rp.IdShort + "." + path;
+                                                                src.objType = split[0];
+                                                                src.apiOperation = split[1];
                                                             }
-                                                            src.submodel = rp as Submodel;
-                                                            src.objPath = path;
+                                                        }
+                                                        if (value.Contains("semanticid"))
+                                                        {
+                                                            split = value.Split(':');
+                                                            if (split[0] == "semanticid")
+                                                            {
+                                                                src.objType = split[0];
+                                                                src.semanticId = split[1];
+                                                                for (int j = 2; j < split.Length; j++)
+                                                                    src.semanticId += ":" + split[j];
+                                                            }
                                                         }
                                                     }
+                                                    else
+                                                    {
+                                                        if (aasObject != null)
+                                                        {
+                                                            src.objReference = aasObject;
+                                                            if (aasObject is AssetAdministrationShell)
+                                                                src.objType = "aas";
+                                                            if (aasObject is Submodel)
+                                                            {
+                                                                src.objType = "sm";
+                                                                src.submodel = aasObject as Submodel;
+                                                                src.objPath = src.submodel.IdShort;
+                                                            }
+                                                            if (aasObject is ISubmodelElement smep)
+                                                            {
+                                                                IReferable rp = smep;
+                                                                src.objType = "submodelElement";
+                                                                string path = rp.IdShort;
+                                                                while (rp.Parent != null)
+                                                                {
+                                                                    rp = (IReferable)rp.Parent;
+                                                                    path = rp.IdShort + "." + path;
+                                                                }
+                                                                src.submodel = rp as Submodel;
+                                                                src.objPath = path;
+                                                            }
+                                                        }
+                                                    }
+                                                    src.permission = l.ToUpper();
+                                                    if (kind != null)
+                                                        src.kind = kind.Value.ToLower();
+                                                    src.rulePath = aas.IdShort + "." + sm.IdShort + "..." + smc4.IdShort + "." + sme.IdShort;
+                                                    securityRole.Add(src);
                                                 }
-                                                src.permission = l.ToUpper();
-                                                if (kind != null)
-                                                    src.kind = kind.Value.ToLower();
-                                                src.rulePath = aas.IdShort + "." + sm.IdShort + "..." + smc4.IdShort + "." + sme.IdShort;
-                                                securityRole.Add(src);
                                             }
+                                            continue;
+                                            //dd
                                         }
-                                        continue;
                                     }
                                 }
                             }

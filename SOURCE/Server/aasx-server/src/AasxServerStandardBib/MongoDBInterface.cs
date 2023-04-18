@@ -41,6 +41,7 @@ public class MongoDBInterface
         _database.DropCollection("Shells");
         _database.DropCollection("Submodels");
         _database.DropCollection("ConceptDescription");
+        _database.DropCollection("dataSpecifications");
     }
     public List<AssetAdministrationShell> readDBShells(BsonDocument filter, FindOptions options = null)
     {
@@ -138,6 +139,14 @@ public class MongoDBInterface
         {
             writeDB("ConceptDescription", conceptDescription);
         });
+        if (environment.DataSpecifications != null)
+        {
+            environment.DataSpecifications.ForEach(dataSpecifications =>
+            {
+                writeDB("dataSpecifications", dataSpecifications);
+            });
+        }
+
     }
 
 
