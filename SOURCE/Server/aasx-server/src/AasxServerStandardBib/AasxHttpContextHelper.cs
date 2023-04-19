@@ -3403,13 +3403,13 @@ namespace AasxRestServerLibrary
             return checkAccessLevelWithError(out error, currentRole, operation, neededRights, out withAllow,
                 objPath, aasOrSubmodel, objectAasOrSubmodel);
         }
-        public static bool checkAccessLevelWithErrorOWN(out string error, string currentRole, string operation,
+        public static bool checkAccessLevelWithError(out string error, string currentRole, string operation,
             string neededRights, out bool withAllow,
             string objPath = "", string aasOrSubmodel = null, object objectAasOrSubmodel = null)
         {
             error = "";
             withAllow = false;
-            
+
             if (Program.secretStringAPI != null)
             {
                 /*
@@ -3438,12 +3438,23 @@ namespace AasxRestServerLibrary
             bool returnAllow = false;
             foreach (var role in securityRole)
             {
-                if((role.condition != "not" && role.name == currentRole) || (role.condition == "not" && role.name != currentRole))
+                if ((role.condition != "not" && role.name == currentRole) || (role.condition == "not" && role.name != currentRole))
                 {
                     if (neededRights == role.permission)
                     {
                         if (role.objType == "aas")
                         {
+                            //untested
+                            if (objectAasOrSubmodel != null && role.objReference == objectAasOrSubmodel)
+                            {
+                                if (role.kind == "allow")
+                                    returnAllow = true;
+                                else
+                                {
+                                    error = "DENY AAS " + (objectAasOrSubmodel as AssetAdministrationShell).Id;
+                                    return false;
+                                }
+                            }
                             if (operation == "/submodels")
                             {
                                 // get from role.objReference Shell
@@ -3455,11 +3466,11 @@ namespace AasxRestServerLibrary
                                 foreach (var submodelReference in submodelReferences)
                                 {
                                     roleSubmodelIds.Add(mongoDBInterface.readDBSubmodels(new BsonDocument("_id", submodelReference.Keys[0].Value))[0].Id);
-                                    
+
                                 }
                                 if (roleSubmodelIds.Contains(givenSubmodel.Id))
                                 {
-                                    if(role.kind == "allow")
+                                    if (role.kind == "allow")
                                     {
                                         returnAllow = true;
                                     }
@@ -3470,14 +3481,14 @@ namespace AasxRestServerLibrary
                                     }
                                 }
                             }
-                            if(operation == "/concept-descriptions")
+                            if (operation == "/concept-descriptions")
                             {
                                 //can not be evaluated. role is going to be ignored for this type of operation
                             }
                         }
-                        if(role.objType == "api")
+                        if (role.objType == "api")
                         {
-                            if(role.apiOperation == "*" || role.apiOperation == operation)
+                            if (role.apiOperation == "*" || role.apiOperation == operation)
                             {
                                 if (role.kind == "allow")
                                 {
@@ -3490,28 +3501,49 @@ namespace AasxRestServerLibrary
                                 }
                             }
                         }
-                        if(role.objType == "semanticid")
+                        if(objPath != "" && (operation == "/submodels" || operation == "/submodelelements"))
                         {
-                            if(operation == "/submodels")
+                            if (role.objType == "semanticid")
                             {
-                                Submodel givenSubmodel = (Submodel)objectAasOrSubmodel;
-                                for(int i = 0; i<givenSubmodel.SemanticId.Keys.Count; i++)
+                                if (objectAasOrSubmodel is Submodel givenSubmodel)
                                 {
-                                    if (givenSubmodel.SemanticId.Keys[i].Value.ToLower() == role.semanticId.ToLower())
+                                    for (int i = 0; i < givenSubmodel.SemanticId.Keys.Count; i++)
                                     {
-                                        if (role.kind == "allow")
+                                        if (role.semanticId == "*" || givenSubmodel.SemanticId.Keys[i].Value.ToLower() == role.semanticId.ToLower())
                                         {
-                                            returnAllow = true;
-                                        }
-                                        else
-                                        {
-                                            error = "DENY" + role.rulePath;
-                                            return false;
+                                            if (role.kind == "allow")
+                                            {
+                                                returnAllow = true;
+                                            }
+                                            else
+                                            {
+                                                error = "DENY" + role.rulePath;
+                                                return false;
+                                            }
                                         }
                                     }
                                 }
+                                if (objectAasOrSubmodel is string s2)
+                                {
+                                    if (s2 != null && s2 != "")
+                                    {
+                                        if (role.semanticId == s2)
+                                        {
+                                            if (role.kind == "allow")
+                                            {
+                                                returnAllow = true;
+                                            }
+                                            if (role.kind == "deny")
+                                            {
+                                                return false;
+                                            }
+                                        }
+                                    }
+                                }
+
                             }
-                        }
+
+                        }                            
                     }
                 }
             }
@@ -3520,368 +3552,6 @@ namespace AasxRestServerLibrary
                 error = "Access not allowed";
             }
             return returnAllow;
-
-
-            /*
-            if (objPath == "")
-            {
-                int iRole = 0;
-                while (securityRole != null && iRole < securityRole.Count && securityRole[iRole].name != null)
-                {
-                    if (aasOrSubmodel == "aas" && securityRole[iRole].objType == "aas") 
-                    
-                    {
-                        if (objectAasOrSubmodel != null && securityRole[iRole].objReference == objectAasOrSubmodel &&
-                        securityRole[iRole].permission == neededRights)
-                        {
-                            if ((securityRole[iRole].condition == "" && securityRole[iRole].name == currentRole) ||
-                                (securityRole[iRole].condition == "not" && securityRole[iRole].name != currentRole))
-                            {
-                                if (securityRole[iRole].kind == "allow")
-                                    return true;
-                                if (securityRole[iRole].kind == "deny")
-                                {
-                                    error = "DENY AAS " + (objectAasOrSubmodel as AssetAdministrationShell).Id;
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                    if (securityRole[iRole].name == currentRole && securityRole[iRole].objType == "api" &&
-                        securityRole[iRole].permission == neededRights)
-                    {
-                        if (securityRole[iRole].apiOperation == "*" || securityRole[iRole].apiOperation == operation)
-                        {
-                            if (securityRole[iRole].permission == neededRights)
-                            {
-                                return checkUsage(out error, securityRole[iRole]);
-                            }
-                        }
-                    }
-                    iRole++;
-                }
-            }
-            if (objPath != "" && (operation == "/submodels" || operation == "/submodelelements"))
-            {
-                // next object with rule must have allow
-                // no objects below must have deny
-                string deepestDeny = "";
-                string deepestAllow = "";
-                bool apiRights = false;
-                foreach (var role in securityRole)
-                {
-                    if (role.name != currentRole)
-                        continue;
-
-                    if (role.objType == "semanticid")
-                    {
-                        if (objectAasOrSubmodel is Submodel s)
-                        {
-                            if (role.semanticId == "*" || (s.SemanticId != null && s.SemanticId.Keys != null && s.SemanticId.Keys.Count != 0))
-                            {
-                                if (role.semanticId == "*" || (role.semanticId.ToLower() == s.SemanticId.Keys[0].Value.ToLower()))
-                                {
-                                    if (role.kind == "allow")
-                                    {
-                                        if (deepestAllow == "")
-                                        {
-                                            deepestAllow = s.IdShort;
-                                            withAllow = true;
-                                        }
-                                    }
-                                    if (role.kind == "deny")
-                                    {
-                                        if (deepestDeny == "")
-                                            deepestDeny = s.IdShort;
-                                    }
-                                }
-                            }
-                        }
-                        if (objectAasOrSubmodel is string s2)
-                        {
-                            if (s2 != null && s2 != "")
-                            {
-                                if (role.semanticId == s2)
-                                {
-                                    if (role.kind == "allow")
-                                    {
-                                        if (deepestAllow == "")
-                                        {
-                                            deepestAllow = objPath;
-                                            withAllow = true;
-                                        }
-                                    }
-                                    if (role.kind == "deny")
-                                    {
-                                        if (deepestDeny == "")
-                                            deepestDeny = objPath;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if ((role.objType == "sm" || role.objType == "submodelElement") &&
-                        role.submodel == objectAasOrSubmodel && role.permission == neededRights)
-                    {
-                        if (role.kind == "deny")
-                        {
-                            if (objPath.Length >= role.objPath.Length) // deny in tree above
-                            {
-                                if (role.objPath == objPath.Substring(0, role.objPath.Length))
-                                    deepestDeny = role.objPath;
-                            }
-                            if (role.objPath.Length >= objPath.Length) // deny in tree below
-                            {
-                                if (objPath == role.objPath.Substring(0, objPath.Length))
-                                {
-                                    error = "DENY " + role.objPath;
-                                    return false;
-                                }
-                            }
-                        }
-                        if (role.kind == "allow")
-                        {
-                            if (objPath.Length >= role.objPath.Length) // allow in tree above
-                            {
-                                if (role.objPath == objPath.Substring(0, role.objPath.Length))
-                                {
-                                    deepestAllow = role.objPath;
-                                    withAllow = true;
-                                }
-                            }
-                        }
-                    }
-
-                    
-                    if(role.objType == "api")
-                    {
-                        if((role.apiOperation == "*" ||  role.apiOperation == operation) && neededRights == role.permission)
-                        {
-                            if(role.kind == "allow")
-                            {
-                                apiRights = true;
-                            }
-                            else
-                            {
-                                //role kind deny
-                                error = "user not allowed";
-                                return false;
-                            }
-                        }
-                    }
-                    if (aasOrSubmodel == "aas" && role.objType == "aas")
-                    {
-                        if (objectAasOrSubmodel != null && role.objReference == objectAasOrSubmodel &&
-                        role.permission == neededRights)
-                        {
-                            if ((role.condition == "" && role.name == currentRole) ||
-                                (role.condition == "not" && role.name != currentRole))
-                            {
-                                if (role.kind == "allow")
-                                    return true;
-                                if (role.kind == "deny")
-                                {
-                                    error = "DENY AAS " + (objectAasOrSubmodel as AssetAdministrationShell).Id;
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-
-                    }
-                if (apiRights)
-                {
-                    return true;
-                }
-                if (deepestAllow == "")
-                {
-                    error = "ALLOW not defined";
-                    return false;
-                }
-                if (deepestDeny.Length > deepestAllow.Length)
-                {
-                    error = "DENY " + deepestDeny;
-                    return false;
-                }
-                return true;
-            }
-
-            error = "ALLOW not defined";*/
-            return false;
-        }
-        public static bool checkAccessLevelWithError(out string error, string currentRole, string operation,
-            string neededRights, out bool withAllow,
-            string objPath = "", string aasOrSubmodel = null, object objectAasOrSubmodel = null)
-        {
-            //TODO Join with checkAccessLevelWithErrorOWN
-            error = "";
-            withAllow = false;
-
-            if (Program.secretStringAPI != null)
-            {
-                /*
-                if (neededRights == "READ")
-                    return true;
-                if ((neededRights == "UPDATE" || neededRights == "DELETE") && currentRole == "UPDATE")
-                    return true;
-                */
-                if (currentRole == "CREATE")
-                    return true;
-            }
-
-            if (currentRole == null)
-                currentRole = "isNotAuthenticated";
-
-            Console.WriteLine("checkAccessLevel: " +
-                " currentRole = " + currentRole +
-                " operation = " + operation +
-                " neededRights = " + neededRights +
-                " objPath = " + objPath
-                );
-
-            if (objPath == "")
-            {
-                int iRole = 0;
-                while (securityRole != null && iRole < securityRole.Count && securityRole[iRole].name != null)
-                {
-                    if (aasOrSubmodel == "aas" && securityRole[iRole].objType == "aas")
-                    /* (aasOrSubmodel == "submodel" && securityRole[iRole].objType == "sm")) */
-                    {
-                        if (objectAasOrSubmodel != null && securityRole[iRole].objReference == objectAasOrSubmodel &&
-                        securityRole[iRole].permission == neededRights)
-                        {
-                            if ((securityRole[iRole].condition == "" && securityRole[iRole].name == currentRole) ||
-                                (securityRole[iRole].condition == "not" && securityRole[iRole].name != currentRole))
-                            {
-                                if (securityRole[iRole].kind == "allow")
-                                    return true;
-                                if (securityRole[iRole].kind == "deny")
-                                {
-                                    error = "DENY AAS " + (objectAasOrSubmodel as AssetAdministrationShell).Id;
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                    if (securityRole[iRole].name == currentRole && securityRole[iRole].objType == "api" &&
-                        securityRole[iRole].permission == neededRights)
-                    {
-                        if (securityRole[iRole].apiOperation == "*" || securityRole[iRole].apiOperation == operation)
-                        {
-                            if (securityRole[iRole].permission == neededRights)
-                            {
-                                return checkUsage(out error, securityRole[iRole]);
-                            }
-                        }
-                    }
-                    iRole++;
-                }
-            }
-            if (objPath != "" && (operation == "/submodels" || operation == "/submodelelements"))
-            {
-                // next object with rule must have allow
-                // no objects below must have deny
-                string deepestDeny = "";
-                string deepestAllow = "";
-                foreach (var role in securityRole)
-                {
-                    if (role.name != currentRole)
-                        continue;
-
-                    if (role.objType == "semanticid")
-                    {
-                        if (objectAasOrSubmodel is Submodel s)
-                        {
-                            if (role.semanticId == "*" || (s.SemanticId != null && s.SemanticId.Keys != null && s.SemanticId.Keys.Count != 0))
-                            {
-                                if (role.semanticId == "*" || (role.semanticId.ToLower() == s.SemanticId.Keys[0].Value.ToLower()))
-                                {
-                                    if (role.kind == "allow")
-                                    {
-                                        if (deepestAllow == "")
-                                        {
-                                            deepestAllow = s.IdShort;
-                                            withAllow = true;
-                                        }
-                                    }
-                                    if (role.kind == "deny")
-                                    {
-                                        if (deepestDeny == "")
-                                            deepestDeny = s.IdShort;
-                                    }
-                                }
-                            }
-                        }
-                        if (objectAasOrSubmodel is string s2)
-                        {
-                            if (s2 != null && s2 != "")
-                            {
-                                if (role.semanticId == s2)
-                                {
-                                    if (role.kind == "allow")
-                                    {
-                                        if (deepestAllow == "")
-                                        {
-                                            deepestAllow = objPath;
-                                            withAllow = true;
-                                        }
-                                    }
-                                    if (role.kind == "deny")
-                                    {
-                                        if (deepestDeny == "")
-                                            deepestDeny = objPath;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if ((role.objType == "sm" || role.objType == "submodelElement") &&
-                        role.submodel == objectAasOrSubmodel && role.permission == neededRights)
-                    {
-                        if (role.kind == "deny")
-                        {
-                            if (objPath.Length >= role.objPath.Length) // deny in tree above
-                            {
-                                if (role.objPath == objPath.Substring(0, role.objPath.Length))
-                                    deepestDeny = role.objPath;
-                            }
-                            if (role.objPath.Length >= objPath.Length) // deny in tree below
-                            {
-                                if (objPath == role.objPath.Substring(0, objPath.Length))
-                                {
-                                    error = "DENY " + role.objPath;
-                                    return false;
-                                }
-                            }
-                        }
-                        if (role.kind == "allow")
-                        {
-                            if (objPath.Length >= role.objPath.Length) // allow in tree above
-                            {
-                                if (role.objPath == objPath.Substring(0, role.objPath.Length))
-                                {
-                                    deepestAllow = role.objPath;
-                                    withAllow = true;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (deepestAllow == "")
-                {
-                    error = "ALLOW not defined";
-                    return false;
-                }
-                if (deepestDeny.Length > deepestAllow.Length)
-                {
-                    error = "DENY " + deepestDeny;
-                    return false;
-                }
-                return true;
-            }
-
-            error = "ALLOW not defined";
-            return false;
         }
 
         public static bool checkUsage(out string error, securityRoleClass sr)
