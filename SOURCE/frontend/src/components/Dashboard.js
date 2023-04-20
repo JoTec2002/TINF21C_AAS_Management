@@ -4,6 +4,8 @@ import { Button, Col, Form, Table } from "react-bootstrap";
 import PopUpDelete from "./PopUpDelete";
 import axios from "axios";
 import Spinner from "react-bootstrap/Spinner";
+import {API_URL} from "../utils/constanst";
+import errorHandling from "./errorHandling";
 
 export default class Dashboard extends Component {
 
@@ -23,10 +25,10 @@ export default class Dashboard extends Component {
 
   componentDidMount() {
 
-    axios.get("https://nas.graubner-bayern.de:50001/submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping", {
+    axios.get(API_URL+"submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping", {
       auth: {
-        username: 'admin@example.com', //hier werden spaeter die Log-In-Daten verwendet statt der fixe Wert... diese werden nur zur Testung benutzt
-        password: 'admin'
+        username: localStorage.getItem('email'),
+        password: localStorage.getItem('password')
       }})
         .then(res => {
           console.log("Response : ", res);
@@ -35,6 +37,7 @@ export default class Dashboard extends Component {
         })
         .catch(error=>{
           console.log(error);
+          errorHandling(error);
         })
   }
 
@@ -72,12 +75,9 @@ export default class Dashboard extends Component {
     );
 
     return (
-
-
-
-      <Col md={10} mt="2">
+      <Col>
         <h4>
-          <strong>Dashboard</strong>
+          <strong>Admin Dashboard</strong>
         </h4>
         <hr />
         <Form className="d-flex">
