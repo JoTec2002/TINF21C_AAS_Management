@@ -7,7 +7,7 @@ const AdminDashboard = () => {
   return (
     <div>
       <NavComponent />
-      <div className="mt2">
+      <div className="mt2" style={{ paddingTop:20, paddingBottom:100 }}>
         <Container fluid>
           <Row>
             <SidebarAdmin />

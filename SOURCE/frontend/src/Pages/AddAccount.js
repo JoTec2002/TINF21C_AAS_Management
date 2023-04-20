@@ -7,7 +7,7 @@ function AddAccount() {
   return (
     <Fragment>
       <NavComponent />
-      <div className="container">
+      <div className="container" style={{ paddingTop:20, paddingBottom:100 }}>
         <h4>Create new account</h4>
         <hr />
         <Form>

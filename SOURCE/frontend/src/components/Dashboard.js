@@ -25,7 +25,7 @@ export default class Dashboard extends Component {
 
     axios.get("https://nas.graubner-bayern.de:50001/submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping", {
       auth: {
-        username: 'admin@example.com',
+        username: 'admin@example.com', //hier werden spaeter die Log-In-Daten verwendet statt der fixe Wert... diese werden nur zur Testung benutzt
         password: 'admin'
       }})
         .then(res => {
@@ -67,11 +67,8 @@ export default class Dashboard extends Component {
   render() {
     const { shells, loading = true, searchTerm } = this.state;
 
-    console.log("Response : ", shells);
-
     const filteredShells = shells.filter((shell) =>
-          shell.idShort.toLowerCase().includes(searchTerm.toLowerCase())
-
+          shell.value[0].value[0].idShort.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
