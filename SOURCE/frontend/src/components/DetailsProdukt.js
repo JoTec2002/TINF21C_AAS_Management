@@ -1,24 +1,39 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Col, Card, Row, Button, ListGroup } from "react-bootstrap";
+import { Col, Card, Row, Button, ListGroup,DropdownButton } from "react-bootstrap";
 import { API_URL } from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
 import { base64url } from "base64url";
 
 const DetailsProdukt = ({ data }) => {
     const [produktData, setProduktData] = useState(null);
-    const [submodelsData, setSubmodelsData] = useState([]);
     const [submodElement, setSubmodElement]= useState([])
-
+    const [idEncoded, setidEncoded]= useState([])
     const [loading, setLoading] = useState(false);
-    const base64url = require('base64url');
+
+    const endcode=(id)=>{
+        const base64url = require('base64url');
+        const idchange = base64url.fromBase64(window.btoa(id));
+        return idchange;
+ }
+
 
     useEffect(() => {
         setLoading(true); // نمایش صفحه لودینگ
+        //hier id wird geleert
+        setidEncoded([]);
+        //hier sollte sub models geleert sein
+        setSubmodElement([])
         axios
-            .get(`${API_URL}shells?idShort=${data}`)
+            .get(`${API_URL}shells?idShort=${data}`,{
+                auth:{
+                    username:localStorage.getItem("email"),
+                    password:localStorage.getItem("password")
+                }
+            })
             .then((res) => {
                 setProduktData(res.data);
+
             })
             .catch((error) => {
                 console.log(error);
@@ -26,6 +41,7 @@ const DetailsProdukt = ({ data }) => {
             .finally(() => {
                 setLoading(false); // مخفی کردن صفحه لودینگ
             });
+
     }, [data]);
 
     if (loading) { // اگر درخواست به سرور فرستاده شده و پاسخ دریافت نشده باشد، نمایش صفحه لودینگ
@@ -53,43 +69,32 @@ const DetailsProdukt = ({ data }) => {
     }
     //Encdded SubmodelsID
 
-    for(let i=0;i<produktData.length;i++){
-        for(let j=0;j<produktData[0].submodels.length;j++) {
-            produktData[0].submodels[j].keys[0].value=base64url.fromBase64(window.btoa(produktData[0].submodels[j].keys[0].value))
 
+    for (let j = 0; j < produktData[0].submodels.length; j++) {
+        let id = endcode(produktData[0].submodels[j].keys[0].value);
+        if (!idEncoded.includes(id)) {
+            setidEncoded(previdEncoded => [...previdEncoded, id]);
         }
     }
-//submodels/{sudmodelsIdentifier}
-    produktData[0].submodels.map((submodels)=>
-        axios.get(API_URL+"submodels/"+submodels.keys[0].value)
-            .then(res => {
-                console.log("Response submodels: ", res.data);
-                const someData = res.data.idShort;
-                if (!submodelsData.includes(someData)) {
-                    setSubmodelsData(prevSubmodelsData => [...prevSubmodelsData, someData]);
-                }
 
+/*hier noch fehlerhaft - ids anscheind in der schleife gefangen und hat sich wiederholt*/
+        idEncoded.map((id)=>
+        axios.get(API_URL+"submodels/"+id)
+            .then(res => {
+               console.log("Response elements: ", res.data);
+                    const submod = res.data.idShort;
+                    if (!submodElement.includes(submod)) {
+                        setSubmodElement(prevSubmodElement => [...prevSubmodElement, submod]);
+                    }
             })
             .catch(error=>{
                 console.log(error);
             })
     )
-    produktData[0].submodels.map((submodels,index)=>
-        axios.get(API_URL+"submodels/"+submodels.keys[0].value+"/submodelelements")
-            .then(res => {
-                console.log("Response elements: ", res.data);
-                console.log("Response elements1: ", res.data[index].idShort);
-                const element = res.data[index].idShort;
-                if (!submodElement.includes(element)) {
-                    setSubmodElement(prevSubmodElement => [...prevSubmodElement, element]);
-                }
 
 
-            })
-            .catch(error=>{
-                console.log(error);
-            })
-    )
+
+
     return (
 
         <Col md={8} mt="2">
@@ -109,14 +114,15 @@ const DetailsProdukt = ({ data }) => {
                         <Card.Header>
 
                             <Card.Title>{produktData[0].idShort}</Card.Title>
+
                         </Card.Header>
                         <Card.Body>
 
                             <ListGroup variant="flush">
-                                {submodElement.map((elements,index)=>
+                                {submodElement.map((element)=>//hier display submodels
                                     <ListGroup.Item  className="fw-bold">
-                                        {elements}
-                                        <Card.Text className="fw-normal"></Card.Text>
+                                        <Button variant="light">{element}</Button>
+
                                     </ListGroup.Item>
                                 )}
 
