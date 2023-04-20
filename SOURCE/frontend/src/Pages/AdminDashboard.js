@@ -1,16 +1,17 @@
 import { NavComponent } from "../components";
 import { Container, Row } from "react-bootstrap";
-import SidebarAdmin from "../components/SidebarAdmin";
+//import SidebarAdmin from "../components/SidebarAdmin";
 import Dashboard from "../components/Dashboard";
+import ErrorHandling from "../components/errorHandling";
 
 const AdminDashboard = () => {
   return (
     <div>
       <NavComponent />
-      <div className="mt2">
-        <Container fluid>
+      <div className="mt2" style={{ paddingTop:20, paddingBottom:100 }}>
+        <ErrorHandling />
+          <Container fluid>
           <Row>
-            <SidebarAdmin />
             <Dashboard />
           </Row>
         </Container>
