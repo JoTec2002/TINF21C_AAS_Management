@@ -49,6 +49,21 @@ export default class Dashboard extends Component {
     });
   };
 
+  sortRole(authRes) {
+    switch(authRes)
+    {
+      case "isNotAuthenticated":
+        return "basic";
+      case "isAuthenticatedUser":
+        return "advanced";
+      case "isAuthenticatedSecurityUser":
+        return "admin";
+      default:
+        console.error("Undefined Authentication : ", authRes);
+        return "undefined";
+    }
+  }
+
   render() {
     const { shells, loading = true, searchTerm } = this.state;
 
@@ -105,7 +120,7 @@ export default class Dashboard extends Component {
 
                     <td>{`${shells.value[0].value[0].idShort}`}</td>
                     <td>Inactive</td>
-                    <td>{`${shells.value[1].value[0].idShort}`}</td>
+                    <td>{`${this.sortRole(shells.value[1].value[0].idShort)}`}</td>
                     <td>
                       <Button href="#/create" variant="text btn-sm">
                         <BsPencilSquare />
