@@ -8,9 +8,9 @@ const AdminDashboard = () => {
   return (
     <div>
       <NavComponent />
-        <ErrorHandling />
       <div className="mt2" style={{ paddingTop:20, paddingBottom:100 }}>
-        <Container fluid>
+        <ErrorHandling />
+          <Container fluid>
           <Row>
             <Dashboard />
           </Row>

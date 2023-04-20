@@ -1,14 +1,20 @@
+import React, {Component, useState} from "react";
 import { Button, Col, Form, Table } from "react-bootstrap";
 
-const errorHandling = ({ error }) => {
-    console.log(error);
-    if(error !== undefined){
-        console.log("im here");
-        return (
-            <Col>
-                {error}
-            </Col>
-        );
+export default class errorHandling extends Component{
+    constructor(props) {
+        super(props)
+        this.state={
+            globalerror: '',
+        }
     }
-};
-export default errorHandling;
+
+    render() {
+        return(
+            <Col>{this.state.globalerror &&
+                <Col>{this.state.globalerror}</Col>}</Col>
+        )
+    }
+
+
+}

@@ -5,13 +5,14 @@ import PopUpDelete from "./PopUpDelete";
 import axios from "axios";
 import Spinner from "react-bootstrap/Spinner";
 import {API_URL} from "../utils/constanst";
-import errorHandling from "./errorHandling";
+import errorHandlin from "./errorHandling";
 
 export default class Dashboard extends Component {
 
   constructor(props) {
     super(props)
     this.state={
+      //globalerror: '',
       shells: [],
       loading: true,
       searchTerm: "",
@@ -37,7 +38,8 @@ export default class Dashboard extends Component {
         })
         .catch(error=>{
           console.log(error);
-          errorHandling(error);
+          //this.setState({globalerror: error});
+          errorHandlin.setState({globalerror: error});
         })
   }
 
