@@ -4,6 +4,7 @@ import axios from "axios";
 import { API_URL } from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
 import base64url from "base64url";
+import PopUpLogin from "./PopUpLogin";
 
 export default class Produkte extends Component {
     constructor(props) {
@@ -22,7 +23,11 @@ export default class Produkte extends Component {
     }
 
     componentDidMount() {
-        axios.get(API_URL+"shells")
+        axios.get(API_URL+"shells", {
+            auth: {
+                username: PopUpLogin.username,
+                password: PopUpLogin.password
+        }})
             .then(res => {
                 console.log("Response : ", res);
                 const shells = res.data;
