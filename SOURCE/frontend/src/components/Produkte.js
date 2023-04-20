@@ -3,6 +3,7 @@ import { Col, Form, Button  } from "react-bootstrap";
 import axios from "axios";
 import { API_URL } from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
+import base64url from "base64url";
 
 export default class Produkte extends Component {
     constructor(props) {
@@ -43,7 +44,7 @@ export default class Produkte extends Component {
         const filteredShells = shells.filter((shell) =>
             shell.idShort.toLowerCase().includes(searchTerm.toLowerCase())
         );
-
+        const base64url = require('base64url');
         return (
             <Col md={4} mt="2">
                 <h4>
@@ -73,7 +74,8 @@ export default class Produkte extends Component {
                 ) : (
                     <div>
                         {filteredShells && filteredShells.map((shells) => (
-                            <div className={`produkt ${shells.idShort === this.state.activeProdukt ? "active" : ""}`} 
+
+                            <div  className={`produkt ${shells.idShort === this.state.activeProdukt ? "active" : ""}`}
                                 onClick={() => this.chooseProdukt(shells.idShort)}>
                                 <h6 style={{ margin: 0 }}>{shells.idShort}</h6>
                             </div>
