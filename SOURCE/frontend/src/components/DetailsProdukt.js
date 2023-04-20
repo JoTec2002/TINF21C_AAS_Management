@@ -9,28 +9,29 @@ const DetailsProdukt = ({ data }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setLoading(true); // نمایش صفحه لودینگ
+    setLoading(true);
     axios
       .get(`${API_URL}shells?idShort=${data}`)
       .then((res) => {
         setProduktData(res.data);
+        console.log("Response : ", res.data);
       })
       .catch((error) => {
         console.log(error);
       })
       .finally(() => {
-        setLoading(false); // مخفی کردن صفحه لودینگ
+        setLoading(false);
       });
   }, [data]);
 
-  if (loading) { // اگر درخواست به سرور فرستاده شده و پاسخ دریافت نشده باشد، نمایش صفحه لودینگ
+  if (loading) {
     return (
       <Col md={8} style={{ padding:50 }}>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop:20 }}>
             <Spinner animation="border" role="status">
                 <span className="visually-hidden">Loading...</span>
             </Spinner>
-            <h4 style={{ marginLeft:10 }}> Loding Details ...</h4>
+            <h4 style={{ marginLeft:10 }}> Loading Details ...</h4>
         </div>
       </Col>
     );

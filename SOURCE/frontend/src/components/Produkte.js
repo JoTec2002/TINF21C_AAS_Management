@@ -68,7 +68,7 @@ export default class Produkte extends Component {
                         <Spinner animation="border" role="status">
                             <span className="visually-hidden">Loading...</span>
                         </Spinner>
-                        <h4 style={{ marginLeft:10 }}> Loding ...</h4>
+                        <h4 style={{ marginLeft:10 }}> Loading ...</h4>
                     </div>
                 ) : (
                     <div>
