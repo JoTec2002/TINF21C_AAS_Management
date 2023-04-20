@@ -2,6 +2,7 @@ import { Button, Container, Navbar, Nav, NavDropdown } from "react-bootstrap";
 import { IoSettings } from "react-icons/io5";
 import { Component } from "react";
 import PopUpLogin from "./PopUpLogin";
+import {API_URL} from "../utils/constanst";
 
 export default class NavComponent extends Component {
 
@@ -55,9 +56,11 @@ export default class NavComponent extends Component {
                 <strong>AAS Management</strong>
               </Navbar.Brand>
               <Navbar.Toggle aria-controls="basic-navbar-nav" />
+                <Nav.Item className={"text-white"}><strong>current Server: </strong>{API_URL}</Nav.Item>
               <Navbar.Collapse id="basic-navbar-nav">
                 <Nav className="ms-auto">
-                  {!loggedIn ? (
+
+                    {!loggedIn ? (
                     <Button variant="success" onClick={() => this.handelShow()}>Login</Button>
                   ) : (
                     <div className="d-flex align-items-center">
