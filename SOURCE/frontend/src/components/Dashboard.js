@@ -22,10 +22,15 @@ export default class Dashboard extends Component {
   }
 
   componentDidMount() {
-    axios.get("https://admin@example.com:admin@nas.graubner-bayern.de:50001/submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping")
+
+    axios.get("https://nas.graubner-bayern.de:50001/submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping", {
+      auth: {
+        username: 'admin@example.com',
+        password: 'admin'
+      }})
         .then(res => {
           console.log("Response : ", res);
-          const shells = res.data;
+          const shells = res.data.value;
           this.setState({ shells, loading: false });
         })
         .catch(error=>{
@@ -47,8 +52,11 @@ export default class Dashboard extends Component {
   render() {
     const { shells, loading = true, searchTerm } = this.state;
 
+    console.log("Response : ", shells);
+
     const filteredShells = shells.filter((shell) =>
-        shell.idShort.toLowerCase().includes(searchTerm.toLowerCase()) // vllt auch: shell.value[i].idShort.k.toLowerCase().includes(searchTerm.toLowerCase())
+          shell.idShort.toLowerCase().includes(searchTerm.toLowerCase())
+
     );
 
     return (
@@ -95,9 +103,9 @@ export default class Dashboard extends Component {
               {filteredShells && filteredShells.map((shells) => (
                   <tr>
 
-                    <td>{`${shells.idShort}`}</td>
+                    <td>{`${shells.value[0].value[0].idShort}`}</td>
                     <td>Inactive</td>
-                    <td>{`${shells.idShort}`}</td>
+                    <td>{`${shells.value[1].value[0].idShort}`}</td>
                     <td>
                       <Button href="#/create" variant="text btn-sm">
                         <BsPencilSquare />
@@ -106,82 +114,14 @@ export default class Dashboard extends Component {
                         <BsTrash />
                       </Button>
                     </td>
-
-
-                  <div className={`produkt ${shells.idShort === this.state.activeProdukt ? "active" : ""}`}
-                       onClick={() => this.chooseProdukt(shells.idShort)}>
-                  </div>
                   </tr>
               ))}
           </tbody>
           </Table>
-          <Button href="#/create" variant="outline-primary btn-sm">
-          Create Account
-          </Button>
-          <PopUpDelete handleClose={this.handleClose} {...this.state} />
           </div>
         )
         }
 
-      {/*  <Button href="#/create" variant="outline-primary btn-sm">*/}
-      {/*    Create Account*/}
-      {/*  </Button>*/}
-      {/*  <PopUpDelete handleClose={this.handleClose} {...this.state} />*/}
-      {/*</Col>*/}
-
-
-        <Table striped>
-
-          <thead>
-            <tr>
-              <th>Account</th>
-              <th>State</th>
-              <th>Role</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>paul.burner</td>
-              <td>Active</td>
-              <td>Basic</td>
-              <td>
-                <Button href="#/create" variant="text btn-sm">
-                  <BsPencilSquare />
-                </Button>
-                <Button variant="text btn-sm" onClick={() => this.handelShow()}>
-                  <BsTrash />
-                </Button>
-              </td>
-            </tr>
-            <tr>
-              <td>JoGa112</td>
-              <td>Active</td>
-              <td>Admin</td>
-              <td>
-                <Button href="#/create" variant="text btn-sm">
-                  <BsPencilSquare />
-                </Button>
-                <Button variant="text btn-sm" onClick={() => this.handelShow()}>
-                  <BsTrash />
-                </Button>
-              </td>
-            </tr>
-            <tr>
-              <td>DarthVader</td>
-              <td>Inactive</td>
-              <td>Advanced</td>
-              <td>
-                <Button href="#/create" variant="text btn-sm">
-                  <BsPencilSquare />
-                </Button>
-                <Button variant="text btn-sm" onClick={() => this.handelShow()}>
-                  <BsTrash />
-                </Button>
-              </td>
-            </tr>
-          </tbody>
-        </Table>
         <Button href="#/create" variant="outline-primary btn-sm">
           Create Account
         </Button>
