@@ -4,6 +4,7 @@ import { Col, Card, Row, Button, ListGroup } from "react-bootstrap";
 import { API_URL } from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
 import { base64url } from "base64url";
+import PopUpLogin from "./PopUpLogin";
 
 const DetailsProdukt = ({ data }) => {
     const [produktData, setProduktData] = useState(null);
@@ -16,7 +17,11 @@ const DetailsProdukt = ({ data }) => {
     useEffect(() => {
         setLoading(true); // نمایش صفحه لودینگ
         axios
-            .get(`${API_URL}shells?idShort=${data}`)
+            .get(`${API_URL}shells?idShort=${data}`, {
+                auth: {
+                    username: PopUpLogin.username,
+                    password: PopUpLogin.password
+                }})
             .then((res) => {
                 setProduktData(res.data);
             })
@@ -61,7 +66,11 @@ const DetailsProdukt = ({ data }) => {
     }
 //submodels/{sudmodelsIdentifier}
     produktData[0].submodels.map((submodels)=>
-        axios.get(API_URL+"submodels/"+submodels.keys[0].value)
+        axios.get(API_URL+"submodels/"+submodels.keys[0].value, {
+            auth: {
+                username: PopUpLogin.username,
+                password: PopUpLogin.password
+            }})
             .then(res => {
                 console.log("Response submodels: ", res.data);
                 const someData = res.data.idShort;
@@ -75,7 +84,11 @@ const DetailsProdukt = ({ data }) => {
             })
     )
     produktData[0].submodels.map((submodels,index)=>
-        axios.get(API_URL+"submodels/"+submodels.keys[0].value+"/submodelelements")
+        axios.get(API_URL+"submodels/"+submodels.keys[0].value+"/submodelelements", {
+            auth: {
+                username: PopUpLogin.username,
+                password: PopUpLogin.password
+            }})
             .then(res => {
                 console.log("Response elements: ", res.data);
                 console.log("Response elements1: ", res.data[index].idShort);
