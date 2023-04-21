@@ -11,7 +11,8 @@ export default class Produkte extends Component {
             shells: [],
             loading: true,
             searchTerm: "",
-            activeProdukt: null
+            activeProdukt: null,
+            errorLog: null
         }
     }
 
@@ -22,14 +23,14 @@ export default class Produkte extends Component {
 
     componentDidMount() {
         axios.get(API_URL+"shells")
-            .then(res => {
-                console.log("Response : ", res);
-                const shells = res.data;
-                this.setState({ shells, loading: false });
-            })
-            .catch(error=>{
-                console.log(error);
-            })
+        .then(res => {
+            console.log("Response : ", res);
+            const shells = res.data;
+            this.setState({ shells, loading: false });
+        })
+        .catch(error=>{
+            this.setState({ loading: false, errorLog: error.message });
+        })
     }
 
     chooseProdukt = (produktId) => {

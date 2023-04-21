@@ -1,20 +1,14 @@
-import React, {Component, useState} from "react";
-import { Button, Col, Form, Table } from "react-bootstrap";
+import React from "react";
+import { Col } from "react-bootstrap";
 
-export default class errorHandling extends Component{
-    constructor(props) {
-        super(props)
-        this.state={
-            globalerror: '',
-        }
-    }
+const ErrorHandling = (props) => {
+const { errorLog } = props;
+console.log(errorLog)
+  return (
+    <Col md={12}>
+        <h3 style={{ padding:20, color:"gray" }}>{errorLog}</h3>
+    </Col>
+  );
+};
 
-    render() {
-        return(
-            <Col>{this.state.globalerror &&
-                <Col>{this.state.globalerror}</Col>}</Col>
-        )
-    }
-
-
-}
+export default ErrorHandling;

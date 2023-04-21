@@ -17,7 +17,7 @@ const DetailsProdukt = ({ data }) => {
         console.log("Response : ", res.data);
       })
       .catch((error) => {
-        console.log(error);
+        // console.log(error);
       })
       .finally(() => {
         setLoading(false);

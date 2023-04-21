@@ -5,7 +5,7 @@ import PopUpDelete from "./PopUpDelete";
 import axios from "axios";
 import Spinner from "react-bootstrap/Spinner";
 import {API_URL} from "../utils/constanst";
-import errorHandlin from "./errorHandling";
+
 
 export default class Dashboard extends Component {
 
@@ -38,8 +38,6 @@ export default class Dashboard extends Component {
         })
         .catch(error=>{
           console.log(error);
-          //this.setState({globalerror: error});
-          errorHandlin.setState({globalerror: error});
         })
   }
 
@@ -79,7 +77,8 @@ export default class Dashboard extends Component {
     return (
       <Col>
         <h4>
-          <strong>Admin Dashboard</strong>
+            <strong>Admin Dashboard</strong>
+             
         </h4>
         <hr />
         <Form className="d-flex">
