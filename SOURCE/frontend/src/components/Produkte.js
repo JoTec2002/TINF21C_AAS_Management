@@ -22,7 +22,12 @@ export default class Produkte extends Component {
     }
 
     componentDidMount() {
-        axios.get(API_URL+"shells")
+        axios.get(API_URL+"shells",{
+            auth:{
+                username:localStorage.getItem("email"),
+                password:localStorage.getItem("password")
+                }
+            })
             .then(res => {
                 console.log("Response : ", res);
                 const shells = res.data;
@@ -76,7 +81,8 @@ export default class Produkte extends Component {
                         {filteredShells && filteredShells.map((shells) => (
 
                             <div  className={`produkt ${shells.idShort === this.state.activeProdukt ? "active" : ""}`}
-                                onClick={() => this.chooseProdukt(shells.idShort)}>
+                                onClick={() => this.chooseProdukt(shells.id)}
+                                id={shells.id}>
                                 <h6 style={{ margin: 0 }}>{shells.idShort}</h6>
                             </div>
                         ))}
