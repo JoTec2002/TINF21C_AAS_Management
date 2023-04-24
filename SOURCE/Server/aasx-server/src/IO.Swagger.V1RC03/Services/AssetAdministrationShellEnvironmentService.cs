@@ -34,7 +34,7 @@ namespace IO.Swagger.V1RC03.Services
     public class AssetAdministrationShellEnvironmentService : IAssetAdministrationShellEnvironmentService
     {
         private readonly IAppLogger<AssetAdministrationShellEnvironmentService> _logger;
-        private AdminShellPackageEnv[] _packages;
+        //private AdminShellPackageEnv[] _packages;
         private AasSecurityContext _securityContext;
 
         /// <summary>
@@ -44,8 +44,8 @@ namespace IO.Swagger.V1RC03.Services
         public AssetAdministrationShellEnvironmentService(IAppLogger<AssetAdministrationShellEnvironmentService> logger)
         {
             _logger = logger;
-            _packages = AasxServer.Program.env;
-            Console.WriteLine("Env copy");
+            //_packages = AasxServer.Program.env;
+            //Console.WriteLine("Env copy");
         }
 
         public void SecurityCheckInit(HttpContext _context, string _route, string _httpOperation)
@@ -480,6 +480,17 @@ namespace IO.Swagger.V1RC03.Services
             if (aas != null)
             {
                 return aas.Submodels;
+            }
+
+            return null;
+        }
+        private AssetAdministrationShell getAssetAdministationShellsBySubmodelIdentifier(string submodelIdentifier)
+        {
+            List<AssetAdministrationShell> assetAdministrationShell = AasxHttpContextHelper.mongoDBInterface.readDBShells(new BsonDocument("Submodels.Keys.Value", submodelIdentifier));
+
+            if (assetAdministrationShell.Count > 0)
+            {
+                return assetAdministrationShell[0];
             }
 
             return null;
@@ -1264,11 +1275,14 @@ namespace IO.Swagger.V1RC03.Services
             }
         }
 
+
         public string GetFileByPathSubmodelRepo(string submodelIdentifier, string idShortPath, out byte[] byteArray, out long fileSize)
         {
             byteArray = null;
             string fileName = null;
             fileSize = 0;
+
+            var assetAdministrationShell = getAssetAdministationShellsBySubmodelIdentifier(submodelIdentifier);
 
             var submodel = GetSubmodelById(submodelIdentifier, out int packageIndex);
 
@@ -1282,7 +1296,8 @@ namespace IO.Swagger.V1RC03.Services
                 {
                     fileName = file.Value;
 
-                    Stream stream = _packages[packageIndex].GetLocalStreamFromPackage(fileName);
+                    string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilename(assetAdministrationShell.Id);
+                    Stream stream = new AdminShellPackageEnv(fn, true).GetLocalStreamFromPackage(fileName);
                     byteArray = stream.ToByteArray();
                     fileSize = byteArray.Length;
                 }
@@ -1330,7 +1345,10 @@ namespace IO.Swagger.V1RC03.Services
 
                             var targetFile = Path.Combine(sourcePath, fileName);
                             targetFile = targetFile.Replace('/', Path.DirectorySeparatorChar);
-                            Task task = _packages[packageIndex].ReplaceSupplementaryFileInPackageAsync(file.Value, targetFile, contentType, fileContent);
+                            var assetAdministrationShell = getAssetAdministationShellsBySubmodelIdentifier(submodelIdentifier);
+                            string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilename(assetAdministrationShell.Id);
+
+                            Task task = new AdminShellPackageEnv(fn, true).ReplaceSupplementaryFileInPackageAsync(file.Value, targetFile, contentType, fileContent);
                             file.Value = FormatFileName(targetFile);
                             AasxServer.Program.signalNewData(2);
                         }
@@ -1347,7 +1365,10 @@ namespace IO.Swagger.V1RC03.Services
                         _logger.LogError($"Null Value of the Submodel-Element File with IdShort {file.IdShort}");
                         var targetFile = Path.Combine("/aasx/files", fileName);
                         targetFile = targetFile.Replace('/', Path.DirectorySeparatorChar);
-                        Task task = _packages[packageIndex].ReplaceSupplementaryFileInPackageAsync(file.Value, targetFile, contentType, fileContent);
+                        var assetAdministrationShell = getAssetAdministationShellsBySubmodelIdentifier(submodelIdentifier);
+                        string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilename(assetAdministrationShell.Id);
+
+                        Task task = new AdminShellPackageEnv(fn, true).ReplaceSupplementaryFileInPackageAsync(file.Value, targetFile, contentType, fileContent);
                         file.Value = FormatFileName(targetFile);
                         AasxServer.Program.signalNewData(2);
                     }
