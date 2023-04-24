@@ -4,6 +4,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+p{
+  margin-bottom: 0;
+}
 .navbar{
   background-color: #22668A ;
 }
@@ -68,4 +71,18 @@ h6{
 
 .py-10{
   padding: 10px;
+}
+
+.Collapsible{
+  border: 2px solid #000000;
+  margin-bottom: 5px;
+}
+
+
+.Collapsible__contentInner {
+  margin-left: 0.5em;
+}
+
+img{
+  max-height: 20em;
 }

@@ -38,15 +38,44 @@ const AssetDetails = ({ data }) => {
             })
     }
 
-    const getFileContent = (id, path) => {
+    const getFileContentBase64 = (id, path, contentType) => {
         axios.get(`${API_URL}submodels/${id}/submodelelements/${path}/attachment`,{
             auth:{
                 username:localStorage.getItem("email"),
                 password:localStorage.getItem("password")
-            }
+            },
+            responseType: 'blob'
         })
             .then((res)=>{
-                return res;
+
+                var reader = new FileReader();
+                reader.readAsDataURL(res.data);
+                reader.onloadend = function () {
+                    var base64String = reader.result;
+                    base64String = base64String.substring((base64String.indexOf(',')+1))
+                    document.getElementById(id+"-"+path).src = "data:"+contentType+";base64,"+base64String;
+                }
+            })
+            .catch((error) =>{
+                console.error(error);
+            })
+    };
+    const getFileContentDownload = (id, path, contentType) => {
+        axios.get(`${API_URL}submodels/${id}/submodelelements/${path}/attachment`,{
+            auth:{
+                username:localStorage.getItem("email"),
+                password:localStorage.getItem("password")
+            },
+            responseType: 'blob'
+        })
+            .then((res)=>{
+                var reader = new FileReader();
+                reader.readAsDataURL(res.data);
+                reader.onloadend = function () {
+                    var base64String = reader.result;
+                    base64String = base64String.substring((base64String.indexOf(',')+1))
+                    document.getElementById(id+"-"+path).href = "data:"+contentType+";base64,"+base64String;
+                }
             })
             .catch((error) =>{
                 console.error(error);
@@ -54,16 +83,16 @@ const AssetDetails = ({ data }) => {
     };
 
     const returnSubmodelContent = (submodelElement, submodelid, idShortPath) => {
+        console.log("MÄH")
+        if(idShortPath.length == 0){
+            idShortPath = submodelElement.idShort
+        }else {
+            idShortPath = idShortPath +"."+ submodelElement.idShort;
+        }
         if(submodelElement.modelType === "Property"){
             return (<p><strong>{submodelElement.idShort}: </strong>{submodelElement.value}</p>)
         }
         if(submodelElement.modelType === "SubmodelElementCollection"){
-            if(idShortPath.length == 0){
-                idShortPath = submodelElement.idShort
-            }else {
-                idShortPath = idShortPath +"."+ submodelElement.idShort;
-            }
-
             return (<Collapsible trigger={submodelElement.idShort}>
                 <p><strong>Semantic ID: </strong>{submodelElement.semanticId.keys[0].value}</p>
                 {
@@ -75,9 +104,15 @@ const AssetDetails = ({ data }) => {
             </Collapsible>)
         }
         if(submodelElement.modelType === "File"){
-            // TODO implement file loading here
-            idShortPath = idShortPath +"."+ submodelElement.idShort;
-            return (<Button onClick={getFileContent(submodelid, idShortPath)}>Load File!</Button>)
+            if(submodelElement.contentType === "application/pdf"){
+                //PDF
+                return (<p>{submodelElement.idShort}: <a id={submodelid+"-"+idShortPath} download onClick={getFileContentDownload(submodelid, idShortPath, submodelElement.contentType)}>Download</a></p>)
+            }
+            if(submodelElement.contentType.startsWith("image/")){
+                getFileContentBase64(submodelid, idShortPath, submodelElement.contentType);
+                return (<p>{submodelElement.idShort}:  <img id={submodelid+"-"+idShortPath}/></p>)
+            }
+            return (<p>Error: Filetype not implementet {submodelElement.contentType}</p>)
         }
 
         return (<p>Error: submodelContent not found</p>);
@@ -154,11 +189,9 @@ const AssetDetails = ({ data }) => {
                         </Card.Header>
                         <Card.Body>
                                 {submodelContent.map((submodel)=>//hier display submodels
-                                    <Collapsible  id={submodel.id} className="fw-bold" trigger={submodel.idShort}>
+                                    <Collapsible  id={submodel.id} trigger={submodel.idShort}>
                                         {console.log(submodel)}
                                         <p><strong>Semantic ID: </strong>{submodel.semanticId.keys[0].value}</p>
-
-                                        {console.log(submodel.submodelElements)}
                                         {
                                             submodel.submodelElements.map((submodelElement) =>
                                                 returnSubmodelContent(submodelElement, endcode(submodel.id), "")
