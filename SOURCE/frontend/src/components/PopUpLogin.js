@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button, Modal, Form } from "react-bootstrap";
+import NavComponent from "./NavComponent";
 
 const PopUpLogin = ({ showModal, handleClose }) => {
   const [email, setEmail] = useState("");
@@ -27,6 +28,7 @@ const PopUpLogin = ({ showModal, handleClose }) => {
     localStorage.setItem("email", email);
     localStorage.setItem("password", password);
     setLoggedIn(true);
+    window.location.reload(false);
   };
 
   return (

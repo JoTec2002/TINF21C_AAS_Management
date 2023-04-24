@@ -1,11 +1,9 @@
 import { Button, Container, Navbar, Nav, NavDropdown } from "react-bootstrap";
-import { IoSettings } from "react-icons/io5";
 import { Component } from "react";
 import PopUpLogin from "./PopUpLogin";
 import {API_URL} from "../utils/constanst";
 
 export default class NavComponent extends Component {
-
 
     constructor(props) {
         super(props)

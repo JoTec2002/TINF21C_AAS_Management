@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DetailsProdukt, Mydocs, NavComponent, Produkte } from '../components';
+import { AssetDetails, Mydocs, NavComponent, Assets } from '../components';
 import { Col, Row, Container } from 'react-bootstrap';
 
 function Guest() {
@@ -11,8 +11,8 @@ function Guest() {
       <div style={{ paddingTop:20, paddingBottom:100 }}>
         <Container>
           <Row>
-            <Produkte onSelect={setSelectedData} />
-            <DetailsProdukt data={selectedData} />
+            <Assets onSelect={setSelectedData} />
+            <AssetDetails data={selectedData} />
           </Row>
         </Container>
       </div>
