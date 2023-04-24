@@ -38,14 +38,49 @@ const AssetDetails = ({ data }) => {
             })
     }
 
-    const getSubmodelContent = (id, path) => {
-        //setLoading(true);
-
-        //setLoading(false);
+    const getFileContent = (id, path) => {
+        axios.get(`${API_URL}submodels/${id}/submodelelements/${path}/attachment`,{
+            auth:{
+                username:localStorage.getItem("email"),
+                password:localStorage.getItem("password")
+            }
+        })
+            .then((res)=>{
+                return res;
+            })
+            .catch((error) =>{
+                console.error(error);
+            })
     };
 
-    const returnSubmodelContent = (submodelContent) => {
-        return "hallo";
+    const returnSubmodelContent = (submodelElement, submodelid, idShortPath) => {
+        if(submodelElement.modelType === "Property"){
+            return (<p><strong>{submodelElement.idShort}: </strong>{submodelElement.value}</p>)
+        }
+        if(submodelElement.modelType === "SubmodelElementCollection"){
+            if(idShortPath.length == 0){
+                idShortPath = submodelElement.idShort
+            }else {
+                idShortPath = idShortPath +"."+ submodelElement.idShort;
+            }
+
+            return (<Collapsible trigger={submodelElement.idShort}>
+                <p><strong>Semantic ID: </strong>{submodelElement.semanticId.keys[0].value}</p>
+                {
+                    submodelElement.value.map((innerSubmodelElement) =>
+
+                        returnSubmodelContent(innerSubmodelElement, submodelid, idShortPath)
+                    )
+                }
+            </Collapsible>)
+        }
+        if(submodelElement.modelType === "File"){
+            // TODO implement file loading here
+            idShortPath = idShortPath +"."+ submodelElement.idShort;
+            return (<Button onClick={getFileContent(submodelid, idShortPath)}>Load File!</Button>)
+        }
+
+        return (<p>Error: submodelContent not found</p>);
     }
 
     useEffect(() => {
@@ -119,23 +154,16 @@ const AssetDetails = ({ data }) => {
                         </Card.Header>
                         <Card.Body>
                                 {submodelContent.map((submodel)=>//hier display submodels
-                                    <Collapsible  id={submodel.id} className="fw-bold" trigger={submodel.idShort} onOpening={getSubmodelContent(submodel.id, submodel.idShort)}>
+                                    <Collapsible  id={submodel.id} className="fw-bold" trigger={submodel.idShort}>
                                         {console.log(submodel)}
                                         <p><strong>Semantic ID: </strong>{submodel.semanticId.keys[0].value}</p>
 
                                         {console.log(submodel.submodelElements)}
-                                        {returnSubmodelContent(submodel.submodelElements)}
                                         {
                                             submodel.submodelElements.map((submodelElement) =>
-                                                submodelElement.modelType === "Property"
-                                                    ?<p><strong>{submodelElement.idShort}: </strong>{submodelElement.value}</p>
-                                                    : null
-
-
-                                                //<p>123</p>
+                                                returnSubmodelContent(submodelElement, endcode(submodel.id), "")
                                             )
                                         }
-                                        <p>Test 123</p>
                                     </Collapsible>
                                 )}
                         </Card.Body>
