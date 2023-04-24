@@ -42,6 +42,7 @@ export default class NavComponent extends Component {
         localStorage.removeItem("email");
         localStorage.removeItem("password");
         this.setState({ loggedIn: false });
+        window.location.reload(false);
     };
     
     render() {

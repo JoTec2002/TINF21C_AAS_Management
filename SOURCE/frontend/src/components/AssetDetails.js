@@ -9,7 +9,6 @@ import base64url from "base64url";
 const AssetDetails = ({ data }) => {
     const [produktData, setProduktData] = useState(null);
     const [submodelContent, setSubmodelContent]= useState([]);
-    const [idEncoded, setidEncoded]= useState([])
     const [loading, setLoading] = useState(false);
     data = base64url.fromBase64(window.btoa(data));
 
@@ -37,7 +36,6 @@ const AssetDetails = ({ data }) => {
                 setLoading(false);
             })
     }
-
     const getFileContentBase64 = (id, path, contentType) => {
         axios.get(`${API_URL}submodels/${id}/submodelelements/${path}/attachment`,{
             auth:{
@@ -81,9 +79,7 @@ const AssetDetails = ({ data }) => {
                 console.error(error);
             })
     };
-
     const returnSubmodelContent = (submodelElement, submodelid, idShortPath) => {
-        console.log("MÄH")
         if(idShortPath.length == 0){
             idShortPath = submodelElement.idShort
         }else {
@@ -119,11 +115,10 @@ const AssetDetails = ({ data }) => {
     }
 
     useEffect(() => {
-        setLoading(true); // نمایش صفحه لودینگ
+        setLoading(true);
         //reset details
         setProduktData(null);
         setSubmodelContent([]);
-        setidEncoded([]);
         axios
             .get(`${API_URL}shells/${data}`,{
                 auth:{
@@ -140,7 +135,6 @@ const AssetDetails = ({ data }) => {
                     getSubmodel(submodelIdEncoded);
                 }
                 console.log(res.data);
-                setidEncoded(submodelsIdEncoded);
                 console.log(submodelContent);
 
             })
