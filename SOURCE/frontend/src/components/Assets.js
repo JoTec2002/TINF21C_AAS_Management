@@ -5,7 +5,7 @@ import { API_URL } from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
 import base64url from "base64url";
 
-export default class Produkte extends Component {
+export default class Assets extends Component {
     constructor(props) {
         super(props)
         this.state={
@@ -38,7 +38,7 @@ export default class Produkte extends Component {
             })
     }
 
-    chooseProdukt = (produktId) => {
+    chooseShell = (produktId) => {
         this.setState({ activeProdukt: produktId });
         this.props.onSelect(produktId);
     }
@@ -53,7 +53,7 @@ export default class Produkte extends Component {
         return (
             <Col md={4} mt="2">
                 <h4>
-                    <strong>Produkte</strong>
+                    <strong>Assets</strong>
                 </h4>
                 <hr/>
 
@@ -81,7 +81,7 @@ export default class Produkte extends Component {
                         {filteredShells && filteredShells.map((shells) => (
 
                             <div  className={`produkt ${shells.idShort === this.state.activeProdukt ? "active" : ""}`}
-                                onClick={() => this.chooseProdukt(shells.id)}
+                                onClick={() => this.chooseShell(shells.id)}
                                 id={shells.id}>
                                 <h6 style={{ margin: 0 }}>{shells.idShort}</h6>
                             </div>

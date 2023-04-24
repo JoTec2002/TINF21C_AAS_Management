@@ -1,4 +1,4 @@
-import { DetailsProdukt, Mydocs, NavComponent, Produkte } from "../components";
+import { AssetDetails, Mydocs, NavComponent, Assets } from "../components";
 import { Container, Row } from "react-bootstrap";
 
 const Home = () => {
@@ -8,8 +8,8 @@ const Home = () => {
       <div className="mt2">
         <Container>
           <Row>
-            <Produkte />
-            <DetailsProdukt />
+            <Assets />
+            <AssetDetails />
             <Mydocs />
           </Row>
         </Container>

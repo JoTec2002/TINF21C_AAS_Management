@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Col, Card, Row, Button, ListGroup,DropdownButton } from "react-bootstrap";
+import Collapsible from 'react-collapsible';
 import { API_URL } from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
 import base64url from "base64url";
 
-const DetailsProdukt = ({ data }) => {
+const AssetDetails = ({ data }) => {
     const [produktData, setProduktData] = useState(null);
-    const [submodelElement, setSubmodelElement]= useState([]);
+    const [submodelContent, setSubmodelContent]= useState([]);
     const [idEncoded, setidEncoded]= useState([])
     const [loading, setLoading] = useState(false);
     data = base64url.fromBase64(window.btoa(data));
@@ -27,7 +28,7 @@ const DetailsProdukt = ({ data }) => {
             })
             .then((res)=>{
                 //console.log(res.data);
-                setSubmodelElement(submodelElement => [...submodelElement, res.data]);
+                setSubmodelContent(submodelElement => [...submodelElement, res.data]);
             })
             .catch((error) =>{
                 console.error(error);
@@ -37,11 +38,21 @@ const DetailsProdukt = ({ data }) => {
             })
     }
 
+    const getSubmodelContent = (id, path) => {
+        //setLoading(true);
+
+        //setLoading(false);
+    };
+
+    const returnSubmodelContent = (submodelContent) => {
+        return "hallo";
+    }
+
     useEffect(() => {
         setLoading(true); // نمایش صفحه لودینگ
         //reset details
         setProduktData(null);
-        setSubmodelElement([]);
+        setSubmodelContent([]);
         setidEncoded([]);
         axios
             .get(`${API_URL}shells/${data}`,{
@@ -60,7 +71,7 @@ const DetailsProdukt = ({ data }) => {
                 }
                 console.log(res.data);
                 setidEncoded(submodelsIdEncoded);
-                console.log(submodelElement);
+                console.log(submodelContent);
 
             })
             .catch((error) => {
@@ -90,7 +101,7 @@ const DetailsProdukt = ({ data }) => {
             <Col md={8}>
                 <div style={{ padding: 100, borderRadius: 20, marginTop: 20, textAlign: 'center' }}>
                     <img src="empty.png" style={{ marginBottom: 20, borderRadius: 20 }} />
-                    <h2 style={{ color: 'gray' }}>Please select a product item</h2>
+                    <h2 style={{ color: 'gray' }}>Please select an Asset</h2>
                 </div>
             </Col>
         );
@@ -99,38 +110,41 @@ const DetailsProdukt = ({ data }) => {
     return (
         <Col md={8} mt="2">
             <h4>
-                <strong>Details</strong>
+                <strong>Submodels</strong>
             </h4>
             <hr />
-            <Row>
-                <Col md={6} xs={6}>
-                    <Card style={{ border: "none" }}>
-
-                        <Card.Img variant="top" src='empty.png' />
-                    </Card>
-                </Col>
-                <Col md={6} xs={6}>
                     <Card  style={{ border: "none" }}>
                         <Card.Header>
                             <Card.Title>{produktData.idShort}</Card.Title>
                         </Card.Header>
                         <Card.Body>
-                            <ListGroup variant="flush">
-                                {submodelElement.map((submodel)=>//hier display submodels
-                                    <ListGroup.Item  id={submodel.id} className="fw-bold">
-                                        <Button variant="light">{submodel.idShort}</Button>
-                                    </ListGroup.Item>
+                                {submodelContent.map((submodel)=>//hier display submodels
+                                    <Collapsible  id={submodel.id} className="fw-bold" trigger={submodel.idShort} onOpening={getSubmodelContent(submodel.id, submodel.idShort)}>
+                                        {console.log(submodel)}
+                                        <p><strong>Semantic ID: </strong>{submodel.semanticId.keys[0].value}</p>
+
+                                        {console.log(submodel.submodelElements)}
+                                        {returnSubmodelContent(submodel.submodelElements)}
+                                        {
+                                            submodel.submodelElements.map((submodelElement) =>
+                                                submodelElement.modelType === "Property"
+                                                    ?<p><strong>{submodelElement.idShort}: </strong>{submodelElement.value}</p>
+                                                    : null
+
+
+                                                //<p>123</p>
+                                            )
+                                        }
+                                        <p>Test 123</p>
+                                    </Collapsible>
                                 )}
-                            </ListGroup>
                         </Card.Body>
                     </Card>
-                </Col>
                 <Button href={`${produktData.id}`} variant="info">
                     Show Link Product
                 </Button>
-            </Row>
         </Col>
     );
 };
 
-export default DetailsProdukt;
+export default AssetDetails;

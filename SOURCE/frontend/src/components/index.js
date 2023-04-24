@@ -1,6 +1,6 @@
 import Mydocs from "./Mydocs";
-import Produkte from "./Produkte";
+import Assets from "./Assets";
 import NavComponent from "./NavComponent";
-import DetailsProdukt from "./DetailsProdukt";
+import AssetDetails from "./AssetDetails";
 
-export { Mydocs,Produkte, NavComponent,DetailsProdukt }
+export { Mydocs,Assets, NavComponent,AssetDetails }

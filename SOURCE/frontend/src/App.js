@@ -65,11 +65,11 @@ render(){
                     <Row>
 
                         <Col md={4} mt="2">
-                            <h4><strong>Produkte</strong></h4>
+                            <h4><strong>Assets</strong></h4>
 
                             <Row>
                                 {shells && shells.map((shells) => (
-                                    <Produkte changeProduct={this.changeProduct} choose={choose}
+                                    <Assets changeProduct={this.changeProduct} choose={choose}
                                                    shells={shells}
                                     />
 
@@ -82,7 +82,7 @@ render(){
                             <hr />
                             <Row>
                                 {shells && shells.map((shells) => (
-                                    <DetailsProdukt
+                                    <AssetDetails
                                         shells={shells}
                                     />
 
