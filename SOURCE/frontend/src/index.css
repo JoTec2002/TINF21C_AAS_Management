@@ -25,7 +25,6 @@ code {
 .produkt{
   width: 400px;
   height: 40px;
-  margin-top: 5x;
   margin-top: 5px;
   transition: 0.3s;
   border: 2px solid gray;
@@ -85,4 +84,10 @@ h6{
 
 img{
   max-height: 20em;
+}
+
+.isError{
+  background-color: red;
+  height: 2em;
+  text-align: center;
 }

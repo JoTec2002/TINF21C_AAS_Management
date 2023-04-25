@@ -1,7 +1,5 @@
-//import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
 import {HashRouter as Router, Routes, Route} from "react-router-dom";
 import Guest from "../Pages/Guest";
-import Home from "../Pages/Home";
 import AdminDashboard from "../Pages/AdminDashboard";
 import Notfound from "../Pages/Notfound";
 import NewProdukt from "../Pages/NewProdukt";
@@ -12,7 +10,6 @@ const RouterPages =()=>{
         <Router>
             <Routes>
                 <Route path='/' element={<Guest />}/>
-                <Route path='/home' element={<Home />}/>
                 <Route path='/admin' element={<AdminDashboard />}/>
                 <Route path='/new' element={<NewProdukt />}/>
                 <Route path='/create' element={<AddAccount />}/>
