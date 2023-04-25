@@ -4,10 +4,12 @@ import { Col, Row, Container } from 'react-bootstrap';
 
 function Guest() {
   const [selectedData, setSelectedData] = useState();
+  const [error, setError] = useState("");
 
   return (
     <div>
       <NavComponent />
+      <div id={"error"} />
       <div style={{ paddingTop:20, paddingBottom:100 }}>
         <Container>
           <Row>

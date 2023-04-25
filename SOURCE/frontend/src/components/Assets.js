@@ -80,7 +80,7 @@ export default class Assets extends Component {
                     <div>
                         {filteredShells && filteredShells.map((shells) => (
 
-                            <div  className={`produkt ${shells.idShort === this.state.activeProdukt ? "active" : ""}`}
+                            <div key={shells.id} className={`produkt ${shells.idShort === this.state.activeProdukt ? "active" : ""}`}
                                 onClick={() => this.chooseShell(shells.id)}
                                 id={shells.id}>
                                 <h6 style={{ margin: 0 }}>{shells.idShort}</h6>
