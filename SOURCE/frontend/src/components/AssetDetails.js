@@ -13,6 +13,7 @@ const AssetDetails = ({ data }) => {
     const [loading, setLoading] = useState(false);
     data = base64url.fromBase64(window.btoa(data));
 
+
     const endcode=(id)=>{
         let idchange = base64url.fromBase64(window.btoa(id));
         return idchange;
@@ -93,7 +94,7 @@ const AssetDetails = ({ data }) => {
             return (<p><strong>{submodelElement.idShort}: </strong>{submodelElement.value}</p>)
         }
         if(submodelElement.modelType === "SubmodelElementCollection"){
-            return (<Collapsible trigger={submodelElement.idShort}>
+            return (<Collapsible trigger={[<div className='wrapper'>{submodelElement.idShort} </div>]}>
                 <p><strong>Semantic ID: </strong>{submodelElement.semanticId.keys[0].value}</p>
                 {
                     submodelElement.value.map((innerSubmodelElement) =>
@@ -189,7 +190,9 @@ const AssetDetails = ({ data }) => {
                         </Card.Header>
                         <Card.Body>
                                 {submodelContent.map((submodel)=>//hier display submodels
-                                    <Collapsible  id={submodel.id} trigger={submodel.idShort}>
+                                    <Collapsible  id={submodel.id}
+                                                  trigger={[<div className='wrapper'>{submodel.idShort}
+                                                            </div>]}>
                                         {console.log(submodel)}
                                         <p><strong>Semantic ID: </strong>{submodel.semanticId.keys[0].value}</p>
                                         {

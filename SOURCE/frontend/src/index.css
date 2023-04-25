@@ -73,16 +73,45 @@ h6{
   padding: 10px;
 }
 
-.Collapsible{
-  border: 2px solid #000000;
+.Collapsible {
+  border: none;
   margin-bottom: 5px;
 }
 
 
 .Collapsible__contentInner {
   margin-left: 0.5em;
+  padding: 10px;
+  background-color: #ebebef;
+  border-radius: 10px;
 }
 
 img{
   max-height: 20em;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+.wrapper{
+  padding: 10px;
+  background-color: #ddd3f1;
+  height: 50px;
+  border: 2px solid gray;
+  border-radius: 10px;
+
+}
+
+.wrapper:hover{
+  background-color: rgb(122, 103, 208);
+  color: white;
+  cursor: pointer;
+}
+img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 50%;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+p{
+  margin-top: 5px;
 }
