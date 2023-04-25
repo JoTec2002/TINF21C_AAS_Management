@@ -9,9 +9,7 @@ import base64url from "base64url";
 const AssetDetails = ({ data }) => {
     const [produktData, setProduktData] = useState(null);
     const [submodelContent, setSubmodelContent]= useState([]);
-    const [idEncoded, setidEncoded]= useState([])
     const [loading, setLoading] = useState(false);
-    data = base64url.fromBase64(window.btoa(data));
 
 
     const endcode=(id)=>{
@@ -19,26 +17,23 @@ const AssetDetails = ({ data }) => {
         return idchange;
     }
 
-    const getSubmodel = (id)=>{
-        setLoading(true)
-        axios.get(`${API_URL}shells/${data}/submodels/${id}/submodel`,{
-            auth:{
-                username:localStorage.getItem("email"),
-                password:localStorage.getItem("password")
-                }
-            })
-            .then((res)=>{
-                //console.log(res.data);
-                setSubmodelContent(submodelElement => [...submodelElement, res.data]);
-            })
-            .catch((error) =>{
-                console.error(error);
-            })
-            .finally(()=>{
-                setLoading(false);
-            })
-    }
+    data = endcode(data);
 
+    const getSubmodel = async (id)=>{
+        setLoading(true)
+        try{
+            let res =
+                await axios.get(`${API_URL}shells/${data}/submodels/${id}/submodel`,{
+                    auth:{
+                        username:localStorage.getItem("email"),
+                        password:localStorage.getItem("password")
+                    }
+                })
+            return res.data;
+        } catch (error){
+            console.error(error);
+        }
+    }
     const getFileContentBase64 = (id, path, contentType) => {
         axios.get(`${API_URL}submodels/${id}/submodelelements/${path}/attachment`,{
             auth:{
@@ -62,6 +57,7 @@ const AssetDetails = ({ data }) => {
             })
     };
     const getFileContentDownload = (id, path, contentType) => {
+        console.log("RUN")
         axios.get(`${API_URL}submodels/${id}/submodelelements/${path}/attachment`,{
             auth:{
                 username:localStorage.getItem("email"),
@@ -82,9 +78,7 @@ const AssetDetails = ({ data }) => {
                 console.error(error);
             })
     };
-
     const returnSubmodelContent = (submodelElement, submodelid, idShortPath) => {
-        console.log("MÄH")
         if(idShortPath.length == 0){
             idShortPath = submodelElement.idShort
         }else {
@@ -107,7 +101,7 @@ const AssetDetails = ({ data }) => {
         if(submodelElement.modelType === "File"){
             if(submodelElement.contentType === "application/pdf"){
                 //PDF
-                return (<p>{submodelElement.idShort}: <a id={submodelid+"-"+idShortPath} download onClick={getFileContentDownload(submodelid, idShortPath, submodelElement.contentType)}>Download</a></p>)
+                return (<p>{submodelElement.idShort}: <a id={submodelid+"-"+idShortPath} download onClick={ () => getFileContentDownload(submodelid, idShortPath, submodelElement.contentType)}>Download</a></p>)
             }
             if(submodelElement.contentType.startsWith("image/")){
                 getFileContentBase64(submodelid, idShortPath, submodelElement.contentType);
@@ -116,15 +110,14 @@ const AssetDetails = ({ data }) => {
             return (<p>Error: Filetype not implementet {submodelElement.contentType}</p>)
         }
 
-        return (<p>Error: submodelContent not found</p>);
+        return (<p>Error: submodelContent not found {submodelElement.modelType}</p>);
     }
 
     useEffect(() => {
-        setLoading(true); // نمایش صفحه لودینگ
+        setLoading(true);
         //reset details
         setProduktData(null);
         setSubmodelContent([]);
-        setidEncoded([]);
         axios
             .get(`${API_URL}shells/${data}`,{
                 auth:{
@@ -132,16 +125,15 @@ const AssetDetails = ({ data }) => {
                     password:localStorage.getItem("password")
                 }
             })
-            .then((res) => {
+            .then(async (res) => {
+                console.log(res.data)
                 setProduktData(res.data);
-                let submodelsIdEncoded = [];
+                let submodels = [];
                 for(let i=0; i<res.data.submodels.length; i++){
                     let submodelIdEncoded = endcode(res.data.submodels[i].keys[0].value);
-                    submodelsIdEncoded.push(submodelIdEncoded);
-                    getSubmodel(submodelIdEncoded);
+                    submodels.push(await getSubmodel(submodelIdEncoded));
                 }
-                console.log(res.data);
-                setidEncoded(submodelsIdEncoded);
+                setSubmodelContent(submodels);
                 console.log(submodelContent);
 
             })
@@ -149,7 +141,7 @@ const AssetDetails = ({ data }) => {
                 console.log(error);
             })
             .finally(() => {
-                setLoading(false);// مخفی کردن صفحه لودینگ
+                setLoading(false);
             });
 
     }, [data]);

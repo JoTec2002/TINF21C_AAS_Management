@@ -21,6 +21,7 @@ const PopUpLogin = ({ showModal, handleClose }) => {
     localStorage.removeItem("email");
     localStorage.removeItem("password");
     setLoggedIn(false);
+    window.location.reload(false);
   };
 
   const handleSubmit = (e) => {
