@@ -5,12 +5,12 @@ import Collapsible from 'react-collapsible';
 import { API_URL } from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
 import base64url from "base64url";
+import errorHandling from "./errorHandling";
 
 const AssetDetails = ({ data }) => {
     const [produktData, setProduktData] = useState(null);
     const [submodelContent, setSubmodelContent]= useState([]);
     const [loading, setLoading] = useState(false);
-
 
     const endcode=(id)=>{
         let idchange = base64url.fromBase64(window.btoa(id));
@@ -31,7 +31,7 @@ const AssetDetails = ({ data }) => {
                 })
             return res.data;
         } catch (error){
-            console.error(error);
+            errorHandling(error);
         }
     }
     const getFileContentBase64 = (id, path, contentType) => {
@@ -53,7 +53,8 @@ const AssetDetails = ({ data }) => {
                 }
             })
             .catch((error) =>{
-                console.error(error);
+                localStorage.setItem("error", error);
+                errorHandling();
             })
     };
     const getFileContentDownload = (id, path, contentType) => {
@@ -85,11 +86,11 @@ const AssetDetails = ({ data }) => {
             idShortPath = idShortPath +"."+ submodelElement.idShort;
         }
         if(submodelElement.modelType === "Property"){
-            return (<p><strong>{submodelElement.idShort}: </strong>{submodelElement.value}</p>)
+            return (<p key={submodelElement.idShort}><strong>{submodelElement.idShort}: </strong>{submodelElement.value}</p>)
         }
         if(submodelElement.modelType === "SubmodelElementCollection"){
-            return (<Collapsible trigger={[<div className='wrapper'>{submodelElement.idShort} </div>]}>
-                <p><strong>Semantic ID: </strong>{submodelElement.semanticId.keys[0].value}</p>
+            return (<Collapsible trigger={[<div className='wrapper'>{submodelElement.idShort}</div>]}>
+                <p key={submodelElement.idShort}><strong>Semantic ID: </strong>{submodelElement.semanticId.keys[0].value}</p>
                 {
                     submodelElement.value.map((innerSubmodelElement) =>
 
@@ -114,39 +115,46 @@ const AssetDetails = ({ data }) => {
     }
 
     useEffect(() => {
-        setLoading(true);
-        //reset details
-        setProduktData(null);
-        setSubmodelContent([]);
-        axios
-            .get(`${API_URL}shells/${data}`,{
-                auth:{
-                    username:localStorage.getItem("email"),
-                    password:localStorage.getItem("password")
-                }
-            })
-            .then(async (res) => {
-                console.log(res.data)
-                setProduktData(res.data);
-                let submodels = [];
-                for(let i=0; i<res.data.submodels.length; i++){
-                    let submodelIdEncoded = endcode(res.data.submodels[i].keys[0].value);
-                    submodels.push(await getSubmodel(submodelIdEncoded));
-                }
-                setSubmodelContent(submodels);
-                console.log(submodelContent);
+        //console.log("effekt"+ data);
+        if(data !== "dW5kZWZpbmVk") {
+            setLoading(true);
+            //reset details
+            setProduktData(null);
+            setSubmodelContent([]);
+            axios
+                .get(`${API_URL}shells/${data}`, {
+                    auth: {
+                        username: localStorage.getItem("email"),
+                        password: localStorage.getItem("password")
+                    }
+                })
+                .then(async (res) => {
+                    console.log(res.data)
+                    setProduktData(res.data);
+                    let submodels = [];
+                    for (let i = 0; i < res.data.submodels.length; i++) {
+                        let submodelIdEncoded = endcode(res.data.submodels[i].keys[0].value);
+                        let submodel = await getSubmodel(submodelIdEncoded)
+                        if(submodel != undefined ){
+                            submodels.push(submodel);
+                        }
+                    }
+                    setSubmodelContent(submodels);
+                    console.log(submodels);
 
-            })
-            .catch((error) => {
-                console.log(error);
-            })
-            .finally(() => {
-                setLoading(false);
-            });
-
+                })
+                .catch((error) => {
+                    console.log(error);
+                    localStorage.setItem("error", error);
+                    errorHandling();
+                })
+                .finally(() => {
+                    setLoading(false);
+                });
+        }
     }, [data]);
 
-    if (loading) { // اگر درخواست به سرور فرستاده شده و پاسخ دریافت نشده باشد، نمایش صفحه لودینگ
+    if (loading) {
         return (
             <Col md={8} style={{ padding:50 }}>
                 <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop:20 }}>
@@ -176,29 +184,27 @@ const AssetDetails = ({ data }) => {
                 <strong>Submodels</strong>
             </h4>
             <hr />
-                    <Card  style={{ border: "none" }}>
-                        <Card.Header>
-                            <Card.Title>{produktData.idShort}</Card.Title>
-                        </Card.Header>
-                        <Card.Body>
-                                {submodelContent.map((submodel)=>//hier display submodels
-                                    <Collapsible  id={submodel.id}
-                                                  trigger={[<div className='wrapper'>{submodel.idShort}
-                                                            </div>]}>
-                                        {console.log(submodel)}
-                                        <p><strong>Semantic ID: </strong>{submodel.semanticId.keys[0].value}</p>
-                                        {
-                                            submodel.submodelElements.map((submodelElement) =>
-                                                returnSubmodelContent(submodelElement, endcode(submodel.id), "")
-                                            )
-                                        }
-                                    </Collapsible>
-                                )}
-                        </Card.Body>
-                    </Card>
-                <Button href={`${produktData.id}`} variant="info">
-                    Show Link Product
-                </Button>
+            <Card  style={{ border: "none" }}>
+                <Card.Header>
+                    <Card.Title>{produktData.idShort}</Card.Title>
+                </Card.Header>
+                <Card.Body>
+                    {submodelContent.map((submodel)=>//hier display submodels
+                        <Collapsible  key={submodel.id} trigger={[<div className='wrapper'>{submodel.idShort}</div>]}>
+                            {console.log(submodel)}
+                            <p key={submodel.semanticId.keys[0].value}><strong>Semantic ID: </strong>{submodel.semanticId.keys[0].value}</p>
+                            {
+                                submodel.submodelElements.map((submodelElement) =>
+                                    returnSubmodelContent(submodelElement, endcode(submodel.id), "")
+                                )
+                            }
+                        </Collapsible>
+                    )}
+                </Card.Body>
+            </Card>
+            <Button href={`${produktData.id}`} variant="info">
+                Show Link Product
+            </Button>
         </Col>
     );
 };
