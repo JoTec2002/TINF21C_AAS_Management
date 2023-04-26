@@ -73,6 +73,7 @@ const AssetDetails = ({ data }) => {
                     var base64String = reader.result;
                     base64String = base64String.substring((base64String.indexOf(',')+1))
                     document.getElementById(id+"-"+path).href = "data:"+contentType+";base64,"+base64String;
+                    document.getElementById(id+"-"+path).click();
                 }
             })
             .catch((error) =>{
