@@ -1,3 +1,4 @@
+/*general css*/
 body {
   margin: 0;
   font-family: 'Public Sans', sans-serif;
@@ -5,8 +6,22 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 p{
-  margin-bottom: 0;
+  margin-bottom: 0.2rem;
 }
+h6{
+  text-align: center;
+}
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+  monospace;
+}
+img{
+  max-height: 20em;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+
+/*Navigation */
 .navbar{
   background-color: #22668A ;
 }
@@ -14,15 +29,21 @@ p{
   background-color: #22668A ;
   color: white;
 }
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
 .d-flex{
   margin-bottom: 0.5rem;
 }
 
-.produkt{
+
+/*Error Display */
+.isError{
+  background-color: red;
+  height: 2em;
+  text-align: center;
+}
+
+
+/*Assets*/
+.assets{
   width: 400px;
   height: 40px;
   margin-top: 5px;
@@ -34,21 +55,63 @@ code {
   align-items: center;
   padding: 20px;
 }
-.produkt:hover{
+.assets:hover{
   background-color: rgb(122, 103, 208);
   color: white;
   cursor: pointer;
 }
-
 .active{
   background-color: rgb(122, 103, 208);
   color: white;
   cursor: pointer;
 }
 
-h6{
-  text-align: center;
+
+/*Submodels*/
+.Collapsible {
+  background-color: #fff;
+  margin-bottom: 0.5em;
 }
+.Collapsible__contentInner {
+  padding: 10px;
+  border: 1px solid #ebebeb;
+  border-top: 0;
+}
+.Collapsible__contentInner p {
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 20px;
+}
+.Collapsible__contentInner p:last-child {
+  margin-bottom: 0;
+}
+.Collapsible__trigger {
+  display: block;
+  font-weight: 400;
+  text-decoration: none;
+  position: relative;
+  padding: 10px;
+  background: #b1b2de;
+  border-radius: 10px;
+}
+.Collapsible__trigger:after {
+  content: '\02C5';
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  display: block;
+  transition: transform 300ms;
+}
+.Collapsible__trigger.is-open:after {
+  transform: rotateZ(180deg);
+}
+.Collapsible__trigger.is-disabled {
+  opacity: 0.5;
+  background-color: grey;
+}
+
+
+/* unknown */
 .newprodukt{
   display: flex;
   width: 1000px;
@@ -64,30 +127,7 @@ h6{
   width: 450px;
   height: 650px;
 
-
 }
-
-
 .py-10{
   padding: 10px;
-}
-
-.Collapsible{
-  border: 2px solid #000000;
-  margin-bottom: 5px;
-}
-
-
-.Collapsible__contentInner {
-  margin-left: 0.5em;
-}
-
-img{
-  max-height: 20em;
-}
-
-.isError{
-  background-color: red;
-  height: 2em;
-  text-align: center;
 }
