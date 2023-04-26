@@ -72,8 +72,11 @@ const AssetDetails = ({ data }) => {
                 reader.onloadend = function () {
                     var base64String = reader.result;
                     base64String = base64String.substring((base64String.indexOf(',')+1))
-                    document.getElementById(id+"-"+path).href = "data:"+contentType+";base64,"+base64String;
-                    document.getElementById(id+"-"+path).click();
+                    let anchor = document.createElement("a")
+                    anchor.setAttribute('download', '');
+                    anchor.href = "data:"+contentType+";base64,"+base64String;
+                    anchor.click();
+                    anchor.remove();
                 }
             })
             .catch((error) =>{
@@ -103,7 +106,7 @@ const AssetDetails = ({ data }) => {
         if(submodelElement.modelType === "File"){
             if(submodelElement.contentType === "application/pdf"){
                 //PDF
-                return (<p>{submodelElement.idShort}: <a id={submodelid+"-"+idShortPath} download onClick={ () => getFileContentDownload(submodelid, idShortPath, submodelElement.contentType)}>Download</a></p>)
+                return (<p>{submodelElement.idShort}: <a id={submodelid+"-"+idShortPath} onClick={ () => getFileContentDownload(submodelid, idShortPath, submodelElement.contentType)}>Download</a></p>)
             }
             if(submodelElement.contentType.startsWith("image/")){
                 getFileContentBase64(submodelid, idShortPath, submodelElement.contentType);
