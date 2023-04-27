@@ -35,10 +35,17 @@ img{
 
 
 /*Error Display */
-#error > p{
+#error > div{
   background-color: red;
-  height: 2em;
   text-align: center;
+  height: 2em;
+}
+#error > div > p{
+  display: inline;
+}
+#error > div > button{
+  float: right;
+  margin-right: 2em;
 }
 
 

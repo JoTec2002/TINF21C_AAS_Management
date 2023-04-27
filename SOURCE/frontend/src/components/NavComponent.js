@@ -70,7 +70,7 @@ export default class NavComponent extends Component {
                           this.handleLogout();
                           this.setState({ loggedIn: false });
                         }}>Logout</Button>
-                      <Button variant="primary" style={{ marginLeft:10 }}> Add Asset </Button>
+                      <Button variant="primary" style={{ marginLeft:10 }} href={"#/addAsset"}> Add Asset </Button>
                         <Nav.Link href="#/admin">User management</Nav.Link>
                     </div>
                   )}

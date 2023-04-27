@@ -5,7 +5,7 @@ import Collapsible from 'react-collapsible';
 import { API_URL } from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
 import base64url from "base64url";
-import errorHandling from "./errorHandling";
+import {setErrorHandling} from "./errorHandling";
 
 const AssetDetails = ({ data }) => {
     const [produktData, setProduktData] = useState(null);
@@ -31,7 +31,7 @@ const AssetDetails = ({ data }) => {
                 })
             return res.data;
         } catch (error){
-            errorHandling(error);
+            setErrorHandling(error);
         }
     }
     const getFileContentBase64 = (id, path, contentType) => {
@@ -54,7 +54,7 @@ const AssetDetails = ({ data }) => {
             })
             .catch((error) =>{
                 localStorage.setItem("error", error);
-                errorHandling();
+                setErrorHandling();
             })
     };
     const getFileContentDownload = (id, path, contentType) => {
@@ -150,7 +150,7 @@ const AssetDetails = ({ data }) => {
                 .catch((error) => {
                     console.log(error);
                     localStorage.setItem("error", error);
-                    errorHandling();
+                    setErrorHandling();
                 })
                 .finally(() => {
                     setLoading(false);
