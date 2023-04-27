@@ -4,6 +4,7 @@ import AdminDashboard from "../Pages/AdminDashboard";
 import Notfound from "../Pages/Notfound";
 import AddAsset from "../Pages/AddAsset";
 import AddAccount from "../Pages/AddAccount"
+import DeleteAsset from "../Pages/DeleteAsset";
 
 const RouterPages =()=>{
     return (
@@ -12,6 +13,7 @@ const RouterPages =()=>{
                 <Route path='/' element={<Guest />}/>
                 <Route path='/admin' element={<AdminDashboard />}/>
                 <Route path='/addAsset' element={<AddAsset />}/>
+                <Route path='/deleteAsset' element={<DeleteAsset />}/>
                 <Route path='/create' element={<AddAccount />}/>
                 <Route path='/*' element={<Notfound />}/>
             </Routes>

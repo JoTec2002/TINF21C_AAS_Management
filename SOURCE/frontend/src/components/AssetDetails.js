@@ -53,8 +53,7 @@ const AssetDetails = ({ data }) => {
                 }
             })
             .catch((error) =>{
-                localStorage.setItem("error", error);
-                setErrorHandling();
+                setErrorHandling(error);
             })
     };
     const getFileContentDownload = (id, path, contentType) => {
@@ -80,7 +79,7 @@ const AssetDetails = ({ data }) => {
                 }
             })
             .catch((error) =>{
-                console.error(error);
+                setErrorHandling(error);
             })
     };
     const returnSubmodelContent = (submodelElement, submodelid, idShortPath) => {
@@ -148,9 +147,7 @@ const AssetDetails = ({ data }) => {
 
                 })
                 .catch((error) => {
-                    console.log(error);
-                    localStorage.setItem("error", error);
-                    setErrorHandling();
+                    setErrorHandling(error);
                 })
                 .finally(() => {
                     setLoading(false);
@@ -206,9 +203,12 @@ const AssetDetails = ({ data }) => {
                                 )}
                         </Card.Body>
                     </Card>
-                <Button href={`${produktData.id}`} variant="info">
-                    Show Link Product
-                </Button>
+                {localStorage.getItem("email")?(
+                    <Button href={'#/deleteAsset?aasId='+produktData.id} variant="danger">
+                        Delete Asset
+                    </Button>
+                ):(<a></a>)}
+
         </Col>
     );
 };
