@@ -160,7 +160,7 @@ namespace IO.Swagger.V1RC03.Services
                     {
                         fileName = aas.AssetInformation.DefaultThumbnail.Path;
 
-                        string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilename(aasIdentifier);
+                        string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilenameGetFile(aasIdentifier);
                         Stream stream = new AdminShellPackageEnv(fn, true).GetLocalThumbnailStream();
                         byteArray = stream.ToByteArray();
                         fileSize = byteArray.Length;
@@ -182,7 +182,7 @@ namespace IO.Swagger.V1RC03.Services
         public void UpdateThumbnail(string aasIdentifier, string fileName, string contentType, Stream fileContent)
         {
             var aas = GetAssetAdministrationShellById(aasIdentifier);
-            string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilename(aasIdentifier);
+            string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilenameGetFile(aasIdentifier);
             if (aas != null)
             {
                 if (aas.AssetInformation != null)
@@ -1296,7 +1296,7 @@ namespace IO.Swagger.V1RC03.Services
                 {
                     fileName = file.Value;
 
-                    string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilename(assetAdministrationShell.Id);
+                    string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilenameGetFile(assetAdministrationShell.Id);
                     Stream stream = new AdminShellPackageEnv(fn, true).GetLocalStreamFromPackage(fileName);
                     byteArray = stream.ToByteArray();
                     fileSize = byteArray.Length;
@@ -1346,7 +1346,7 @@ namespace IO.Swagger.V1RC03.Services
                             var targetFile = Path.Combine(sourcePath, fileName);
                             targetFile = targetFile.Replace('/', Path.DirectorySeparatorChar);
                             var assetAdministrationShell = getAssetAdministationShellsBySubmodelIdentifier(submodelIdentifier);
-                            string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilename(assetAdministrationShell.Id);
+                            string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilenameGetFile(assetAdministrationShell.Id);
 
                             Task task = new AdminShellPackageEnv(fn, true).ReplaceSupplementaryFileInPackageAsync(file.Value, targetFile, contentType, fileContent);
                             file.Value = FormatFileName(targetFile);
@@ -1366,7 +1366,7 @@ namespace IO.Swagger.V1RC03.Services
                         var targetFile = Path.Combine("/aasx/files", fileName);
                         targetFile = targetFile.Replace('/', Path.DirectorySeparatorChar);
                         var assetAdministrationShell = getAssetAdministationShellsBySubmodelIdentifier(submodelIdentifier);
-                        string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilename(assetAdministrationShell.Id);
+                        string fn = AasxHttpContextHelper.mongoDBInterface.readDBFilenameGetFile(assetAdministrationShell.Id);
 
                         Task task = new AdminShellPackageEnv(fn, true).ReplaceSupplementaryFileInPackageAsync(file.Value, targetFile, contentType, fileContent);
                         file.Value = FormatFileName(targetFile);
