@@ -1,4 +1,4 @@
-import { Button, Container, Navbar, Nav, NavDropdown } from "react-bootstrap";
+import { Button, Container, Navbar, Nav, Form,Col,Row } from "react-bootstrap";
 import { Component } from "react";
 import PopUpLogin from "./PopUpLogin";
 import {API_URL} from "../utils/constanst";
@@ -12,6 +12,7 @@ export default class NavComponent extends Component {
             username:'',
             password:'',
             loggedIn: false,
+            server:'',
         }
     }
 
@@ -45,10 +46,28 @@ export default class NavComponent extends Component {
         this.setState({ loggedIn: false });
         window.location.reload(false);
     };
-    
+    // save url in localstorage,if doesn't empty replace it
+
+
+    handleURL=(e)=>{
+
+        e.preventDefault();
+        if(localStorage.getItem("server")){
+            localStorage.setItem("server","");
+            localStorage.setItem("server",this.state.server);
+            window.location.reload(false);
+        }
+        localStorage.setItem("server",this.state.server);
+        window.location.reload(false);
+
+
+    };
     render() {
         const { loggedIn } = this.state;
+        const {server}= this.state.server;
         return (
+            <Col>
+            <Row>
           <Navbar variant="dark" expand="lg">
             <Container>
               <Navbar.Brand href="#">
@@ -85,6 +104,26 @@ export default class NavComponent extends Component {
               </Navbar.Collapse>
             </Container>
           </Navbar>
+            </Row>
+        <Row>
+
+            <div className="server" >
+                <Form className="d-flex" >
+                    <Form.Control type="text" onSubmit={this.handleURL}
+
+                                  placeholder="Change Server"
+                                  className="me-2"
+                                  aria-label="Search"
+                                  value={server}
+                                  onChange={(e) => this.setState({server: e.target.value})}
+
+                    />
+                    <Button onClick={this.handleURL} variant="outline-success" type="submit">Load</Button>
+                </Form>
+            </div>
+
+        </Row>
+    </Col>
         );
       }
 
