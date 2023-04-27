@@ -82,18 +82,6 @@ export default class Dashboard extends Component {
           <strong>Admin Dashboard</strong>
         </h4>
         <hr />
-        <Form className="d-flex">
-          <Form.Control
-              type="search"
-              placeholder="Search Member ..."
-              className="me-2"
-              aria-label="Search"
-              value={searchTerm}
-              onChange={this.onSearchTermChange}
-          />
-          <Button variant="outline-success">Search</Button>
-        </Form>
-
 
         {loading ? (
             <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop:20 }}>
@@ -104,11 +92,21 @@ export default class Dashboard extends Component {
             </div>
         ) : (
             <div>
+              <Form className="d-flex">
+                <Form.Control
+                    type="search"
+                    placeholder="Search Member ..."
+                    className="me-2"
+                    aria-label="Search"
+                    value={searchTerm}
+                    onChange={this.onSearchTermChange}
+                />
+                <Button variant="outline-success">Search</Button>
+              </Form>
               <Table striped>
                 <thead>
                 <tr>
                   <th>Account</th>
-                  <th>State</th>
                   <th>Role</th>
                   <th>Action</th>
                 </tr>
@@ -118,7 +116,6 @@ export default class Dashboard extends Component {
                   <tr>
 
                     <td>{`${shells.value[0].value[0].idShort}`}</td>
-                    <td>Inactive</td>
                     <td>{`${this.sortRole(shells.value[1].value[0].idShort)}`}</td>
                     <td>
                       <Button href="#/create" variant="text btn-sm">
@@ -132,14 +129,13 @@ export default class Dashboard extends Component {
               ))}
           </tbody>
           </Table>
+              <Button href="#/create" variant="outline-primary btn-sm">
+                Create Account
+              </Button>
+              <PopUpDelete handleClose={this.handleClose} {...this.state} />
           </div>
         )
         }
-
-        <Button href="#/create" variant="outline-primary btn-sm">
-          Create Account
-        </Button>
-        <PopUpDelete handleClose={this.handleClose} {...this.state} />
       </Col>
     );
   }
