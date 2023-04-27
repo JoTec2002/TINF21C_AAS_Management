@@ -10,6 +10,7 @@ using MongoDB.Bson.Serialization.Serializers;
 using AasxServerStandardBib.Exceptions;
 using System.Collections;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 //Author: Jonas Graubner
 //contact: jogithub@graubner-bayern.de
@@ -49,7 +50,7 @@ public class MongoDBInterface
 
         return collection.Find<AssetAdministrationShell>(filter, options).ToList<AssetAdministrationShell>();
     }
-    public string readDBFilename(string aasIdentifier)
+    public string readDBFilenameGetFile(string aasIdentifier)
     {
         var collection = _database.GetCollection<BsonDocument>("Filenames");
 
@@ -60,6 +61,16 @@ public class MongoDBInterface
             throw new Exception("File not found in DB");
         }
         return result[0].Elements.ToList()[1].Value.ToString();
+    }
+    public string readDBFilenameGetAasIdentifier(string filename)
+    {
+        var collection = _database.GetCollection<BsonDocument>("Filenames");
+
+        filename = filename.Replace("\\", "/");
+
+        var result = collection.Find<BsonDocument>(new BsonDocument("filename", filename)).ToList<BsonDocument>().FirstOrDefault();
+
+        return result.Elements.ToList()[0].Value.ToString();
     }
     public List<Submodel> readDBSubmodels(BsonDocument filter, FindOptions options = null)
     {
@@ -96,6 +107,43 @@ public class MongoDBInterface
         collection.DeleteOne(new BsonDocument("_id", Identifier));
     }
 
+    public void saveDeleteFilename(string filename)
+    {
+        string aasIdentifier = readDBFilenameGetAasIdentifier(filename);
+        saveDeleteShell(aasIdentifier);
+        deleteDB("Filenames", aasIdentifier);
+    }
+    private void saveDeleteShell(string aasIdentifier)
+    {
+        //get all submodels from the shell and save delete them first
+        List<string> submodelKeys = new List<string>();
+        AssetAdministrationShell shells = readDBShells(new BsonDocument("_id", aasIdentifier))[0];  //aas Identifier is unique -> just one response possible
+        shells.Submodels.ForEach(submodel =>
+        {
+            submodel.Keys.ForEach(key =>
+            {
+                submodelKeys.Add(key.Value);
+            });
+        });
+
+        submodelKeys = submodelKeys.Distinct().ToList();
+
+        submodelKeys.ForEach(submodelIdentifier =>
+        {
+            saveDeleteSubmodel(submodelIdentifier);
+        });
+        //TODO save delete Concept Descriptions
+        deleteDB("Shells", aasIdentifier);
+    }
+    private void saveDeleteSubmodel(string submodelIdentifier)
+    {
+        //check if submodelIdentifier is in more than one Shell
+        List<AssetAdministrationShell> shells = readDBShells(new BsonDocument("Submodels.Keys.Value", submodelIdentifier));
+        if(shells.Count < 2) {
+            deleteDB("Submodels", submodelIdentifier);
+        }
+    }
+
     public void writeDB(String collectionName, object data, bool throwError=false)
     {
         var collection = _database.GetCollection<object>(collectionName);
@@ -127,6 +175,7 @@ public class MongoDBInterface
     { 
         environment.AssetAdministrationShells.ForEach(shell => {
             writeDB("Shells", shell);
+            filename = filename.Replace("\\", "/");
             writeDBFilenames(new BsonDocument { { "_id", shell.Id }, { "filename", filename } });
             });
 

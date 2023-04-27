@@ -35,6 +35,7 @@ namespace IO.Swagger.V1RC03.Services
             var requestedPackage = _packages[packageIndex];
             if (requestedPackage != null)
             {
+                AasxHttpContextHelper.mongoDBInterface.saveDeleteFilename(_envFileNames[packageIndex]);
                 //Move the file to archive
                 var archivePath = Path.Combine(AasxHttpContextHelper.DataPath, "AasxFileArchive");
                 if (!Directory.Exists(archivePath))
@@ -161,6 +162,7 @@ namespace IO.Swagger.V1RC03.Services
             System.IO.File.WriteAllBytes(newFileName, fileContent);
             // open again
             var newAasx = new AdminShellPackageEnv(newFileName, true);
+            AasxHttpContextHelper.mongoDBInterface.importAASCoreEnvironment(newAasx.AasEnv, newFileName);
             if (newAasx != null)
             {
                 if (EmptyPackageAvailable(out int emptyPackageIndex))
