@@ -12,7 +12,8 @@ function setErrorWithId(innerId, state){
 let preDifinedErrors = [];
 //Axios Errors
 preDifinedErrors[100] = "User rights insufficient to load all data. Please login to see all Data.";
-preDifinedErrors[101] = "Internal Server Error. Please restart AASX Server."
+preDifinedErrors[150] = "Internal Server Error. File already exists"
+preDifinedErrors[151] = "Unknown Internal Server Error. Please restart AASX Server."
 
 function closeError(id){
     id=""+id;
@@ -22,17 +23,29 @@ function closeError(id){
 const setErrorHandling = function setErrorHandling (error) {
     //ErrorHandling
     try {
-            if (error.isAxiosError === true) {
+        //Error Thrown by Axios module - most likely http error
+        if (error.isAxiosError === true) {
                 //Error Thrown from Http Response
                 if (error.response.status === 403 && error.response.data.messages[0].code === "Forbidden") {
                     setErrorWithId("100", "block");
-                    //document.getElementById("error").getElementById(100).display = "block";
-                } else {
-                    console.error(error);
+                    return;
+                }
+                if(error.response.status === 500){
+                    //Remote Server Errors
+                    if(error.response.data.messages[0].text === "File already exists"){
+                        setErrorWithId("150", "block");
+                        return;
+                    }
                 }
 
+                console.log("unknown Axios Error")
+                console.error(error);
+
             }
-    }catch (error){}
+    }catch (errorinternal){
+        console.error(errorinternal)
+        console.error(error);
+    }
 
 }
 const errorHandling  = () => {
