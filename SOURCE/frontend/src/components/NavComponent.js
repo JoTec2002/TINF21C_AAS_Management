@@ -22,9 +22,6 @@ export default class NavComponent extends Component {
         if (email && password) {
           this.setState({ loggedIn: true });
         }
-        if(localStorage.getItem("server") == "" || localStorage.getItem("server") == null){
-            localStorage.setItem("server", API_URL);
-        }
     }
 
     handleLogin = () => {
@@ -53,7 +50,6 @@ export default class NavComponent extends Component {
 
 
     handleURL=(e)=>{
-
         e.preventDefault();
         if(localStorage.getItem("server")){
             localStorage.setItem("server","");
@@ -68,6 +64,9 @@ export default class NavComponent extends Component {
     render() {
         const { loggedIn } = this.state;
         const {server}= this.state.server;
+        if(localStorage.getItem("server") === null){
+            localStorage.setItem("server", API_URL);
+        }
         return (
 
           <Navbar variant="dark" expand="lg">
@@ -86,7 +85,6 @@ export default class NavComponent extends Component {
                                           aria-label="Search"
                                           value={server}
                                           onChange={(e) => this.setState({server: e.target.value})}
-
                             />
                             <Button onClick={this.handleURL} variant="success" type="submit">Change</Button>
                         </Form>
