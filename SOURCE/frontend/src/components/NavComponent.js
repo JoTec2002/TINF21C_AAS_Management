@@ -1,4 +1,4 @@
-import { Button, Container, Navbar, Nav, Form,Col,Row } from "react-bootstrap";
+import { Button, Container, Navbar, Nav, Form } from "react-bootstrap";
 import { Component } from "react";
 import PopUpLogin from "./PopUpLogin";
 import {API_URL} from "../utils/constanst";
@@ -66,15 +66,29 @@ export default class NavComponent extends Component {
         const { loggedIn } = this.state;
         const {server}= this.state.server;
         return (
-            <Col>
-            <Row>
+
           <Navbar variant="dark" expand="lg">
             <Container>
               <Navbar.Brand href="#">
                 <strong>AAS Management</strong>
               </Navbar.Brand>
               <Navbar.Toggle aria-controls="basic-navbar-nav" />
-                <Nav.Item className={"text-white"}><strong>current Server: </strong>{API_URL}</Nav.Item>
+                <Nav.Item className={"text-white"}>
+                    <div className="server" >
+                        <Form className="d-flex" >
+                            <Form.Control type="text" onSubmit={this.handleURL}
+
+                                          placeholder={"current server: "+localStorage.getItem("server")}
+                                          className="me-2"
+                                          aria-label="Search"
+                                          value={server}
+                                          onChange={(e) => this.setState({server: e.target.value})}
+
+                            />
+                            <Button onClick={this.handleURL} variant="success" type="submit">Change</Button>
+                        </Form>
+                    </div>
+                </Nav.Item>
               <Navbar.Collapse id="basic-navbar-nav">
                 <Nav className="ms-auto">
 
@@ -104,26 +118,7 @@ export default class NavComponent extends Component {
               </Navbar.Collapse>
             </Container>
           </Navbar>
-            </Row>
-        <Row>
 
-            <div className="server" >
-                <Form className="d-flex" >
-                    <Form.Control type="text" onSubmit={this.handleURL}
-
-                                  placeholder="Change Server"
-                                  className="me-2"
-                                  aria-label="Search"
-                                  value={server}
-                                  onChange={(e) => this.setState({server: e.target.value})}
-
-                    />
-                    <Button onClick={this.handleURL} variant="outline-success" type="submit">Load</Button>
-                </Form>
-            </div>
-
-        </Row>
-    </Col>
         );
       }
 
