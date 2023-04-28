@@ -1,4 +1,4 @@
-import { Button, Container, Navbar, Nav, NavDropdown } from "react-bootstrap";
+import { Button, Container, Navbar, Nav, Form } from "react-bootstrap";
 import { Component } from "react";
 import PopUpLogin from "./PopUpLogin";
 import {API_URL} from "../utils/constanst";
@@ -12,6 +12,7 @@ export default class NavComponent extends Component {
             username:'',
             password:'',
             loggedIn: false,
+            server:'',
         }
     }
 
@@ -45,17 +46,50 @@ export default class NavComponent extends Component {
         this.setState({ loggedIn: false });
         window.location.reload(false);
     };
-    
+    // save url in localstorage,if doesn't empty replace it
+
+
+    handleURL=(e)=>{
+        e.preventDefault();
+        if(localStorage.getItem("server")){
+            localStorage.setItem("server","");
+            localStorage.setItem("server",this.state.server);
+            window.location.reload(false);
+        }
+        localStorage.setItem("server",this.state.server);
+        window.location.reload(false);
+
+
+    };
     render() {
         const { loggedIn } = this.state;
+        const {server}= this.state.server;
+        if(localStorage.getItem("server") === null){
+            localStorage.setItem("server", API_URL);
+        }
         return (
+
           <Navbar variant="dark" expand="lg">
             <Container>
               <Navbar.Brand href="#">
                 <strong>AAS Management</strong>
               </Navbar.Brand>
               <Navbar.Toggle aria-controls="basic-navbar-nav" />
-                <Nav.Item className={"text-white"}><strong>current Server: </strong>{API_URL}</Nav.Item>
+                <Nav.Item className={"text-white"}>
+                    <div className="server" >
+                        <Form className="d-flex" >
+                            <Form.Control type="text" onSubmit={this.handleURL}
+
+                                          placeholder={"current server: "+localStorage.getItem("server")}
+                                          className="me-2"
+                                          aria-label="Search"
+                                          value={server}
+                                          onChange={(e) => this.setState({server: e.target.value})}
+                            />
+                            <Button onClick={this.handleURL} variant="success" type="submit">Change</Button>
+                        </Form>
+                    </div>
+                </Nav.Item>
               <Navbar.Collapse id="basic-navbar-nav">
                 <Nav className="ms-auto">
 
@@ -85,6 +119,7 @@ export default class NavComponent extends Component {
               </Navbar.Collapse>
             </Container>
           </Navbar>
+
         );
       }
 
