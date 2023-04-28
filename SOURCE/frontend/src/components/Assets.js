@@ -34,7 +34,7 @@ export default class Assets extends Component {
                 this.setState({ shells, loading: false });
             })
             .catch(error=>{
-                this.setState({ shells, loading: false });
+                this.setState({ loading: false });
                 console.log(error);
             })
     }
