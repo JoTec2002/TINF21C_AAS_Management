@@ -22,6 +22,9 @@ export default class NavComponent extends Component {
         if (email && password) {
           this.setState({ loggedIn: true });
         }
+        if(localStorage.getItem("server") == "" || localStorage.getItem("server") == null){
+            localStorage.setItem("server", API_URL);
+        }
     }
 
     handleLogin = () => {
