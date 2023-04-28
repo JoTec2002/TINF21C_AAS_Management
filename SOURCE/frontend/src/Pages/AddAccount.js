@@ -1,13 +1,15 @@
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
-import { Fragment, useRef} from "react";
+import { Fragment } from "react";
 import { NavComponent } from "../components";
 import { Col, Row } from "react-bootstrap";
 import {API_URL} from "../utils/constanst";
-import React from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 
 const AddAccount = () => {
+
+  const [validated, setValidated] = useState(false);
 
   const [formValue, setformValue] = React.useState({
     email: '',
@@ -15,26 +17,64 @@ const AddAccount = () => {
     role: ''
   });
 
-  const handleSubmit = async() => {
+
+  const handleSubmit = (event) => {
+    const form = event.currentTarget;
+    if (form.checkValidity() === false) {
+      event.preventDefault();
+      event.stopPropagation();
+    } else {
+      postNewAccount();
+    }
+    setValidated(true);
+  };
+
+  const postNewAccount = async() => {
+
     // store the states in the form data
-    const loginFormData = new FormData();
-    loginFormData.append("username", formValue.email)
-    loginFormData.append("password", formValue.password)
-    loginFormData.append("role", formValue.role)
+    const formData = new FormData();
+
+    console.log("Username: " + formValue.email);
+    console.log("Password: " + formValue.password);
+    console.log("Role: " + formValue.role);
+
+    formData.append("username", formValue.email);
+    formData.append("password", formValue.password);
+    formData.append("role", formValue.role);
+
+    var object = {};
+    formData.forEach((value, key) => object[key] = value);
+    var formDataJson = JSON.stringify(object);
+
+    console.log(formDataJson);
+
+    axios.get(API_URL+"submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth", {
+      auth: {
+        username: localStorage.getItem('email'),
+        password: localStorage.getItem('password')
+      }})
+        .then(res => {
+          console.log("Response : ", res);
+          const shells = res.data.value;
+          this.setState({ shells, loading: false });
+        })
+        .catch(error=>{
+          console.log(error);
+        })
 
     try {
       // axios post request
       const res = await axios({
         method: "post",
-        url: API_URL + "",
-        data: loginFormData,
-        headers: { "Content-Type": "multipart/form-data" },
+        url: API_URL + `submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${formDataJson.username}`,
+        data: formDataJson,
+        headers: { "Content-Type": "application/json" },
       }, {
         auth: {
-          username: localStorage.getItem('email'),
-          password: localStorage.getItem('password')
+          username: "luka@example.com", // localStorage.getItem('email'),
+          password: "wasAnnares"  // localStorage.getItem('password')
         }});
-      console.log(res)
+      console.log(res);
     } catch(error) {
       console.error(error);
     }
@@ -54,13 +94,16 @@ const AddAccount = () => {
           <div className="container" style={{paddingTop: 20, paddingBottom: 100}}>
             <h4>Create new account</h4>
             <hr/>
-            <Form onSubmit={handleSubmit}>
+            <Form noValidate validated={validated} onSubmit={handleSubmit} >
               <Form.Group as={Row} className="mb-3" controlId="formUsername">
                 <Form.Label column sm={2}>
                   Username
                 </Form.Label>
                 <Col sm={10}>
-                  <Form.Control placeholder="Username" value={formValue.email} onChange={handleChange} required/>
+                  <Form.Control name="email" type="email" placeholder="Username" value={formValue.email} onChange={handleChange} required />
+                  <Form.Control.Feedback type="invalid">
+                    Please provide a valid email as username.
+                  </Form.Control.Feedback>
                 </Col>
               </Form.Group>
 
@@ -69,10 +112,14 @@ const AddAccount = () => {
                   Password
                 </Form.Label>
                 <Col sm={10}>
-                  <Form.Control placeholder="Password" value={formValue.email} onChange={handleChange} required/>
+                  <Form.Control name="password" type="password" placeholder="Password" value={formValue.password} onChange={handleChange} required />
+                  <Form.Control.Feedback type="invalid">
+                    Please provide a password.
+                  </Form.Control.Feedback>
                 </Col>
               </Form.Group>
-              <fieldset id="role" onChange={handleChange}>
+
+              <fieldset>
                 <Form.Group as={Row} className="mb-3">
                   <Form.Label as="legend" column sm={2}>
                     Role
@@ -82,22 +129,25 @@ const AddAccount = () => {
                         type="radio"
                         value="isNotAuthenticated"
                         label="basic"
-                        name="formHorizontalRadios"
+                        name="role"
                         id="formRoleBasic"
+                        onChange={handleChange}
                     />
                     <Form.Check
                         type="radio"
                         value="isAuthenticatedUser"
                         label="advanced"
-                        name="formHorizontalRadios"
+                        name="role"
                         id="formRoleAdvanced"
+                        onChange={handleChange}
                     />
                     <Form.Check
                         type="radio"
                         value="isAuthenticatedSecurityUser"
                         label="admin"
-                        name="formHorizontalRadios"
+                        name="role"
                         id="formRoleAdmin"
+                        onChange={handleChange}
                     />
                   </Col>
                 </Form.Group>
@@ -105,7 +155,7 @@ const AddAccount = () => {
 
               <Form.Group as={Row} className="mb-3">
                 <Col sm={{span: 10, offset: 2}}>
-                  <Button type="submit" href="/admin" onClick={handleSubmit}>
+                  <Button type="submit" href="/admin#/create" onClick={handleSubmit}>
                     Submit new account
                   </Button>
                 </Col>
