@@ -147,6 +147,7 @@ const AssetDetails = ({ data }) => {
 
                 })
                 .catch((error) => {
+                    setLoading(false);
                     setErrorHandling(error);
                 })
                 .finally(() => {
