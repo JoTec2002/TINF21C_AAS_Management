@@ -17,75 +17,95 @@ const AddAccount = () => {
     role: ''
   });
 
-
-  const handleSubmit = (event) => {
-    const form = event.currentTarget;
-    if (form.checkValidity() === false) {
-      event.preventDefault();
-      event.stopPropagation();
-    } else {
-      postNewAccount();
-    }
-    setValidated(true);
-  };
-
-  const postNewAccount = async() => {
-
-    // store the states in the form data
-    const formData = new FormData();
-
-    console.log("Username: " + formValue.email);
-    console.log("Password: " + formValue.password);
-    console.log("Role: " + formValue.role);
-
-    formData.append("username", formValue.email);
-    formData.append("password", formValue.password);
-    formData.append("role", formValue.role);
-
-    var object = {};
-    formData.forEach((value, key) => object[key] = value);
-    var formDataJson = JSON.stringify(object);
-
-    console.log(formDataJson);
-
-    axios.get(API_URL+"submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth", {
-      auth: {
-        username: localStorage.getItem('email'),
-        password: localStorage.getItem('password')
-      }})
-        .then(res => {
-          console.log("Response : ", res);
-          const shells = res.data.value;
-          this.setState({ shells, loading: false });
-        })
-        .catch(error=>{
-          console.log(error);
-        })
-
-    try {
-      // axios post request
-      const res = await axios({
-        method: "post",
-        url: API_URL + `submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${formDataJson.username}`,
-        data: formDataJson,
-        headers: { "Content-Type": "application/json" },
-      }, {
-        auth: {
-          username: "luka@example.com", // localStorage.getItem('email'),
-          password: "wasAnnares"  // localStorage.getItem('password')
-        }});
-      console.log(res);
-    } catch(error) {
-      console.error(error);
+  function routToAssociatedRoleMapping(authRes) {
+    switch (authRes) {
+      case "isNotAuthenticated":
+        return "1";
+      case "isAuthenticatedUser":
+        return "2";
+      case "isAuthenticatedSecurityUser":
+        return "3";
+      default:
+        console.error("Undefined Authentication : ", authRes);
+        return "500";
     }
   }
 
-  const handleChange = (event) => {
-    setformValue({
-      ...formValue,
-      [event.target.name]: event.target.value
-    });
-  }
+
+    const handleSubmit = (event) => {
+      const form = event.currentTarget;
+      if (form.checkValidity() === false) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      if (!(formValue.email === "" || formValue.email === null || formValue.password === "" || formValue.password === null || formValue.role === "" || formValue.role === null )){
+        postNewAccount();
+      }
+
+      setValidated(true);
+    };
+
+    const postNewAccount = async () => {
+      console.log("Username: " + formValue.email);
+      console.log("Password: " + formValue.password);
+      console.log("Role: " + formValue.role);
+
+      const formDataBasicAuth = `{"idShort":"${formValue.email}","kind":"Instance","semanticId":{"type":"GlobalReference","keys":[]},"dataSpecifications":[],"valueType":"xs:string","value":"${formValue.password}","modelType":"Property"}`;
+      const formDataRoleMapping = `{"idShort": "${formValue.email}", "kind": "Instance","semanticId": {"type": "GlobalReference","keys": []},"dataSpecifications": [],"valueType": "xs:string","value": "","modelType": "Property"}`;
+
+      console.log(formDataBasicAuth);
+      console.log(formDataRoleMapping);
+
+      // store the states in the formDataJson
+      const formDataJsonBasicAuth = JSON.parse(formDataBasicAuth);
+      const formDataJsonRoleMapping = JSON.parse(formDataRoleMapping);
+
+      console.log(formDataJsonBasicAuth);
+      console.log(formDataJsonRoleMapping);
+      console.log(routToAssociatedRoleMapping(formValue.role));
+
+      try {
+        // axios post request
+        const resBasicAuth = await axios({
+          method: "post",
+          url: API_URL + `submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`,
+          data: formDataJsonBasicAuth,
+          headers: {"Content-Type": "application/json"},
+        }, {
+          auth: {
+            username: localStorage.getItem('email'),
+            password: localStorage.getItem('password')
+          }
+        });
+        console.log(resBasicAuth);
+        try {
+          const resRoleMapping = await axios({
+            method: "post",
+            url: API_URL + `submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects.${formValue.email}`,
+            data: formDataJsonRoleMapping,
+            headers: {"Content-Type": "application/json"},
+          }, {
+            auth: {
+              username: "luka@example.com", // localStorage.getItem('email'),
+              password: "wasAnnares"  // localStorage.getItem('password')
+            }
+          });
+          console.log(resRoleMapping);
+        } catch (error) {
+          console.error(error);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    const handleChange = (event) => {
+      setformValue({
+        ...formValue,
+        [event.target.name]: event.target.value
+      });
+    }
 
 
     return (
@@ -94,13 +114,14 @@ const AddAccount = () => {
           <div className="container" style={{paddingTop: 20, paddingBottom: 100}}>
             <h4>Create new account</h4>
             <hr/>
-            <Form noValidate validated={validated} onSubmit={handleSubmit} >
+            <Form noValidate validated={validated} onSubmit={postNewAccount}>
               <Form.Group as={Row} className="mb-3" controlId="formUsername">
                 <Form.Label column sm={2}>
                   Username
                 </Form.Label>
                 <Col sm={10}>
-                  <Form.Control name="email" type="email" placeholder="Username" value={formValue.email} onChange={handleChange} required />
+                  <Form.Control name="email" type="email" placeholder="Username" value={formValue.email}
+                                onChange={handleChange} required/>
                   <Form.Control.Feedback type="invalid">
                     Please provide a valid email as username.
                   </Form.Control.Feedback>
@@ -112,7 +133,8 @@ const AddAccount = () => {
                   Password
                 </Form.Label>
                 <Col sm={10}>
-                  <Form.Control name="password" type="password" placeholder="Password" value={formValue.password} onChange={handleChange} required />
+                  <Form.Control name="password" type="password" placeholder="Password" value={formValue.password}
+                                onChange={handleChange} required/>
                   <Form.Control.Feedback type="invalid">
                     Please provide a password.
                   </Form.Control.Feedback>
@@ -132,6 +154,7 @@ const AddAccount = () => {
                         name="role"
                         id="formRoleBasic"
                         onChange={handleChange}
+                        required
                     />
                     <Form.Check
                         type="radio"
@@ -155,8 +178,11 @@ const AddAccount = () => {
 
               <Form.Group as={Row} className="mb-3">
                 <Col sm={{span: 10, offset: 2}}>
-                  <Button type="submit" href="/admin#/create" onClick={handleSubmit}>
+                  <Button type="submit">
                     Submit new account
+                  </Button>
+                  <Button onClick={handleSubmit}>
+                    was anderes
                   </Button>
                 </Col>
               </Form.Group>
@@ -164,6 +190,6 @@ const AddAccount = () => {
           </div>
         </Fragment>
     );
-};
+}
 
 export default AddAccount;
