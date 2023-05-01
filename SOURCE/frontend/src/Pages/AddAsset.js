@@ -1,7 +1,7 @@
 import {DetailsProdukt, Mydocs, NavComponent, Produkte} from "../components";
 import {Form, Button, Col, Row, Container} from "react-bootstrap";
 import {errorHandling, setErrorHandling} from "../components/errorHandling";
-import {useState} from "react";
+import React, {useState} from "react";
 import axios from "axios";
 import {API_URL} from "../utils/constanst";
 
@@ -48,8 +48,10 @@ const AddAsset =()=>{
             <div style={{ paddingTop:20, paddingBottom:100 }}>
                 <Container fluid className={"mx-auto"}>
                     <Row>
-                        <input type={"text"} name={"aasid"} onChange={changeHandlerAasId}/>
-                        <input type="file" name="file" onChange={changeHandlerFile} accept={".aasx"} />
+                        <label className="form-label" htmlFor="aasid_input">Please specify the AAS-ID</label>
+                        <input type={"text"} class="form-control" name={"aasid"} onChange={changeHandlerAasId}/>
+                        <hr/>
+                        <input type="file" className="form-control" name="file" onChange={changeHandlerFile} accept={".aasx"} />
                     {isSelected ? (
                         <div>
                             <p>Filename: {selectedFile.name}</p>
@@ -60,10 +62,13 @@ const AddAsset =()=>{
                             </p>
                         </div>
                     ) : (
-                        <p>Select a file to show details</p>
+                        <div>
+                        <hr/>
+                        <div className="alert alert-warning" role="alert">Please select a file to show the details!</div>
+                        </div>
                     )}
                     <div>
-                        <button onClick={handleSubmission}>Submit</button>
+                        <input className="btn btn-primary" type="submit" value="Submit" onClick={handleSubmission}/>
                     </div>
                     </Row>
                 </Container>
