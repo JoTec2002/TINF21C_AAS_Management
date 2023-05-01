@@ -39,11 +39,13 @@ const AddAccount = () => {
         event.stopPropagation();
       }
 
+      setValidated(true);
+
       if (!(formValue.email === "" || formValue.email === null || formValue.password === "" || formValue.password === null || formValue.role === "" || formValue.role === null )){
         postNewAccount();
+      } else {
+        alert("please fill out the form completly");
       }
-
-      setValidated(true);
     };
 
     const postNewAccount = async () => {
@@ -66,38 +68,31 @@ const AddAccount = () => {
       console.log(routToAssociatedRoleMapping(formValue.role));
 
       try {
-        // axios post request
-        const resBasicAuth = await axios({
-          method: "post",
-          url: API_URL + `submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`,
-          data: formDataJsonBasicAuth,
-          headers: {"Content-Type": "application/json"},
-        }, {
+        axios.post(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, formDataJsonBasicAuth, {
           auth: {
             username: localStorage.getItem('email'),
             password: localStorage.getItem('password')
           }
-        });
-        console.log(resBasicAuth);
-        try {
-          const resRoleMapping = await axios({
-            method: "post",
-            url: API_URL + `submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects.${formValue.email}`,
-            data: formDataJsonRoleMapping,
-            headers: {"Content-Type": "application/json"},
-          }, {
-            auth: {
-              username: "luka@example.com", // localStorage.getItem('email'),
-              password: "wasAnnares"  // localStorage.getItem('password')
-            }
-          });
-          console.log(resRoleMapping);
-        } catch (error) {
-          console.error(error);
-        }
+        }).then((res)=>{
+          console.log(res);
+        })
       } catch (error) {
         console.error(error);
       }
+
+      try {
+        axios.post(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, formDataJsonRoleMapping, {
+          auth: {
+            username: localStorage.getItem('email'),
+            password: localStorage.getItem('password')
+          }
+        }).then((res)=>{
+          console.log(res);
+        })
+      } catch (error) {
+        console.error(error);
+      }
+
     }
 
     const handleChange = (event) => {
@@ -114,7 +109,7 @@ const AddAccount = () => {
           <div className="container" style={{paddingTop: 20, paddingBottom: 100}}>
             <h4>Create new account</h4>
             <hr/>
-            <Form noValidate validated={validated} onSubmit={postNewAccount}>
+            <Form noValidate validated={validated} onSubmit={handleSubmit}>
               <Form.Group as={Row} className="mb-3" controlId="formUsername">
                 <Form.Label column sm={2}>
                   Username
@@ -180,9 +175,6 @@ const AddAccount = () => {
                 <Col sm={{span: 10, offset: 2}}>
                   <Button type="submit">
                     Submit new account
-                  </Button>
-                  <Button onClick={handleSubmit}>
-                    was anderes
                   </Button>
                 </Col>
               </Form.Group>
