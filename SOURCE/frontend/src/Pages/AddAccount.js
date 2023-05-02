@@ -49,9 +49,6 @@ const AddAccount = () => {
   };
 
   const postNewAccount = async () => {
-    console.log("Username: " + formValue.email);
-    console.log("Password: " + formValue.password);
-    console.log("Role: " + formValue.role);
 
     const formDataBasicAuth = `{"idShort":"${formValue.email}","kind":"Instance","semanticId":{"type":"GlobalReference","keys":[]},"dataSpecifications":[],"valueType":"xs:string","value":"${formValue.password}","modelType":"Property"}`;
     const formDataRoleMapping = `{"idShort": "${formValue.email}", "kind": "Instance","semanticId": {"type": "GlobalReference","keys": []},"dataSpecifications": [],"valueType": "xs:string","value": "","modelType": "Property"}`;
@@ -60,9 +57,17 @@ const AddAccount = () => {
     const formDataJsonBasicAuth = JSON.parse(formDataBasicAuth);
     const formDataJsonRoleMapping = JSON.parse(formDataRoleMapping);
 
+    var dataPutBasicAuth = new FormData();
+    var dataPutRoleMapping = new FormData();
+
+    console.log("Username: " + formValue.email);
+    console.log("Password: " + formValue.password);
+    console.log("Role: " + formValue.role);
 
     console.log(formDataJsonBasicAuth);
     console.log(formDataJsonRoleMapping);
+
+
 
     axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
       auth: {
@@ -70,9 +75,9 @@ const AddAccount = () => {
         password: localStorage.getItem('password')
       }
     }).then((res) => {
-      const data = res.data;
-      data.value.append(formDataJsonBasicAuth);
-      console.log("Response basicAuth : ", data);
+      dataPutBasicAuth = res.data;
+      dataPutBasicAuth.value.append(formDataJsonBasicAuth);
+      console.log("Response basicAuth : ", dataPutBasicAuth);
     }).catch(error => {
       console.log(error);
     });
@@ -83,9 +88,9 @@ const AddAccount = () => {
         password: localStorage.getItem('password')
       }
     }).then((res) => {
-      const data = res.data;
-      data.value.append(formDataJsonRoleMapping);
-      console.log("Response roleMapping : ", data);
+      dataPutRoleMapping = res.data;
+      dataPutRoleMapping.value.append(formDataJsonRoleMapping);
+      console.log("Response roleMapping : ", dataPutRoleMapping);
     }).catch(error => {
       console.log(error);
     });
@@ -101,27 +106,27 @@ const AddAccount = () => {
     console.log(formDataJsonRoleMapping);
     console.log(routToAssociatedRoleMapping(formValue.role));
 
-    axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, formDataJsonBasicAuth, {
-      auth: {
-        username: localStorage.getItem('email'),
-        password: localStorage.getItem('password')
-      }
-    }).then((res) => {
-      console.log(res);
-    }).catch(error => {
-      console.log(error);
-    });
-
-    axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, formDataJsonRoleMapping, {
-      auth: {
-        username: localStorage.getItem('email'),
-        password: localStorage.getItem('password')
-      }
-    }).then((res) => {
-      console.log(res);
-    }).catch(error => {
-      console.log(error);
-    });
+    // axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, formDataJsonBasicAuth, {
+    //   auth: {
+    //     username: localStorage.getItem('email'),
+    //     password: localStorage.getItem('password')
+    //   }
+    // }).then((res) => {
+    //   console.log(res);
+    // }).catch(error => {
+    //   console.log(error);
+    // });
+    //
+    // axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, formDataJsonRoleMapping, {
+    //   auth: {
+    //     username: localStorage.getItem('email'),
+    //     password: localStorage.getItem('password')
+    //   }
+    // }).then((res) => {
+    //   console.log(res);
+    // }).catch(error => {
+    //   console.log(error);
+    // });
   };
 
     const handleChange = (event) => {
