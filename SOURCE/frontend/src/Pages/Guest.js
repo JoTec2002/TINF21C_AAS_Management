@@ -7,17 +7,20 @@ function Guest() {
   const [selectedData, setSelectedData] = useState();
 
   return (
-    <div>
+    <div >
+
       <NavComponent />
+        <div style={{marginLeft:"2rem", marginRight:"2rems"}}>
       {errorHandling()}
-      <div style={{ paddingTop:20, paddingBottom:100 }}>
-        <Container>
+
+
+          <Container fluid >
           <Row>
             <Assets onSelect={setSelectedData} />
             <AssetDetails data={selectedData} />
           </Row>
         </Container>
-      </div>
+        </div>
     </div>
   );
 }

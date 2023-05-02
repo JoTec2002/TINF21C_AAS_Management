@@ -44,11 +44,12 @@ const AddAsset =()=>{
     return(
         <div>
             <NavComponent />
+
             {errorHandling()}
             <div style={{ paddingTop:20, paddingBottom:100 }}>
-                <Container fluid className={"mx-auto"}>
+                <Container fluid="md">
                     <Row>
-                        <label className="form-label" htmlFor="aasid_input">Please specify the AAS-ID</label>
+                        <label className="form-label" htmlFor="aasid_input"><strong>Please specify the AAS-ID</strong></label>
                         <input type={"text"} class="form-control" name={"aasid"} onChange={changeHandlerAasId}/>
                         <hr/>
                         <input type="file" className="form-control" name="file" onChange={changeHandlerFile} accept={".aasx"} />
