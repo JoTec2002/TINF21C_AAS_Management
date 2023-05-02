@@ -6,6 +6,7 @@ import { API_URL } from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
 import base64url from "base64url";
 import {setErrorHandling} from "./errorHandling";
+import {json} from "react-router-dom";
 
 const AssetDetails = ({ data }) => {
     const [produktData, setProduktData] = useState(null);
@@ -52,7 +53,9 @@ const AssetDetails = ({ data }) => {
                     document.getElementById(id+"-"+path).src = "data:"+contentType+";base64,"+base64String;
                 }
             })
-            .catch((error) =>{
+            .catch(async (error) =>{
+                let jsondata = JSON.parse(await error.response.data.text());
+                error.response.data = jsondata;
                 setErrorHandling(error);
             })
     };
@@ -78,7 +81,9 @@ const AssetDetails = ({ data }) => {
                     anchor.remove();
                 }
             })
-            .catch((error) =>{
+            .catch(async (error) =>{
+                let jsondata = JSON.parse(await error.response.data.text());
+                error.response.data = jsondata;
                 setErrorHandling(error);
             })
     };

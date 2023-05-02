@@ -4,6 +4,7 @@ import axios from "axios";
 import { API_URL } from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
 import base64url from "base64url";
+import {errorHandling, setErrorHandling} from "./errorHandling";
 
 export default class Assets extends Component {
     constructor(props) {
@@ -34,8 +35,8 @@ export default class Assets extends Component {
                 this.setState({ shells, loading: false });
             })
             .catch(error=>{
+                setErrorHandling(error);
                 this.setState({ loading: false });
-                console.log(error);
             })
     }
 
