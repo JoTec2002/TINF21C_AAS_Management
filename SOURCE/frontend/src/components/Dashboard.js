@@ -140,7 +140,6 @@ export default class Dashboard extends Component {
                 Create Account
               </Button>
               <PopUpDelete handleClose={this.handleClose} {...this.state} accID={this.specificShellID}/>
-              <PopUpEditAccount handleClose={this.handleClose} {...this.state} accID={this.specificShellID}/>
           </div>
         )
         }
