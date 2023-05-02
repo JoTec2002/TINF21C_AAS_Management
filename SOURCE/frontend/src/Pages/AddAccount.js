@@ -57,8 +57,8 @@ const AddAccount = () => {
     const formDataJsonBasicAuth = JSON.parse(formDataBasicAuth);
     const formDataJsonRoleMapping = JSON.parse(formDataRoleMapping);
 
-    var dataPutBasicAuth = new FormData();
-    var dataPutRoleMapping = new FormData();
+    var dataResBasicAuth = new FormData();
+    var dataResRoleMapping = new FormData();
 
     console.log("Username: " + formValue.email);
     console.log("Password: " + formValue.password);
@@ -75,12 +75,15 @@ const AddAccount = () => {
         password: localStorage.getItem('password')
       }
     }).then((res) => {
-      dataPutBasicAuth = res.data;
-      dataPutBasicAuth.value.append(formDataJsonBasicAuth);
-      console.log("Response basicAuth : ", dataPutBasicAuth);
+      dataResBasicAuth = res.data;
+
+      let array = dataResBasicAuth.value;
+      array.push(formDataJsonBasicAuth);
+      console.log("Response basicAuth : ", dataResBasicAuth);
     }).catch(error => {
       console.log(error);
     });
+
 
     axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, {
       auth: {
@@ -88,45 +91,37 @@ const AddAccount = () => {
         password: localStorage.getItem('password')
       }
     }).then((res) => {
-      dataPutRoleMapping = res.data;
-      dataPutRoleMapping.value.append(formDataJsonRoleMapping);
-      console.log("Response roleMapping : ", dataPutRoleMapping);
+      dataResRoleMapping = res.data;
+
+      let array = dataResRoleMapping.value;
+      array.push(formDataJsonRoleMapping);
+
+      console.log("Response roleMapping : ", dataResRoleMapping);
     }).catch(error => {
       console.log(error);
     });
 
+    axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, formDataJsonBasicAuth, {
+      auth: {
+        username: localStorage.getItem('email'),
+        password: localStorage.getItem('password')
+      }
+    }).then((res) => {
+      console.log(res);
+    }).catch(error => {
+      console.log(error);
+    });
 
-
-    // get for ${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth` -- Passt
-    // append formDataJsonBasicAuth to json respone
-    // .push(formDataJsonBasicAuth);
-    // put reqest to ${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`
-
-
-    console.log(formDataJsonRoleMapping);
-    console.log(routToAssociatedRoleMapping(formValue.role));
-
-    // axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, formDataJsonBasicAuth, {
-    //   auth: {
-    //     username: localStorage.getItem('email'),
-    //     password: localStorage.getItem('password')
-    //   }
-    // }).then((res) => {
-    //   console.log(res);
-    // }).catch(error => {
-    //   console.log(error);
-    // });
-    //
-    // axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, formDataJsonRoleMapping, {
-    //   auth: {
-    //     username: localStorage.getItem('email'),
-    //     password: localStorage.getItem('password')
-    //   }
-    // }).then((res) => {
-    //   console.log(res);
-    // }).catch(error => {
-    //   console.log(error);
-    // });
+    axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, formDataJsonRoleMapping, {
+      auth: {
+        username: localStorage.getItem('email'),
+        password: localStorage.getItem('password')
+      }
+    }).then((res) => {
+      console.log(res);
+    }).catch(error => {
+      console.log(error);
+    });
   };
 
     const handleChange = (event) => {
