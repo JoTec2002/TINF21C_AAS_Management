@@ -10,6 +10,7 @@ import axios from 'axios';
 const AddAccount = () => {
 
   const [validated, setValidated] = useState(false);
+  const [packageId, setpackageId] = useState(-1);
 
   const [formValue, setformValue] = React.useState({
     email: '',
@@ -69,24 +70,26 @@ const AddAccount = () => {
         password: localStorage.getItem('password')
       }
     }).then((res) => {
-      const dataBasicAuth = res.data;
-      console.log("Response basicAuth : ", dataBasicAuth);
+      const data = res.data;
+      data.value.append(formDataJsonBasicAuth);
+      console.log("Response basicAuth : ", data);
     }).catch(error => {
       console.log(error);
     });
 
-    const resRoleMapping = await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, {
+    axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, {
       auth: {
         username: localStorage.getItem('email'),
         password: localStorage.getItem('password')
       }
     }).then((res) => {
-      console.log(res);
+      const data = res.data;
+      data.value.append(formDataJsonRoleMapping);
+      console.log("Response roleMapping : ", data);
     }).catch(error => {
       console.log(error);
     });
 
-    console.log("Response roleMapping : ", resRoleMapping);
 
 
     // get for ${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth` -- Passt
