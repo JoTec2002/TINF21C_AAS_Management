@@ -1,12 +1,10 @@
-import React, {Component, useState} from "react";
+import React, {Component} from "react";
 import { BsPencilSquare, BsTrash } from "react-icons/bs";
 import { Button, Col, Form, Table } from "react-bootstrap";
 import PopUpDelete from "./PopUpDelete";
 import axios from "axios";
 import Spinner from "react-bootstrap/Spinner";
 import {API_URL} from "../utils/constanst";
-import EditAccount from "../Pages/EditAccount";
-import PopUpEditAccount from "./PopUpEditAccount";
 
 export default class Dashboard extends Component {
 
@@ -19,6 +17,7 @@ export default class Dashboard extends Component {
       searchTerm: "",
     }
     this.specificShellID = "";
+    this.specificRole = "";
   }
 
   onSearchTermChange = (event) => {
@@ -45,17 +44,66 @@ export default class Dashboard extends Component {
         })
   }
 
-  handleDeleteRequest = (shell) => {
-    this.handelShow();
-    this.specificShellID = shell.value[0].value[0].idShort;
-    console.log(this.specificShellID);
+  handleDelete = () => {
+
+    if(this.specificShellID !== "" || this.specificShellID !== null) {
+
+      console.log(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${this.specificShellID}`);
+
+      axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
+        auth: {
+          username: localStorage.getItem("email"),
+          password: localStorage.getItem("password")
+        }
+      }).then(async (res) => {
+        console.log(res);
+      }).catch(error => {
+        console.log(error);
+      });
+
+      axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping.subjects`, {
+        auth: {
+          username: localStorage.getItem("email"),
+          password: localStorage.getItem("password")
+        }
+      }).then(async (res) => {
+        console.log(res);
+        // if (res.status === 204) {
+        //     alert("File deleted successfully.");
+        // } else {
+        //     alert("The deletion of the file could not be executed. Please try again.")
+        // }
+      }).catch(error => {
+        console.log(error);
+      });
+
+      // axios.delete(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth/${this.specificShellID}`, {
+      //     auth: {
+      //         username: localStorage.getItem("email"),
+      //         password: localStorage.getItem("password")
+      //     }
+      // }).then(async (res) => {
+      //     console.log(res);
+      //     if (res.status === 204) {
+      //         alert("File deleted successfully.");
+      //     } else {
+      //         alert("The deletion of the file could not be executed. Please try again.")
+      //     }
+      // }).catch(error=>{
+      //     console.log(error);
+      // });
+    }
   }
 
-  handelShow = () => {
+  handleShow = (shell) => {
     this.setState({
       showModal: true,
     });
-  };
+    this.specificShellID = shell.value[0].value[0].idShort;
+    this.specificRole = shell.value[1].value[0].idShort;
+    console.log(this.specificRole);
+  }
+
   handleClose = () => {
     this.setState({
       showModal: false,
@@ -128,7 +176,7 @@ export default class Dashboard extends Component {
                       <Button href="#/edit" variant="text btn-sm" >
                         <BsPencilSquare />
                       </Button>
-                      <Button variant="text btn-sm" onClick={() => this.handleDeleteRequest(shells)}>
+                      <Button variant="text btn-sm" onClick={() => this.handleShow(shells)}>
                         <BsTrash />
                       </Button>
                     </td>
@@ -139,7 +187,7 @@ export default class Dashboard extends Component {
               <Button href="#/create" variant="outline-primary btn-sm">
                 Create Account
               </Button>
-              <PopUpDelete handleClose={this.handleClose} {...this.state} accID={this.specificShellID}/>
+              <PopUpDelete handleClose={this.handleClose} {...this.state} handleDelete={this.handleDelete}/>
           </div>
         )
         }
