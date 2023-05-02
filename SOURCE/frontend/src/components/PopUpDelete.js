@@ -3,28 +3,55 @@ import React from "react";
 import axios from "axios";
 import {API_URL} from "../utils/constanst";
 
-function handleDelete(){
-    const name = 7;
-    try {
-        axios.delete(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth/${name}`, {
+const PopUpDelete = ({ showModal, handleClose, accID }) => {
+    function handleDelete(accID){
+
+        console.log(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${accID}`);
+
+        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
             auth: {
                 username: localStorage.getItem("email"),
                 password: localStorage.getItem("password")
             }
         }).then(async (res) => {
             console.log(res);
-            if (res.status === 204) {
-                alert("File deleted successfully.");
-            } else {
-                alert("The deletion of the file could not be executed. Please try again.")
-            }
-        })
-    } catch (error) {
-        console.error(error);
-    }
-}
+        }).catch(error=>{
+            console.log(error);
+        });
 
-const PopUpDelete = ({ showModal, handleClose }) => {
+        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping3.subjects`, {
+            auth: {
+                username: localStorage.getItem("email"),
+                password: localStorage.getItem("password")
+            }
+        }).then(async (res) => {
+            console.log(res);
+            // if (res.status === 204) {
+            //     alert("File deleted successfully.");
+            // } else {
+            //     alert("The deletion of the file could not be executed. Please try again.")
+            // }
+        }).catch(error=>{
+            console.log(error);
+        });
+
+        // axios.delete(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth/${accID}`, {
+        //     auth: {
+        //         username: localStorage.getItem("email"),
+        //         password: localStorage.getItem("password")
+        //     }
+        // }).then(async (res) => {
+        //     console.log(res);
+        //     if (res.status === 204) {
+        //         alert("File deleted successfully.");
+        //     } else {
+        //         alert("The deletion of the file could not be executed. Please try again.")
+        //     }
+        // }).catch(error=>{
+        //     console.log(error);
+        // });
+    }
+
   return (
     <Modal show={showModal} onHide={handleClose}>
       <Modal.Header closeButton>
@@ -41,7 +68,7 @@ const PopUpDelete = ({ showModal, handleClose }) => {
         <Button variant="btn btn-primary btn-sm" onClick={handleClose}>
           Close
         </Button>
-        <Button variant="outline-danger btn-sm" onClick={handleClose}>
+        <Button variant="outline-danger btn-sm" onClick={handleDelete(accID)}>
           Delete
         </Button>
       </Modal.Footer>

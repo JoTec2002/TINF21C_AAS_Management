@@ -43,8 +43,6 @@ const AddAccount = () => {
 
       if (!(formValue.email === "" || formValue.email === null || formValue.password === "" || formValue.password === null || formValue.role === "" || formValue.role === null )){
         postNewAccount();
-      } else {
-        alert("please fill out the form completly");
       }
     };
 
@@ -67,7 +65,6 @@ const AddAccount = () => {
       console.log(formDataJsonRoleMapping);
       console.log(routToAssociatedRoleMapping(formValue.role));
 
-      try {
         axios.post(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, formDataJsonBasicAuth, {
           auth: {
             username: localStorage.getItem('email'),
@@ -75,12 +72,10 @@ const AddAccount = () => {
           }
         }).then((res)=>{
           console.log(res);
-        })
-      } catch (error) {
-        console.error(error);
-      }
+        }).catch(error=>{
+          console.log(error);
+        });
 
-      try {
         axios.post(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, formDataJsonRoleMapping, {
           auth: {
             username: localStorage.getItem('email'),
@@ -88,11 +83,9 @@ const AddAccount = () => {
           }
         }).then((res)=>{
           console.log(res);
-        })
-      } catch (error) {
-        console.error(error);
-      }
-
+        }).catch(error=>{
+          console.log(error);
+        });
     }
 
     const handleChange = (event) => {

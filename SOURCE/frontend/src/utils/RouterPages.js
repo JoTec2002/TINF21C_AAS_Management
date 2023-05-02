@@ -6,6 +6,7 @@ import AdminDashboard from "../Pages/AdminDashboard";
 import Notfound from "../Pages/Notfound";
 import NewProdukt from "../Pages/NewProdukt";
 import AddAccount from "../Pages/AddAccount"
+import EditAccount from "../Pages/EditAccount";
 
 const RouterPages =()=>{
     return (
@@ -16,6 +17,7 @@ const RouterPages =()=>{
                 <Route path='/admin' element={<AdminDashboard />}/>
                 <Route path='/new' element={<NewProdukt />}/>
                 <Route path='/create' element={<AddAccount />}/>
+                <Route path='/edit' element={<EditAccount />}/>
                 <Route path='/*' element={<Notfound />}/>
             </Routes>
         </Router>

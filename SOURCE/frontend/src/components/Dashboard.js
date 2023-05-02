@@ -1,11 +1,11 @@
-import React, { Component } from "react";
+import React, {Component, useState} from "react";
 import { BsPencilSquare, BsTrash } from "react-icons/bs";
 import { Button, Col, Form, Table } from "react-bootstrap";
 import PopUpDelete from "./PopUpDelete";
 import axios from "axios";
 import Spinner from "react-bootstrap/Spinner";
 import {API_URL} from "../utils/constanst";
-import errorHandlin from "./errorHandling";
+import EditAccount from "../Pages/EditAccount";
 
 export default class Dashboard extends Component {
 
@@ -17,6 +17,7 @@ export default class Dashboard extends Component {
       loading: true,
       searchTerm: "",
     }
+    this.specificShellID = "";
   }
 
   onSearchTermChange = (event) => {
@@ -39,8 +40,14 @@ export default class Dashboard extends Component {
         .catch(error=>{
           console.log(error);
           //this.setState({globalerror: error});
-          errorHandlin.setState({globalerror: error});
+          //errorHandlin.setState({globalerror: error});
         })
+  }
+
+  handleDeleteRequest = (shell) => {
+    this.handelShow();
+    this.specificShellID = shell.value[0].value[0].idShort;
+    console.log(this.specificShellID);
   }
 
   handelShow = () => {
@@ -114,14 +121,13 @@ export default class Dashboard extends Component {
                 <tbody>
               {filteredShells && filteredShells.map((shells) => (
                   <tr>
-
                     <td>{`${shells.value[0].value[0].idShort}`}</td>
                     <td>{`${this.sortRole(shells.value[1].value[0].idShort)}`}</td>
                     <td>
-                      <Button href="#/create" variant="text btn-sm">
+                      <Button href="#/edit" variant="text btn-sm" >
                         <BsPencilSquare />
                       </Button>
-                      <Button variant="text btn-sm" onClick={() => this.handelShow()}>
+                      <Button variant="text btn-sm" onClick={() => this.handleDeleteRequest(shells)}>
                         <BsTrash />
                       </Button>
                     </td>
@@ -132,7 +138,7 @@ export default class Dashboard extends Component {
               <Button href="#/create" variant="outline-primary btn-sm">
                 Create Account
               </Button>
-              <PopUpDelete handleClose={this.handleClose} {...this.state} />
+              <PopUpDelete handleClose={this.handleClose} {...this.state} accID={this.specificShellID}/>
           </div>
         )
         }
