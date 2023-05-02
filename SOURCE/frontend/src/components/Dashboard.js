@@ -6,6 +6,7 @@ import axios from "axios";
 import Spinner from "react-bootstrap/Spinner";
 import {API_URL} from "../utils/constanst";
 import EditAccount from "../Pages/EditAccount";
+import PopUpEditAccount from "./PopUpEditAccount";
 
 export default class Dashboard extends Component {
 
@@ -139,6 +140,7 @@ export default class Dashboard extends Component {
                 Create Account
               </Button>
               <PopUpDelete handleClose={this.handleClose} {...this.state} accID={this.specificShellID}/>
+              <PopUpEditAccount handleClose={this.handleClose} {...this.state} accID={this.specificShellID}/>
           </div>
         )
         }

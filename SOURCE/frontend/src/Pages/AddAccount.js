@@ -32,68 +32,101 @@ const AddAccount = () => {
   }
 
 
-    const handleSubmit = (event) => {
-      const form = event.currentTarget;
-      if (form.checkValidity() === false) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-
-      setValidated(true);
-
-      if (!(formValue.email === "" || formValue.email === null || formValue.password === "" || formValue.password === null || formValue.role === "" || formValue.role === null )){
-        postNewAccount();
-      }
-    };
-
-    const postNewAccount = async () => {
-      console.log("Username: " + formValue.email);
-      console.log("Password: " + formValue.password);
-      console.log("Role: " + formValue.role);
-
-      const formDataBasicAuth = `{"idShort":"${formValue.email}","kind":"Instance","semanticId":{"type":"GlobalReference","keys":[]},"dataSpecifications":[],"valueType":"xs:string","value":"${formValue.password}","modelType":"Property"}`;
-      const formDataRoleMapping = `{"idShort": "${formValue.email}", "kind": "Instance","semanticId": {"type": "GlobalReference","keys": []},"dataSpecifications": [],"valueType": "xs:string","value": "","modelType": "Property"}`;
-
-      console.log(formDataBasicAuth);
-      console.log(formDataRoleMapping);
-
-      // store the states in the formDataJson
-      const formDataJsonBasicAuth = JSON.parse(formDataBasicAuth);
-      const formDataJsonRoleMapping = JSON.parse(formDataRoleMapping);
-
-      console.log(formDataJsonBasicAuth);
-      console.log(formDataJsonRoleMapping);
-      console.log(routToAssociatedRoleMapping(formValue.role));
-
-        axios.post(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, formDataJsonBasicAuth, {
-          auth: {
-            username: localStorage.getItem('email'),
-            password: localStorage.getItem('password')
-          }
-        }).then((res)=>{
-          console.log(res);
-        }).catch(error=>{
-          console.log(error);
-        });
-
-        axios.post(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, formDataJsonRoleMapping, {
-          auth: {
-            username: localStorage.getItem('email'),
-            password: localStorage.getItem('password')
-          }
-        }).then((res)=>{
-          console.log(res);
-        }).catch(error=>{
-          console.log(error);
-        });
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    const form = event.currentTarget;
+    if (form.checkValidity() === false) {
+      event.preventDefault();
+      event.stopPropagation();
     }
+
+    setValidated(true);
+
+    if (!(formValue.email === "" || formValue.email === null || formValue.password === "" || formValue.password === null || formValue.role === "" || formValue.role === null)) {
+      postNewAccount();
+    }
+  };
+
+  const postNewAccount = async () => {
+    console.log("Username: " + formValue.email);
+    console.log("Password: " + formValue.password);
+    console.log("Role: " + formValue.role);
+
+    const formDataBasicAuth = `{"idShort":"${formValue.email}","kind":"Instance","semanticId":{"type":"GlobalReference","keys":[]},"dataSpecifications":[],"valueType":"xs:string","value":"${formValue.password}","modelType":"Property"}`;
+    const formDataRoleMapping = `{"idShort": "${formValue.email}", "kind": "Instance","semanticId": {"type": "GlobalReference","keys": []},"dataSpecifications": [],"valueType": "xs:string","value": "","modelType": "Property"}`;
+
+    // store the states in the formDataJson
+    const formDataJsonBasicAuth = JSON.parse(formDataBasicAuth);
+    const formDataJsonRoleMapping = JSON.parse(formDataRoleMapping);
+
+    console.log(formDataJsonBasicAuth);
+    console.log(formDataJsonRoleMapping);
+
+    const resBasicAuth = await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
+      auth: {
+        username: localStorage.getItem('email'),
+        password: localStorage.getItem('password')
+      }
+    }).then((res) => {
+      console.log(res);
+    }).catch(error => {
+      console.log(error);
+    });
+
+    console.log("Response basicAuth : ", resBasicAuth);
+
+    const resRoleMapping = await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, {
+      auth: {
+        username: localStorage.getItem('email'),
+        password: localStorage.getItem('password')
+      }
+    }).then((res) => {
+      console.log(res);
+    }).catch(error => {
+      console.log(error);
+    });
+
+    console.log("Response roleMapping : ", resRoleMapping);
+
+
+    // get for ${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth` -- Passt
+    // append formDataJsonBasicAuth to json respone
+    // .push(formDataJsonBasicAuth);
+    // put reqest to ${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`
+
+
+    console.log(formDataJsonRoleMapping);
+    console.log(routToAssociatedRoleMapping(formValue.role));
+
+    axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, formDataJsonBasicAuth, {
+      auth: {
+        username: localStorage.getItem('email'),
+        password: localStorage.getItem('password')
+      }
+    }).then((res) => {
+      console.log(res);
+    }).catch(error => {
+      console.log(error);
+    });
+
+    axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, formDataJsonRoleMapping, {
+      auth: {
+        username: localStorage.getItem('email'),
+        password: localStorage.getItem('password')
+      }
+    }).then((res) => {
+      console.log(res);
+    }).catch(error => {
+      console.log(error);
+    });
+  };
 
     const handleChange = (event) => {
       setformValue({
         ...formValue,
         [event.target.name]: event.target.value
       });
-    }
+    };
 
 
     return (

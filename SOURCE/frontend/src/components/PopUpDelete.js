@@ -6,50 +6,53 @@ import {API_URL} from "../utils/constanst";
 const PopUpDelete = ({ showModal, handleClose, accID }) => {
     function handleDelete(accID){
 
-        console.log(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${accID}`);
+        if(accID !== "" || accID !== null) {
 
-        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
-            auth: {
-                username: localStorage.getItem("email"),
-                password: localStorage.getItem("password")
-            }
-        }).then(async (res) => {
-            console.log(res);
-        }).catch(error=>{
-            console.log(error);
-        });
+            console.log(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${accID}`);
 
-        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping3.subjects`, {
-            auth: {
-                username: localStorage.getItem("email"),
-                password: localStorage.getItem("password")
-            }
-        }).then(async (res) => {
-            console.log(res);
-            // if (res.status === 204) {
-            //     alert("File deleted successfully.");
-            // } else {
-            //     alert("The deletion of the file could not be executed. Please try again.")
-            // }
-        }).catch(error=>{
-            console.log(error);
-        });
+            axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
+                auth: {
+                    username: localStorage.getItem("email"),
+                    password: localStorage.getItem("password")
+                }
+            }).then(async (res) => {
+                console.log(res);
+            }).catch(error => {
+                console.log(error);
+            });
 
-        // axios.delete(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth/${accID}`, {
-        //     auth: {
-        //         username: localStorage.getItem("email"),
-        //         password: localStorage.getItem("password")
-        //     }
-        // }).then(async (res) => {
-        //     console.log(res);
-        //     if (res.status === 204) {
-        //         alert("File deleted successfully.");
-        //     } else {
-        //         alert("The deletion of the file could not be executed. Please try again.")
-        //     }
-        // }).catch(error=>{
-        //     console.log(error);
-        // });
+            axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping3.subjects`, {
+                auth: {
+                    username: localStorage.getItem("email"),
+                    password: localStorage.getItem("password")
+                }
+            }).then(async (res) => {
+                console.log(res);
+                // if (res.status === 204) {
+                //     alert("File deleted successfully.");
+                // } else {
+                //     alert("The deletion of the file could not be executed. Please try again.")
+                // }
+            }).catch(error => {
+                console.log(error);
+            });
+
+            // axios.delete(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth/${accID}`, {
+            //     auth: {
+            //         username: localStorage.getItem("email"),
+            //         password: localStorage.getItem("password")
+            //     }
+            // }).then(async (res) => {
+            //     console.log(res);
+            //     if (res.status === 204) {
+            //         alert("File deleted successfully.");
+            //     } else {
+            //         alert("The deletion of the file could not be executed. Please try again.")
+            //     }
+            // }).catch(error=>{
+            //     console.log(error);
+            // });
+        }
     }
 
   return (
