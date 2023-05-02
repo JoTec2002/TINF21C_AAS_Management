@@ -59,21 +59,21 @@ const AddAccount = () => {
     const formDataJsonBasicAuth = JSON.parse(formDataBasicAuth);
     const formDataJsonRoleMapping = JSON.parse(formDataRoleMapping);
 
+
     console.log(formDataJsonBasicAuth);
     console.log(formDataJsonRoleMapping);
 
-    const resBasicAuth = await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
+    axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
       auth: {
         username: localStorage.getItem('email'),
         password: localStorage.getItem('password')
       }
     }).then((res) => {
-      console.log(res);
+      const dataBasicAuth = res.data;
+      console.log("Response basicAuth : ", dataBasicAuth);
     }).catch(error => {
       console.log(error);
     });
-
-    console.log("Response basicAuth : ", resBasicAuth);
 
     const resRoleMapping = await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, {
       auth: {
