@@ -17,7 +17,7 @@ export default class Dashboard extends Component {
             loading: true,
             searchTerm: "",
         }
-        this.specificUsername = "";
+        this.specificUser = [];
     }
 
     onSearchTermChange = (event) => {
@@ -55,8 +55,8 @@ export default class Dashboard extends Component {
 
     handleDeleteRequest = (user) => {
         this.handelShow();
-        this.specificUsername = user[0];
-        console.log(this.specificUsername);
+        this.specificUser = user;
+        console.log(this.specificUser);
     }
 
     handelShow = () => {
@@ -146,7 +146,7 @@ export default class Dashboard extends Component {
                         <Button href="#/create" variant="outline-primary btn-sm">
                             Create Account
                         </Button>
-                        <PopUpDelete handleClose={this.handleClose} {...this.state} accID={this.specificUsername}/>
+                        <PopUpDelete handleClose={this.handleClose} {...this.state} user={this.specificUser}/>
                     </div>
                 )
                 }
