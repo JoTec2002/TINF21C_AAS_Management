@@ -50,9 +50,9 @@ export default class Dashboard extends Component {
             })
     }
 
-    handleDelete = (givenuser) => {
+    handleDelete = () => {
         //console.log(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${user}`);
-        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(givenuser[1])}.subjects`, {
+        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.specificUser[1])}.subjects`, {
             auth: {
                 username: localStorage.getItem("email"),
                 password: localStorage.getItem("password")
@@ -60,12 +60,12 @@ export default class Dashboard extends Component {
         }).then(async (res) => {
             let users = res.data.value;
 
-            console.log(users[1].idShort, givenuser[0], users[0].idShort.trim !== givenuser[0].trim);
+            console.log(users[1].idShort, this.specificUser[0], users[0].idShort.trim !== this.specificUser[0].trim);
 
             //TODO here filter doesnt work I'dont know why futher trubbelshooting
             users.filter((user) => {
-                console.log(user.idShort, givenuser[0], user.idShort.trim() !== givenuser[0].trim());
-                return user.idShort.trim() !== givenuser[0].trim()
+                console.log(user.idShort, this.specificUser[0], user.idShort.trim() !== this.specificUser[0].trim());
+                return user.idShort.trim() !== this.specificUser[0].trim()
             });
 
             console.log(users);
@@ -89,13 +89,12 @@ export default class Dashboard extends Component {
 
     }
 
-    handleShow = (shell) => {
+    handleShow = (user) => {
         this.setState({
             showModal: true,
         });
-        this.specificShellID = shell.value[0].value[0].idShort;
-        this.specificRole = shell.value[1].value[0].idShort;
-        console.log(this.specificRole);
+        this.specificUser = user;
+        console.log(this.specificUser);
     }
 
     handleClose = () => {
@@ -179,12 +178,16 @@ export default class Dashboard extends Component {
                                     <td>{`${user[0]}`}</td>
                                     <td>{`${user[1]}`}</td>
                                     <td>
-                                        <Button href="#/edit" variant="text btn-sm">
-                                            <BsPencilSquare/>
-                                        </Button>
-                                        <Button variant="text btn-sm" onClick={() => this.handleDelete(user)}>
-                                            <BsTrash/>
-                                        </Button>
+                                        {!(user[0] === "anonymous") ? (
+                                            <div>
+                                                <Button variant="text btn-sm" onClick={() => this.handleShow(user)}>
+                                                    <BsPencilSquare />
+                                                </Button>
+                                                <Button variant="text btn-sm" onClick={() => this.handleShow(user)}>
+                                                    <BsTrash />
+                                                </Button>
+                                            </div>
+                                        ) : (<div></div>)}
                                     </td>
                                 </tr>
                             ))}
@@ -193,7 +196,7 @@ export default class Dashboard extends Component {
                         <Button href="#/create" variant="outline-primary btn-sm">
                             Create Account
                         </Button>
-                        <PopUpDelete handleClose={this.handleClose} {...this.state} user={this.specificUser}/>
+                        <PopUpDelete handleClose={this.handleClose} {...this.state} handleDelete={this.handleDelete}/>
                     </div>
                 )
                 }
