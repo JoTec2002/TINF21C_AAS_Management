@@ -51,14 +51,14 @@ img{
 
 /*Assets*/
 .assets{
-  width: 400px;
-  height: 40px;
+  width:50rem;
+  height: 1rem;
   margin-top: 5px;
   transition: 0.3s;
   border: 2px solid gray;
   border-radius: 10px;
   display: flex;
-  justify-content: center;
+
   align-items: center;
   padding: 20px;
 }
