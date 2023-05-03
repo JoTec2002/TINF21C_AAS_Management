@@ -5,6 +5,7 @@ import Notfound from "../Pages/Notfound";
 import AddAsset from "../Pages/AddAsset";
 import AddAccount from "../Pages/AddAccount"
 import DeleteAsset from "../Pages/DeleteAsset";
+import EditAccount from "../Pages/EditAccount";
 
 const RouterPages =()=>{
     return (
@@ -15,6 +16,7 @@ const RouterPages =()=>{
                 <Route path='/addAsset' element={<AddAsset />}/>
                 <Route path='/deleteAsset' element={<DeleteAsset />}/>
                 <Route path='/create' element={<AddAccount />}/>
+                <Route path='/edit' element={<EditAccount />}/>
                 <Route path='/*' element={<Notfound />}/>
             </Routes>
         </Router>
