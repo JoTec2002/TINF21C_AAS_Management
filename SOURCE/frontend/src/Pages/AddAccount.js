@@ -71,7 +71,7 @@ const AddAccount = () => {
     //1. get all current users
     //2. Add new user to this list
     //3. Update useres on server
-    axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
+    await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
       auth: {
         username: localStorage.getItem('email'),
         password: localStorage.getItem('password')
