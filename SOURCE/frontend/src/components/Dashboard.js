@@ -46,7 +46,6 @@ export default class Dashboard extends Component {
                 this.setState({users, loading: false});
             })
             .catch(error => {
-                console.error(error);
                 setErrorHandling(error)
             })
     }
@@ -73,7 +72,7 @@ export default class Dashboard extends Component {
 
 
         }).catch(error => {
-            console.log(error);
+            setErrorHandling(error);
         });
 
         axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
@@ -84,7 +83,7 @@ export default class Dashboard extends Component {
         }).then(async (res) => {
             console.log(res);
         }).catch(error => {
-            console.log(error);
+            setErrorHandling(error);
         });
 
 

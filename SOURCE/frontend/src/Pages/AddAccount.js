@@ -1,16 +1,17 @@
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
-import { Fragment } from "react";
-import { NavComponent } from "../components";
-import { Col, Row } from "react-bootstrap";
+import {Fragment} from "react";
+import {NavComponent} from "../components";
+import {Col, Row} from "react-bootstrap";
 import {API_URL} from "../utils/constanst";
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import axios from 'axios';
+import {setErrorHandling} from "../components/errorHandling";
 
 const AddAccount = () => {
 
-    const [validated, setValidated] = useState(false);
-    const [packageId, setpackageId] = useState(-1);
+  const [validated, setValidated] = useState(false);
+  const [packageId, setpackageId] = useState(-1);
 
   const [formValue, setformValue] = React.useState({
     email: '',
@@ -57,9 +58,6 @@ const AddAccount = () => {
     const formDataJsonBasicAuth = JSON.parse(formDataBasicAuth);
     const formDataJsonRoleMapping = JSON.parse(formDataRoleMapping);
 
-    var dataResBasicAuth = new FormData();
-    var dataResRoleMapping = new FormData();
-
     console.log("Username: " + formValue.email);
     console.log("Password: " + formValue.password);
     console.log("Role: " + formValue.role);
@@ -68,20 +66,34 @@ const AddAccount = () => {
     console.log(formDataJsonRoleMapping);
 
 
-
+    //add user to auth user
+    //therefore
+    //1. get all current users
+    //2. Add new user to this list
+    //3. Update useres on server
     axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
       auth: {
         username: localStorage.getItem('email'),
         password: localStorage.getItem('password')
       }
     }).then((res) => {
-      dataResBasicAuth = res.data;
+      let dataResBasicAuth = res.data;
+      dataResBasicAuth.value.push(formDataJsonBasicAuth);
 
-      let array = dataResBasicAuth.value;
-      array.push(formDataJsonBasicAuth);
-      console.log("Response basicAuth : ", dataResBasicAuth);
+      console.log("New basicAuth Submodel : ", dataResBasicAuth);
+
+      axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, dataResBasicAuth, {
+        auth: {
+          username: localStorage.getItem('email'),
+          password: localStorage.getItem('password')
+        }
+      }).then((res) => {
+        console.log("basic auth put res", res);
+      }).catch(error => {
+        setErrorHandling(error);
+      });
     }).catch(error => {
-      console.log(error);
+      setErrorHandling(error);
     });
 
 
@@ -91,126 +103,115 @@ const AddAccount = () => {
         password: localStorage.getItem('password')
       }
     }).then((res) => {
-      dataResRoleMapping = res.data;
+      let dataResRoleMapping = res.data;
+      dataResRoleMapping.value.push(formDataJsonRoleMapping)
 
-      let array = dataResRoleMapping.value;
-      array.push(formDataJsonRoleMapping);
+      console.log("New roleMapping : ", dataResRoleMapping);
 
-      console.log("Response roleMapping : ", dataResRoleMapping);
+      axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, dataResRoleMapping, {
+        auth: {
+          username: localStorage.getItem('email'),
+          password: localStorage.getItem('password')
+        }
+      }).then((res) => {
+        console.log(res);
+      }).catch(error => {
+        setErrorHandling(error)
+      });
     }).catch(error => {
-      console.log(error);
+      setErrorHandling(error)
     });
 
-    axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, formDataJsonBasicAuth, {
-      auth: {
-        username: localStorage.getItem('email'),
-        password: localStorage.getItem('password')
-      }
-    }).then((res) => {
-      console.log(res);
-    }).catch(error => {
-      console.log(error);
-    });
+  };
 
-    axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, formDataJsonRoleMapping, {
-      auth: {
-        username: localStorage.getItem('email'),
-        password: localStorage.getItem('password')
-      }
-    }).then((res) => {
-      console.log(res);
-    }).catch(error => {
-      console.log(error);
+  const handleChange = (event) => {
+    setformValue({
+      ...formValue,
+      [event.target.name]: event.target.value
     });
   };
 
-    const handleChange = (event) => {
-      setformValue({
-        ...formValue,
-        [event.target.name]: event.target.value
-      });
-    };
 
+  return (
+      <Fragment>
+        <NavComponent/>
+        <div className="container" style={{paddingTop: 20, paddingBottom: 100}}>
+          <h4>Create new account</h4>
+          <hr/>
+          <Form noValidate validated={validated} onSubmit={handleSubmit}>
+            <Form.Group as={Row} className="mb-3" controlId="formUsername">
+              <Form.Label column sm={2}>
+                Username
+              </Form.Label>
+              <Col sm={10}>
+                <Form.Control name="email" type="email" placeholder="Username" value={formValue.email}
+                              onChange={handleChange} required/>
+                <Form.Control.Feedback type="invalid">
+                  Please provide a valid email as username.
+                </Form.Control.Feedback>
+              </Col>
+            </Form.Group>
 
-    return (
-        <Fragment>
-          <NavComponent/>
-          <div className="container" style={{paddingTop: 20, paddingBottom: 100}}>
-            <h4>Create new account</h4>
-            <hr/>
-            <Form noValidate validated={validated} onSubmit={handleSubmit}>
-              <Form.Group as={Row} className="mb-3" controlId="formUsername">
-                <Form.Label column sm={2}>
-                  Username
-                </Form.Label>
-                <Col sm={10}>
-                  <Form.Control name="email" type="email" placeholder="Username" value={formValue.email}
-                                onChange={handleChange} required/>
-                  <Form.Control.Feedback type="invalid">
-                    Please provide a valid email as username.
-                  </Form.Control.Feedback>
-                </Col>
-              </Form.Group>
+            <Form.Group as={Row} className="mb-3" controlId="formPassword">
+              <Form.Label column sm={2}>
+                Password
+              </Form.Label>
+              <Col sm={10}>
+                <Form.Control name="password" type="password" placeholder="Password"
+                              value={formValue.password}
+                              onChange={handleChange} required/>
+                <Form.Control.Feedback type="invalid">
+                  Please provide a password.
+                </Form.Control.Feedback>
+              </Col>
+            </Form.Group>
 
-              <Form.Group as={Row} className="mb-3" controlId="formPassword">
-                <Form.Label column sm={2}>
-                  Password
-                </Form.Label>
-                <Col sm={10}>
-                  <Form.Control name="password" type="password" placeholder="Password" value={formValue.password}
-                                onChange={handleChange} required/>
-                  <Form.Control.Feedback type="invalid">
-                    Please provide a password.
-                  </Form.Control.Feedback>
-                </Col>
-              </Form.Group>
-
-              <fieldset>
-                <Form.Group as={Row} className="mb-3">
-                  <Form.Label as="legend" column sm={2}>
-                    Role
-                  </Form.Label>
-                  <Col sm={10}>
-                    <Form.Check
-                        type="radio"
-                        value="isNotAuthenticated"
-                        label="basic"
-                        name="role"
-                        id="formRoleBasic"
-                        onChange={handleChange}
-                        required
-                    />
-                    <Form.Check
-                        type="radio"
-                        value="isAuthenticatedUser"
-                        label="advanced"
-                        name="role"
-                        id="formRoleAdvanced"
-                        onChange={handleChange}
-                    />
-                    <Form.Check
-                        type="radio"
-                        value="isAuthenticatedSecurityUser"
-                        label="admin"
-                        name="role"
-                        id="formRoleAdmin"
-                        onChange={handleChange}
-                    />
-                  </Col>
-                </Form.Group>
-              </fieldset>
-
+            <fieldset>
               <Form.Group as={Row} className="mb-3">
-                <Col sm={{span: 10, offset: 2}}>
-                  <Button type="submit">
-                    Submit new account
-                  </Button>
+                <Form.Label as="legend" column sm={2}>
+                  Role
+                </Form.Label>
+                <Col sm={10}>
+                  <Form.Check
+                      type="radio"
+                      value="isNotAuthenticated"
+                      label="basic"
+                      name="role"
+                      id="formRoleBasic"
+                      onChange={handleChange}
+                      required
+                  />
+                  <Form.Check
+                      type="radio"
+                      value="isAuthenticatedUser"
+                      label="advanced"
+                      name="role"
+                      id="formRoleAdvanced"
+                      onChange={handleChange}
+                  />
+                  <Form.Check
+                      type="radio"
+                      value="isAuthenticatedSecurityUser"
+                      label="admin"
+                      name="role"
+                      id="formRoleAdmin"
+                      onChange={handleChange}
+                  />
                 </Col>
               </Form.Group>
-            </Form>
-          </div>
-        </Fragment>
-    );
+            </fieldset>
+
+            <Form.Group as={Row} className="mb-3">
+              <Col sm={{span: 10, offset: 2}}>
+                <Button type="submit">
+                  Submit new account
+                </Button>
+              </Col>
+            </Form.Group>
+          </Form>
+        </div>
+      </Fragment>
+  );
 }
 
 export default AddAccount;
