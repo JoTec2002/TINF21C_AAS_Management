@@ -10,9 +10,11 @@ using IO.Swagger.V1RC03.ApiModel;
 using IO.Swagger.V1RC03.APIModels.Core;
 using IO.Swagger.V1RC03.APIModels.ValueOnly;
 using IO.Swagger.V1RC03.Logging;
+using MailKit.Security;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
+using MongoDB.Driver;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -27,6 +29,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using static IO.Swagger.V1RC03.Controllers.AssetAdministrationShellEnvironmentAPIController;
+using static MongoDB.Driver.WriteConcern;
 using File = AasCore.Aas3_0_RC02.File;
 
 namespace IO.Swagger.V1RC03.Services
@@ -662,42 +665,85 @@ namespace IO.Swagger.V1RC03.Services
             {
                 throw new NoIdentifierException("SubmodelElement");
             }
-            //TODO still unchanged
-            var submodelElement = GetSubmodelElementByPathSubmodelRepo(submodelIdentifier, idShortPath, out object smeParent);
-            if (submodelElement != null && smeParent != null)
-            {
+            //var submodelElement = GetSubmodelElementByPathSubmodelRepo(submodelIdentifier, idShortPath, out object smeParent);
+            //if (submodelElement != null && smeParent != null)
+            //{
                 //If level = core and/or content = value/metadata, do not replace the resource, do fieldwise update
-                if (outputModifierContext != null && !outputModifierContext.IsDefault())
+                /*if (outputModifierContext != null && !outputModifierContext.IsDefault())
                 {
                     UpdateImplementation.Update(submodelElement, body, outputModifierContext);
-                }
+                }*/
                 //Default or null modifiers, so replace the complete resource as per standard HTTP/PUT
-                else
-                {
+                //else
+                //{
+                    Submodel submodelRoot = GetSubmodelById(submodelIdentifier);
+                    string[] idShortPathArray = idShortPath.Split('.');
+                    object smeParent = null;
+                    object submodelElement = submodelRoot;
+
+                    foreach (string idShort in idShortPathArray)
+                    {
+                        if (submodelElement is SubmodelElementCollection smeCollection)
+                        {
+                            smeParent = submodelElement;
+                            for(int i = 0; i < smeCollection.Value.Count; i++)
+                            {
+                                if (smeCollection.Value[i].IdShort == idShort)
+                                {
+                                    submodelElement = smeCollection.Value[i];
+                                }
+                            }
+                        }
+                        else if (submodelElement is SubmodelElementList list)
+                        {
+                            smeParent = submodelElement;
+                            for (int i = 0; i < list.Value.Count; i++)
+                            {
+                                if (list.Value[i].IdShort == idShort)
+                                {
+                                    submodelElement = list.Value[i];
+                                }
+                            }
+                        }
+                        else if (submodelElement is Submodel submodel)
+                        {
+                            smeParent = submodelElement;
+                            for (int i = 0; i < submodel.SubmodelElements.Count; i++)
+                            {
+                                if (submodel.SubmodelElements[i].IdShort == idShort)
+                                {
+                                    submodelElement = submodel.SubmodelElements[i];
+                                }
+                            }
+                        }
+                    }
+
                     if (smeParent is SubmodelElementCollection collection)
                     {
-                        var smeIndex = collection.Value.IndexOf(submodelElement);
-                        collection.Value.Remove(submodelElement);
+                        var smeIndex = collection.Value.IndexOf((ISubmodelElement)submodelElement);
+                        collection.Value.Remove((ISubmodelElement)submodelElement);
                         collection.Value.Insert(smeIndex, body);
                     }
                     else if (smeParent is SubmodelElementList list)
                     {
-                        var smeIndex = list.Value.IndexOf(submodelElement);
-                        list.Value.Remove(submodelElement);
+                        var smeIndex = list.Value.IndexOf((ISubmodelElement)submodelElement);
+                        list.Value.Remove((ISubmodelElement)submodelElement);
                         list.Value.Insert(smeIndex, body);
                     }
                     //Added support for submodel here, as no other api smReffound for this functionality
                     else if (smeParent is Submodel submodel)
                     {
-                        var smeIndex = submodel.SubmodelElements.IndexOf(submodelElement);
-                        submodel.SubmodelElements.Remove(submodelElement);
+                        var smeIndex = submodel.SubmodelElements.IndexOf((ISubmodelElement)submodelElement);
+                        submodel.SubmodelElements.Remove((ISubmodelElement)submodelElement);
                         submodel.SubmodelElements.Insert(smeIndex, body);
                     }
-                }
+
+                        AasxHttpContextHelper.mongoDBInterface.updateDBSubmodels(submodelIdentifier, submodelRoot);
+                //}
 
 
-                //AasxServer.Program.signalNewData(1);
-            }
+                AasxServer.Program.signalNewData(1);
+            //}
         }
 
         public void UpdateSubmodelById(Submodel body, string submodelIdentifier, OutputModifierContext outputModifierContext = null)
