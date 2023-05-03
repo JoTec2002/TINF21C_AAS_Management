@@ -4,7 +4,7 @@
 // import {API_URL} from "../utils/constanst";
 // import editAccount from "../Pages/EditAccount";
 //
-// const PopUpEditAccount = ({ showModal, handleClose, accID }) => {
+// const PopUpEditAccount = ({ showModal, handleClose, user }) => {
 //
 //     const [validated, setValidated] = useState(false);
 //
@@ -29,11 +29,11 @@
 //     });
 //     function handleEdit() {
 //
-//         if(accID !== "" || accID !== null) {
+//         if(user !== "" || user !== null) {
 //
-//             console.log(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${accID}`);
+//             console.log(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${user}`);
 //
-//             axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${accID}`, {
+//             axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${user}`, {
 //                 auth: {
 //                     username: localStorage.getItem("email"),
 //                     password: localStorage.getItem("password")
@@ -49,7 +49,7 @@
 //                 console.log(error);
 //             });
 //
-//             axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping3.subjects.${accID}`, {
+//             axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping3.subjects.${user}`, {
 //                 auth: {
 //                     username: localStorage.getItem("email"),
 //                     password: localStorage.getItem("password")
@@ -65,7 +65,7 @@
 //                 console.log(error);
 //             });
 //
-//             // axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth/${accID}`, {
+//             // axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth/${user}`, {
 //             //     auth: {
 //             //         username: localStorage.getItem("email"),
 //             //         password: localStorage.getItem("password")
