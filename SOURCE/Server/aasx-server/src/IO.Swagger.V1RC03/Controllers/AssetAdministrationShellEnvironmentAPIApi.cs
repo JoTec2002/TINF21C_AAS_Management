@@ -831,6 +831,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PostAssetAdministrationShell([FromBody] AssetAdministrationShell body)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/shells", "POST");
+
             var output = _aasEnvService.CreateAssetAdministrationShell(body);
 
             return CreatedAtAction(nameof(PostAssetAdministrationShell), output);
@@ -852,6 +854,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PostConceptDescription([FromBody] ConceptDescription body)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/concept-descriptions", "POST");
+
             var output = _aasEnvService.CreateConceptDescription(body);
 
             return CreatedAtAction(nameof(PostConceptDescription), output);
@@ -874,6 +878,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PostSubmodel([FromBody] Submodel body, [FromQuery] string aasIdentifier)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/submodels", "POST");
+
             var decodedAasIdentifier = _decoderService.Decode("aasIdentifier", aasIdentifier);
 
             var output = _aasEnvService.CreateSubmodel(body, decodedAasIdentifier);
@@ -974,6 +980,8 @@ namespace IO.Swagger.V1RC03.Controllers
         public virtual IActionResult PostSubmodelElementByPathSubmodelRepo([FromBody] ISubmodelElement body, [FromRoute][Required] string submodelIdentifier, [FromRoute][Required] string idShortPath,
             [FromQuery] LevelEnum level, [FromQuery] ContentEnum content, [FromQuery] ExtentEnum extent, [FromQuery] int first)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/submodelelements", "POST");
+
             var decodedSubmodelId = _decoderService.Decode("submodelIdentifier", submodelIdentifier);
 
             var output = _aasEnvService.CreateSubmodelElementByPathSubmodelRepo(body, decodedSubmodelId, idShortPath, first);
@@ -1004,6 +1012,8 @@ namespace IO.Swagger.V1RC03.Controllers
         public virtual IActionResult PostSubmodelElementSubmodelRepo([FromBody] ISubmodelElement body, [FromRoute][Required] string submodelIdentifier,
             [FromQuery] LevelEnum level, [FromQuery] ContentEnum content, [FromQuery] ExtentEnum extent, [FromQuery] int first)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/submodelelements", "POST"); 
+            
             var decodedSubmodelId = _decoderService.Decode("submodelIdentifier", submodelIdentifier);
 
             var output = _aasEnvService.CreateSubmodelElementSubmodelRepo(body, decodedSubmodelId, first);
@@ -1029,6 +1039,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PostSubmodelReference([FromBody] Reference body, [FromRoute][Required] string aasIdentifier)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/submodels", "POST"); 
+            
             var decodedAasId = _decoderService.Decode("aasIdentifier", aasIdentifier);
 
             var output = _aasEnvService.CreateSubmodelReference(body, decodedAasId);
@@ -1054,6 +1066,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PutAssetAdministrationShellById([FromBody] AssetAdministrationShell body, [FromRoute][Required] string aasIdentifier)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/shells", "PUT"); 
+            
             var decodedAasId = _decoderService.Decode("aasIdentifier", aasIdentifier);
 
             _aasEnvService.UpdateAssetAdministrationShellById(body, decodedAasId);
@@ -1077,6 +1091,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PutAssetInformation([FromBody] AssetInformation body, [FromRoute][Required] string aasIdentifier)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/shells", "PUT"); 
+            
             var decodedAasId = _decoderService.Decode("aasIdentifier", aasIdentifier);
 
             _aasEnvService.UpdateAssetInformation(body, decodedAasId);
@@ -1102,6 +1118,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PutConceptDescriptionById([FromBody] ConceptDescription body, [FromRoute][Required] string cdIdentifier)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/concept-descriptions", "PUT"); 
+            
             var decodedCdId = _decoderService.Decode("cdIdentifier", cdIdentifier);
 
             _aasEnvService.UpdateConceptDescriptionById(body, decodedCdId);
@@ -1131,6 +1149,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PutSubmodel([FromBody] Submodel body, [FromRoute][Required] string aasIdentifier, [FromRoute][Required] string submodelIdentifier, [FromQuery] LevelEnum level, [FromQuery] ContentEnum content, [FromQuery] ExtentEnum extent)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/submodels", "PUT");
+
             var decodedAasId = _decoderService.Decode("aasIdentifier", aasIdentifier);
             var decodedSubmodelId = _decoderService.Decode("submodelIdentifier", submodelIdentifier);
             var outputModifierContext = new OutputModifierContext(level.ToString(), content.ToString(), extent.ToString());
@@ -1159,6 +1179,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PutSubmodelById([FromBody] Submodel body, [FromRoute][Required] string submodelIdentifier)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/submodels", "PUT"); 
+            
             var decodedSubmodelId = _decoderService.Decode("submodelIdentifier", submodelIdentifier);
 
             _aasEnvService.UpdateSubmodelById(body, decodedSubmodelId);
@@ -1189,6 +1211,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PutSubmodelElementByPath([FromBody] ISubmodelElement body, [FromRoute][Required] string aasIdentifier, [FromRoute][Required] string submodelIdentifier, [FromRoute][Required] string idShortPath, [FromQuery] LevelEnum level, [FromQuery] ContentEnum content, [FromQuery] ExtentEnum extent)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/submodelelements", "PUT");
+
             var decodedAasId = _decoderService.Decode("aasIdentifier", aasIdentifier);
             var decodedSubmodelId = _decoderService.Decode("submodelIdentifier", submodelIdentifier);
 
@@ -1221,6 +1245,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PutSubmodelElementByPathSubmodelRepo([FromBody] ISubmodelElement body, [FromRoute][Required] string submodelIdentifier, [FromRoute][Required] string idShortPath, [FromQuery] LevelEnum level, [FromQuery] ContentEnum content, [FromQuery] ExtentEnum extent)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/submodelelements", "PUT"); 
+            
             var decodedSubmodelId = _decoderService.Decode("submodelIdentifier", submodelIdentifier);
 
             var outputModifierContext = new OutputModifierContext(level.ToString(), content.ToString(), extent.ToString());
@@ -1251,6 +1277,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PutFileByPath([FromRoute][Required] string aasIdentifier, [FromRoute][Required] string submodelIdentifier, [FromRoute] string idShortPath, [Required][FromForm] IFormFile file)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/submodelelements", "PUT"); 
+            
             var decodedAasId = _decoderService.Decode("aasIdentifier", aasIdentifier);
             var decodedSubmodelId = _decoderService.Decode("submodelIdentifier", submodelIdentifier);
 
@@ -1284,6 +1312,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PutFileByPathSubmodelRepo([FromRoute][Required] string submodelIdentifier, [FromRoute] string idShortPath, [Required][FromForm] IFormFile file)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/submodelelements", "PUT"); 
+            
             var decodedSubmodelId = _decoderService.Decode("submodelIdentifier", submodelIdentifier);
 
             var stream = new MemoryStream();
@@ -1316,6 +1346,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult GetThumbnail([FromRoute][Required] string aasIdentifier)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/shells", "PUT"); 
+            
             var decodedAasIdentifier = _decoderService.Decode("aasIdentifier", aasIdentifier);
 
             var fileName = _aasEnvService.GetThumbnail(decodedAasIdentifier, out byte[] content, out long fileSize);
@@ -1353,6 +1385,8 @@ namespace IO.Swagger.V1RC03.Controllers
         [SwaggerResponse(statusCode: 0, type: typeof(Result), description: "Default error handling for unmentioned status codes")]
         public virtual IActionResult PutThumbnail([FromRoute][Required] string aasIdentifier, IFormFile file)
         {
+            _aasEnvService.SecurityCheckInit(HttpContext, "/shells", "PUT"); 
+            
             var decodedAasIdentifier = _decoderService.Decode("aasIdentifier", aasIdentifier);
 
             var stream = new MemoryStream();
