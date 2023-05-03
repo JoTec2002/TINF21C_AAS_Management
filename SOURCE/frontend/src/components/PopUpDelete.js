@@ -30,6 +30,7 @@ const PopUpDelete = ({ showModal, handleClose, user }) => {
 
                 console.log(users[1].idShort,givenuser[0], users[0].idShort.trim !== givenuser[0].trim);
 
+                //TODO here filter doesnt work I'dont know why futher trubbelshooting
                 users.filter((user) => {console.log(user.idShort,givenuser[0], user.idShort.trim() !== givenuser[0].trim()); return user.idShort.trim() !== givenuser[0].trim()});
 
                 console.log(users);
