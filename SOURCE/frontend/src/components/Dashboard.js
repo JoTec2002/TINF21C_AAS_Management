@@ -167,7 +167,7 @@ export default class Dashboard extends Component {
                         </Form>
                         <Table striped>
                             <thead>
-                            <tr>
+                            <tr key={"Header"}>
                                 <th>Account</th>
                                 <th>Role</th>
                                 <th>Action</th>
@@ -175,7 +175,7 @@ export default class Dashboard extends Component {
                             </thead>
                             <tbody>
                             {filteredusers && filteredusers.map((user) => (
-                                <tr>
+                                <tr key={user[0]}>
                                     <td>{`${user[0]}`}</td>
                                     <td>{`${user[1]}`}</td>
                                     <td>

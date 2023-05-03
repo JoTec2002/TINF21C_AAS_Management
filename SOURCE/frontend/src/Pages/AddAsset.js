@@ -32,6 +32,9 @@ const AddAsset =()=>{
                 }}
             ).then((res)=>{
                 console.log(res);
+                if(res.status === 201){
+                    alert("File added sucessfully.")
+                }
             })
             .catch((error) =>{
                 setErrorHandling(error);
