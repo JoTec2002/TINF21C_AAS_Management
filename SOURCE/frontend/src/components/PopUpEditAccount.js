@@ -6,11 +6,7 @@ const PopUpEditAccount = ({ showModal, handleClose, handleEdit, user }) => {
 
     const [validated, setValidated] = useState(false);
 
-    const [formValue, setformValue] = React.useState({
-        email: (user === []) ? (''):(user[0]),
-        password: '',
-        role: (user === []) ? (''):(user[1])
-    });
+    const [formValue, setformValue] = React.useState({});
 
     const handleChange = (event) => {
         setformValue({
@@ -31,7 +27,7 @@ const PopUpEditAccount = ({ showModal, handleClose, handleEdit, user }) => {
                             Username
                         </Form.Label>
                         <Col sm={10}>
-                            <Form.Control name="email" type="email" placeholder="Username" value={formValue.email}
+                            <Form.Control name="email" type="email" placeholder="Username" value={user[0]}
                                           onChange={handleChange} required/>
                             <Form.Control.Feedback type="invalid">
                                 Please provide a valid email as username.
@@ -65,6 +61,7 @@ const PopUpEditAccount = ({ showModal, handleClose, handleEdit, user }) => {
                                     name="role"
                                     id="formRoleBasic"
                                     onChange={handleChange}
+                                    checked={(user[1] === "basic")}
                                     required
                                 />
                                 <Form.Check
@@ -74,6 +71,7 @@ const PopUpEditAccount = ({ showModal, handleClose, handleEdit, user }) => {
                                     name="role"
                                     id="formRoleAdvanced"
                                     onChange={handleChange}
+                                    checked={(user[1] === "advanced")}
                                 />
                                 <Form.Check
                                     type="radio"
@@ -82,6 +80,7 @@ const PopUpEditAccount = ({ showModal, handleClose, handleEdit, user }) => {
                                     name="role"
                                     id="formRoleAdmin"
                                     onChange={handleChange}
+                                    checked={(user[1] === "admin")}
                                 />
                             </Col>
                         </Form.Group>

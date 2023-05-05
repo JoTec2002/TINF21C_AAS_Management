@@ -62,16 +62,29 @@ export default class Dashboard extends Component {
         }).then(async (res) => {
             let users = res.data.value;
 
-            console.log(users[1].idShort, this.specificUser[0], users[0].idShort.trim !== this.specificUser[0].trim);
+            console.log("Response roleMapping : ", users);
+            console.log(users[0].idShort.trim !== this.specificUser[0].trim);
 
-            //TODO here filter doesnt work I'dont know why futher trubbelshooting
-            users.filter((user) => {
-                console.log(user.idShort, this.specificUser[0], user.idShort.trim() !== this.specificUser[0].trim());
-                return user.idShort.trim() !== this.specificUser[0].trim()
+            let dataFilteredUser = users.filter((user) => {
+                return user.idShort.trim() !== this.specificUser[0].trim();
             });
 
-            console.log(users);
+            res.data.value = dataFilteredUser;
 
+            console.log("Filtered Response roleMapping : ", dataFilteredUser);
+
+            console.log("New data for put roleMapping : ", res.data);
+
+            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, res.data, {
+                auth: {
+                    username: localStorage.getItem('email'),
+                    password: localStorage.getItem('password')
+                }
+            }).then((res) => {
+                console.log("basic auth put res", res);
+            }).catch(error => {
+                setErrorHandling(error);
+            });
 
         }).catch(error => {
             setErrorHandling(error);
@@ -83,13 +96,36 @@ export default class Dashboard extends Component {
                 password: localStorage.getItem("password")
             }
         }).then(async (res) => {
-            console.log(res);
+            let users = res.data.value;
+
+            console.log("Response basicAuth : ", users);
+            console.log(users[0].idShort.trim !== this.specificUser[0].trim);
+
+            let dataFilteredUser = users.filter((user) => {
+                return user.idShort.trim() !== this.specificUser[0].trim();
+            });
+
+            res.data.value = dataFilteredUser;
+
+            console.log("Filtered Response basicAuth : ", dataFilteredUser);
+
+            console.log("New data for put basicAuth : ", res.data);
+
+            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, res.data, {
+                auth: {
+                    username: localStorage.getItem('email'),
+                    password: localStorage.getItem('password')
+                }
+            }).then((res) => {
+                console.log("basic auth put res", res);
+            }).catch(error => {
+                setErrorHandling(error);
+            });
+
         }).catch(error => {
             setErrorHandling(error);
         });
-
-
-    }
+    };
 
     handleEdit = () => {
         //console.log(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${user}`);
@@ -131,11 +167,11 @@ export default class Dashboard extends Component {
     }
 
     handleShow = (user, whichModal) => {
+        this.sortModal = whichModal;
+        this.specificUser = user;
         this.setState({
             showModal: true,
         });
-        this.specificUser = user;
-        this.sortModal = whichModal;
         console.log(this.specificUser);
     }
 
