@@ -11,7 +11,6 @@ import {setErrorHandling} from "../components/errorHandling";
 const AddAccount = () => {
 
   const [validated, setValidated] = useState(false);
-  const [packageId, setpackageId] = useState(-1);
 
   const [formValue, setformValue] = React.useState({
     email: '',
@@ -115,6 +114,7 @@ const AddAccount = () => {
         }
       }).then((res) => {
         console.log(res);
+
       }).catch(error => {
         setErrorHandling(error)
       });

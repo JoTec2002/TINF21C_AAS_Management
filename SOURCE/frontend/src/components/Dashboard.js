@@ -52,8 +52,9 @@ export default class Dashboard extends Component {
             })
     }
 
-    handleDelete = () => {
-        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.specificUser[1])}.subjects`, {
+    handleDelete = async () => {
+
+        await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.specificUser[1])}.subjects`, {
             auth: {
                 username: localStorage.getItem("email"),
                 password: localStorage.getItem("password")
@@ -78,8 +79,11 @@ export default class Dashboard extends Component {
                 }
             }).then((res) => {
                 console.log("roleMapping Put-Res", res);
-                if(res.status === 204){
+                if (res.status === 204) {
                     console.log("File deleted successfully in roleMapping");
+                } else {
+                    console.log("File could not be deleted in roleMapping");
+                    alert("File could not be deleted");
                 }
             }).catch(error => {
                 setErrorHandling(error);
@@ -113,11 +117,13 @@ export default class Dashboard extends Component {
                     password: localStorage.getItem('password')
                 }
             }).then((res) => {
-                console.log("basicAuth Put-Res", res);
-                if(res.status === 204){
-                    console.log("File deleted successfully in basicAuth");
-                    alert("File deleted successfully in basicAuth");
-                    window.location.reload(false);
+                if (res.status === 204) {
+                    console.log("File deleted successfully in basicAuth : ", res);
+                    if (this.sortModal === "delete") {
+                        window.location.reload(false);
+                    }
+                } else {
+                    console.log("File could not be deleted in basicAuth : ", res);
                 }
             }).catch(error => {
                 setErrorHandling(error);
@@ -128,16 +134,16 @@ export default class Dashboard extends Component {
 
     };
 
-    handleEdit = (formValue) => {
+    handleEdit = async (formValue) => {
 
-        this.handleDelete();
+        await this.handleDelete();
 
         const formDataBasicAuth = `{"idShort":"${formValue.email}","kind":"Instance","semanticId":{"type":"GlobalReference","keys":[]},"dataSpecifications":[],"valueType":"xs:string","value":"${formValue.password}","modelType":"Property"}`;
         const formDataRoleMapping = `{"idShort": "${formValue.email}", "kind": "Instance","semanticId": {"type": "GlobalReference","keys": []},"dataSpecifications": [],"valueType": "xs:string","value": "","modelType": "Property"}`;
         const formDataJsonBasicAuth = JSON.parse(formDataBasicAuth);
         const formDataJsonRoleMapping = JSON.parse(formDataRoleMapping);
 
-        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
+        await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
             auth: {
                 username: localStorage.getItem('email'),
                 password: localStorage.getItem('password')
@@ -154,7 +160,11 @@ export default class Dashboard extends Component {
                     password: localStorage.getItem('password')
                 }
             }).then((res) => {
-                console.log("basic auth put res", res);
+                if (res.status === 204) {
+                    console.log("File deleted successfully in basicAuth : ", res);
+                } else {
+                    console.log("File could not be deleted in basicAuth : ", res);
+                }
             }).catch(error => {
                 setErrorHandling(error);
             });
@@ -162,7 +172,7 @@ export default class Dashboard extends Component {
             setErrorHandling(error);
         });
 
-        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(formValue.role)}.subjects`, {
+        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, {
             auth: {
                 username: localStorage.getItem('email'),
                 password: localStorage.getItem('password')
@@ -173,13 +183,19 @@ export default class Dashboard extends Component {
 
             console.log("New roleMapping : ", dataResRoleMapping);
 
-            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(formValue.role)}.subjects`, dataResRoleMapping, {
+            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, dataResRoleMapping, {
                 auth: {
                     username: localStorage.getItem('email'),
                     password: localStorage.getItem('password')
                 }
             }).then((res) => {
                 console.log(res);
+                if (res.status === 204) {
+                    console.log("File updated successfully in roleMapping : ", res);
+                    window.location.reload(false);
+                } else {
+                    console.log("File could not be updated in roleMapping : ", res);
+                }
             }).catch(error => {
                 setErrorHandling(error)
             });
