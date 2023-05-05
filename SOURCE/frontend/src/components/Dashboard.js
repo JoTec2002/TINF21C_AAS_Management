@@ -53,7 +53,6 @@ export default class Dashboard extends Component {
     }
 
     handleDelete = () => {
-        //console.log(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${user}`);
         axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.specificUser[1])}.subjects`, {
             auth: {
                 username: localStorage.getItem("email"),
@@ -70,18 +69,18 @@ export default class Dashboard extends Component {
             });
 
             res.data.value = dataFilteredUser;
-
             console.log("Filtered Response roleMapping : ", dataFilteredUser);
 
-            console.log("New data for put roleMapping : ", res.data);
-
-            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, res.data, {
+            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.specificUser[1])}.subjects`, res.data, {
                 auth: {
                     username: localStorage.getItem('email'),
                     password: localStorage.getItem('password')
                 }
             }).then((res) => {
-                console.log("basic auth put res", res);
+                console.log("roleMapping Put-Res", res);
+                if(res.status === 204){
+                    console.log("File deleted successfully in roleMapping");
+                }
             }).catch(error => {
                 setErrorHandling(error);
             });
@@ -106,12 +105,50 @@ export default class Dashboard extends Component {
             });
 
             res.data.value = dataFilteredUser;
-
             console.log("Filtered Response basicAuth : ", dataFilteredUser);
 
-            console.log("New data for put basicAuth : ", res.data);
-
             axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, res.data, {
+                auth: {
+                    username: localStorage.getItem('email'),
+                    password: localStorage.getItem('password')
+                }
+            }).then((res) => {
+                console.log("basicAuth Put-Res", res);
+                if(res.status === 204){
+                    console.log("File deleted successfully in basicAuth");
+                    alert("File deleted successfully in basicAuth");
+                    window.location.reload(false);
+                }
+            }).catch(error => {
+                setErrorHandling(error);
+            });
+        }).catch(error => {
+            setErrorHandling(error);
+        });
+
+    };
+
+    handleEdit = (formValue) => {
+
+        this.handleDelete();
+
+        const formDataBasicAuth = `{"idShort":"${formValue.email}","kind":"Instance","semanticId":{"type":"GlobalReference","keys":[]},"dataSpecifications":[],"valueType":"xs:string","value":"${formValue.password}","modelType":"Property"}`;
+        const formDataRoleMapping = `{"idShort": "${formValue.email}", "kind": "Instance","semanticId": {"type": "GlobalReference","keys": []},"dataSpecifications": [],"valueType": "xs:string","value": "","modelType": "Property"}`;
+        const formDataJsonBasicAuth = JSON.parse(formDataBasicAuth);
+        const formDataJsonRoleMapping = JSON.parse(formDataRoleMapping);
+
+        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
+            auth: {
+                username: localStorage.getItem('email'),
+                password: localStorage.getItem('password')
+            }
+        }).then((res) => {
+            let dataResBasicAuth = res.data;
+            dataResBasicAuth.value.push(formDataJsonBasicAuth);
+
+            console.log("New basicAuth Submodel : ", dataResBasicAuth);
+
+            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, dataResBasicAuth, {
                 auth: {
                     username: localStorage.getItem('email'),
                     password: localStorage.getItem('password')
@@ -121,50 +158,35 @@ export default class Dashboard extends Component {
             }).catch(error => {
                 setErrorHandling(error);
             });
-
         }).catch(error => {
             setErrorHandling(error);
+        });
+
+        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(formValue.role)}.subjects`, {
+            auth: {
+                username: localStorage.getItem('email'),
+                password: localStorage.getItem('password')
+            }
+        }).then((res) => {
+            let dataResRoleMapping = res.data;
+            dataResRoleMapping.value.push(formDataJsonRoleMapping)
+
+            console.log("New roleMapping : ", dataResRoleMapping);
+
+            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(formValue.role)}.subjects`, dataResRoleMapping, {
+                auth: {
+                    username: localStorage.getItem('email'),
+                    password: localStorage.getItem('password')
+                }
+            }).then((res) => {
+                console.log(res);
+            }).catch(error => {
+                setErrorHandling(error)
+            });
+        }).catch(error => {
+            setErrorHandling(error)
         });
     };
-
-    handleEdit = () => {
-        //console.log(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${user}`);
-        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.specificUser[1])}.subjects`, {
-            auth: {
-                username: localStorage.getItem("email"),
-                password: localStorage.getItem("password")
-            }
-        }).then(async (res) => {
-            let users = res.data.value;
-
-            console.log(users[1].idShort, this.specificUser[0], users[0].idShort.trim !== this.specificUser[0].trim);
-
-            //TODO here filter doesnt work I'dont know why futher trubbelshooting
-            users.filter((user) => {
-                console.log(user.idShort, this.specificUser[0], user.idShort.trim() !== this.specificUser[0].trim());
-                return user.idShort.trim() !== this.specificUser[0].trim()
-            });
-
-            console.log(users);
-
-
-        }).catch(error => {
-            setErrorHandling(error);
-        });
-
-        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
-            auth: {
-                username: localStorage.getItem("email"),
-                password: localStorage.getItem("password")
-            }
-        }).then(async (res) => {
-            console.log(res);
-        }).catch(error => {
-            setErrorHandling(error);
-        });
-
-
-    }
 
     handleShow = (user, whichModal) => {
         this.sortModal = whichModal;
