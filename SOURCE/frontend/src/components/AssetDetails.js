@@ -168,7 +168,7 @@ const AssetDetails = ({ data }) => {
                     <Spinner animation="border" role="status">
                         <span className="visually-hidden">Loading...</span>
                     </Spinner>
-                    <h4 style={{ marginLeft:10 }}> Loding Details ...</h4>
+                    <h4 style={{ marginLeft:10 }}> Loading Details ...</h4>
                 </div>
             </Col>
         );
