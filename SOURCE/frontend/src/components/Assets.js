@@ -54,12 +54,13 @@ export default class Assets extends Component {
         const base64url = require('base64url');
         return (
 
-            <Col xs={6} md={4}>
+            <Col  xs={6} md={4}>
 
                 <h4>
                     <strong>Assets</strong>
                 </h4>
                 <hr/>
+
 
                 <Form className="d-flex">
                     <Form.Control
@@ -74,17 +75,19 @@ export default class Assets extends Component {
                 </Form>
 
                 {loading ? (
-                    <Col>
+
                     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop:20 }}>
                         <Spinner animation="border" role="status">
                             <span className="visually-hidden">Loading...</span>
                         </Spinner>
                         <h4 style={{ marginLeft:10 }}> Loading ...</h4>
                     </div>
-                    </Col>
+
 
                 ) : (
-                    <Col>
+
+                    <Col xs={6} md={4} className='scrollbox'>
+                            <Col className='scrollbox-inner'>
 
                         {filteredShells && filteredShells.map((shells) => (
                             <Row>
@@ -97,9 +100,11 @@ export default class Assets extends Component {
                             </Row>
                         ))}
 
+                                </Col>
+                            </Col>
 
-                    </Col>
                 )}
+
             </Col>
 
 
