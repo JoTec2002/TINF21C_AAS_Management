@@ -119,7 +119,7 @@ const AssetDetails = ({ data }) => {
             return (<p>Error: Filetype not implementet {submodelElement.contentType}</p>)
         }
 
-        return (<p>Error: submodelContent not found {submodelElement.modelType}</p>);
+        return (<div className="alert alert-danger" role="alert">Error: submodelContent not found {submodelElement.modelType}</div>);
     }
 
     useEffect(() => {
