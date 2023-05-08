@@ -6,7 +6,6 @@ import { API_URL } from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
 import base64url from "base64url";
 import {setErrorHandling} from "./errorHandling";
-import {json} from "react-router-dom";
 
 const AssetDetails = ({ data }) => {
     const [produktData, setProduktData] = useState(null);
@@ -45,10 +44,10 @@ const AssetDetails = ({ data }) => {
         })
             .then((res)=>{
 
-                var reader = new FileReader();
+                let reader = new FileReader();
                 reader.readAsDataURL(res.data);
                 reader.onloadend = function () {
-                    var base64String = reader.result;
+                    let base64String = reader.result;
                     base64String = base64String.substring((base64String.indexOf(',')+1))
                     document.getElementById(id+"-"+path).src = "data:"+contentType+";base64,"+base64String;
                 }
@@ -69,10 +68,10 @@ const AssetDetails = ({ data }) => {
             responseType: 'blob'
         })
             .then((res)=>{
-                var reader = new FileReader();
+                let reader = new FileReader();
                 reader.readAsDataURL(res.data);
                 reader.onloadend = function () {
-                    var base64String = reader.result;
+                    let base64String = reader.result;
                     base64String = base64String.substring((base64String.indexOf(',')+1))
                     let anchor = document.createElement("a")
                     anchor.setAttribute('download', '');
@@ -88,7 +87,7 @@ const AssetDetails = ({ data }) => {
             })
     };
     const returnSubmodelContent = (submodelElement, submodelid, idShortPath) => {
-        if(idShortPath.length == 0){
+        if(idShortPath.length === 0){
             idShortPath = submodelElement.idShort
         }else {
             idShortPath = idShortPath +"."+ submodelElement.idShort;
@@ -143,7 +142,7 @@ const AssetDetails = ({ data }) => {
                     for (let i = 0; i < res.data.submodels.length; i++) {
                         let submodelIdEncoded = endcode(res.data.submodels[i].keys[0].value);
                         let submodel = await getSubmodel(submodelIdEncoded)
-                        if(submodel != undefined ){
+                        if(submodel !== undefined ){
                             submodels.push(submodel);
                         }
                     }
