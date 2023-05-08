@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Col, Card, Row, Button, ListGroup,DropdownButton } from "react-bootstrap";
+import { Col, Card, Button } from "react-bootstrap";
 import Collapsible from 'react-collapsible';
 import { API_URL } from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
@@ -197,7 +197,7 @@ const AssetDetails = ({ data }) => {
                         </Card.Header>
                         <Card.Body>
                                 {submodelContent.map((submodel)=>//hier display submodels
-                                    <Collapsible  key={submodel.id} trigger={submodel.idShort}>
+                                    <Collapsible  key={submodel.id} trigger={submodel.idShort} open={submodel.idShort === "Nameplate"}>
                                         {console.log(submodel)}
                                         <p key={submodel.semanticId.keys[0].value}><strong>Semantic ID: </strong>{submodel.semanticId.keys[0].value}</p>
                                         {
