@@ -11,7 +11,6 @@ import {setErrorHandling} from "../components/errorHandling";
 const AddAccount = () => {
 
   const [validated, setValidated] = useState(false);
-  const [packageId, setpackageId] = useState(-1);
 
   const [formValue, setformValue] = React.useState({
     email: '',
@@ -71,6 +70,7 @@ const AddAccount = () => {
     //1. get all current users
     //2. Add new user to this list
     //3. Update useres on server
+
     await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
       auth: {
         username: localStorage.getItem('email'),
@@ -96,7 +96,6 @@ const AddAccount = () => {
       setErrorHandling(error);
     });
 
-
     axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, {
       auth: {
         username: localStorage.getItem('email'),
@@ -115,13 +114,13 @@ const AddAccount = () => {
         }
       }).then((res) => {
         console.log(res);
+
       }).catch(error => {
         setErrorHandling(error)
       });
     }).catch(error => {
       setErrorHandling(error)
     });
-
   };
 
   const handleChange = (event) => {

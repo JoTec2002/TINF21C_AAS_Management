@@ -6,6 +6,7 @@ import axios from "axios";
 import Spinner from "react-bootstrap/Spinner";
 import {API_URL} from "../utils/constanst";
 import {setErrorHandling} from "./errorHandling";
+import PopUpEditAccount from "./PopUpEditAccount";
 
 export default class Dashboard extends Component {
 
@@ -17,6 +18,7 @@ export default class Dashboard extends Component {
             searchTerm: "",
         }
         this.specificUser = [];
+        this.sortModal = "";
     }
 
     onSearchTermChange = (event) => {
@@ -50,9 +52,9 @@ export default class Dashboard extends Component {
             })
     }
 
-    handleDelete = (givenuser) => {
-        //console.log(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth.${user}`);
-        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(givenuser[1])}.subjects`, {
+    handleDelete = async () => {
+
+        await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.specificUser[1])}.subjects`, {
             auth: {
                 username: localStorage.getItem("email"),
                 password: localStorage.getItem("password")
@@ -60,16 +62,32 @@ export default class Dashboard extends Component {
         }).then(async (res) => {
             let users = res.data.value;
 
-            console.log(users[1].idShort, givenuser[0], users[0].idShort.trim !== givenuser[0].trim);
+            console.log("Response roleMapping : ", users);
+            console.log(users[0].idShort.trim !== this.specificUser[0].trim);
 
-            //TODO here filter doesnt work I'dont know why futher trubbelshooting
-            users.filter((user) => {
-                console.log(user.idShort, givenuser[0], user.idShort.trim() !== givenuser[0].trim());
-                return user.idShort.trim() !== givenuser[0].trim()
+            let dataFilteredUser = users.filter((user) => {
+                return user.idShort.trim() !== this.specificUser[0].trim();
             });
 
-            console.log(users);
+            res.data.value = dataFilteredUser;
+            console.log("Filtered Response roleMapping : ", dataFilteredUser);
 
+            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.specificUser[1])}.subjects`, res.data, {
+                auth: {
+                    username: localStorage.getItem('email'),
+                    password: localStorage.getItem('password')
+                }
+            }).then((res) => {
+                console.log("roleMapping Put-Res", res);
+                if (res.status === 204) {
+                    console.log("File deleted successfully in roleMapping");
+                } else {
+                    console.log("File could not be deleted in roleMapping");
+                    alert("File could not be deleted");
+                }
+            }).catch(error => {
+                setErrorHandling(error);
+            });
 
         }).catch(error => {
             setErrorHandling(error);
@@ -81,21 +99,118 @@ export default class Dashboard extends Component {
                 password: localStorage.getItem("password")
             }
         }).then(async (res) => {
-            console.log(res);
+            let users = res.data.value;
+
+            console.log("Response basicAuth : ", users);
+            console.log(users[0].idShort.trim !== this.specificUser[0].trim);
+
+            let dataFilteredUser = users.filter((user) => {
+                return user.idShort.trim() !== this.specificUser[0].trim();
+            });
+
+            res.data.value = dataFilteredUser;
+            console.log("Filtered Response basicAuth : ", dataFilteredUser);
+
+            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, res.data, {
+                auth: {
+                    username: localStorage.getItem('email'),
+                    password: localStorage.getItem('password')
+                }
+            }).then((res) => {
+                if (res.status === 204) {
+                    console.log("File deleted successfully in basicAuth : ", res);
+                    if (this.sortModal === "delete") {
+                        window.location.reload(false);
+                    }
+                } else {
+                    console.log("File could not be deleted in basicAuth : ", res);
+                }
+            }).catch(error => {
+                setErrorHandling(error);
+            });
         }).catch(error => {
             setErrorHandling(error);
         });
 
+    };
 
-    }
+    handleEdit = async (formValue) => {
 
-    handleShow = (shell) => {
+        await this.handleDelete();
+
+        const formDataBasicAuth = `{"idShort":"${formValue.email}","kind":"Instance","semanticId":{"type":"GlobalReference","keys":[]},"dataSpecifications":[],"valueType":"xs:string","value":"${formValue.password}","modelType":"Property"}`;
+        const formDataRoleMapping = `{"idShort": "${formValue.email}", "kind": "Instance","semanticId": {"type": "GlobalReference","keys": []},"dataSpecifications": [],"valueType": "xs:string","value": "","modelType": "Property"}`;
+        const formDataJsonBasicAuth = JSON.parse(formDataBasicAuth);
+        const formDataJsonRoleMapping = JSON.parse(formDataRoleMapping);
+
+        await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
+            auth: {
+                username: localStorage.getItem('email'),
+                password: localStorage.getItem('password')
+            }
+        }).then((res) => {
+            let dataResBasicAuth = res.data;
+            dataResBasicAuth.value.push(formDataJsonBasicAuth);
+
+            console.log("New basicAuth Submodel : ", dataResBasicAuth);
+
+            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, dataResBasicAuth, {
+                auth: {
+                    username: localStorage.getItem('email'),
+                    password: localStorage.getItem('password')
+                }
+            }).then((res) => {
+                if (res.status === 204) {
+                    console.log("File deleted successfully in basicAuth : ", res);
+                } else {
+                    console.log("File could not be deleted in basicAuth : ", res);
+                }
+            }).catch(error => {
+                setErrorHandling(error);
+            });
+        }).catch(error => {
+            setErrorHandling(error);
+        });
+
+        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, {
+            auth: {
+                username: localStorage.getItem('email'),
+                password: localStorage.getItem('password')
+            }
+        }).then((res) => {
+            let dataResRoleMapping = res.data;
+            dataResRoleMapping.value.push(formDataJsonRoleMapping)
+
+            console.log("New roleMapping : ", dataResRoleMapping);
+
+            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, dataResRoleMapping, {
+                auth: {
+                    username: localStorage.getItem('email'),
+                    password: localStorage.getItem('password')
+                }
+            }).then((res) => {
+                console.log(res);
+                if (res.status === 204) {
+                    console.log("File updated successfully in roleMapping : ", res);
+                    window.location.reload(false);
+                } else {
+                    console.log("File could not be updated in roleMapping : ", res);
+                }
+            }).catch(error => {
+                setErrorHandling(error)
+            });
+        }).catch(error => {
+            setErrorHandling(error)
+        });
+    };
+
+    handleShow = (user, whichModal) => {
+        this.sortModal = whichModal;
+        this.specificUser = user;
         this.setState({
             showModal: true,
         });
-        this.specificShellID = shell.value[0].value[0].idShort;
-        this.specificRole = shell.value[1].value[0].idShort;
-        console.log(this.specificRole);
+        console.log(this.specificUser);
     }
 
     handleClose = () => {
@@ -179,12 +294,16 @@ export default class Dashboard extends Component {
                                     <td>{`${user[0]}`}</td>
                                     <td>{`${user[1]}`}</td>
                                     <td>
-                                        <Button href="#/edit" variant="text btn-sm">
-                                            <BsPencilSquare/>
-                                        </Button>
-                                        <Button variant="text btn-sm" onClick={() => this.handleDelete(user)}>
-                                            <BsTrash/>
-                                        </Button>
+                                        {!(user[0] === "anonymous") ? (
+                                            <div>
+                                                <Button variant="text btn-sm" onClick={() => this.handleShow(user, "edit")}>
+                                                    <BsPencilSquare />
+                                                </Button>
+                                                <Button variant="text btn-sm" onClick={() => this.handleShow(user, "delete")}>
+                                                    <BsTrash />
+                                                </Button>
+                                            </div>
+                                        ) : (<div></div>)}
                                     </td>
                                 </tr>
                             ))}
@@ -193,7 +312,12 @@ export default class Dashboard extends Component {
                         <Button href="#/create" variant="outline-primary btn-sm">
                             Create Account
                         </Button>
-                        <PopUpDelete handleClose={this.handleClose} {...this.state} user={this.specificUser}/>
+                        {
+                            (this.sortModal === "edit") ?
+                                (<PopUpEditAccount handleClose={this.handleClose} {...this.state} handleEdit={this.handleEdit} user={this.specificUser}/>)
+                                :
+                                (<PopUpDelete handleClose={this.handleClose} {...this.state} handleDelete={this.handleDelete}/>)
+                        }
                     </div>
                 )
                 }
