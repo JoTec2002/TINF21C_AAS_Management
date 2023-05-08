@@ -140,11 +140,16 @@ const AssetDetails = ({ data }) => {
                     setProduktData(res.data);
                     let submodels = [];
                     for (let i = 0; i < res.data.submodels.length; i++) {
-                        let submodelIdEncoded = endcode(res.data.submodels[i].keys[0].value);
-                        let submodel = await getSubmodel(submodelIdEncoded)
-                        if(submodel !== undefined ){
-                            submodels.push(submodel);
+                        try{        //try catch for not correct response
+                            let submodelIdEncoded = endcode(res.data.submodels[i].keys[0].value);
+                            let submodel = await getSubmodel(submodelIdEncoded)
+                            if(submodel !== undefined ){
+                                submodels.push(submodel);
+                            }
+                        }catch (e){
+
                         }
+
                     }
                     setSubmodelContent(submodels);
                     console.log(submodels);
