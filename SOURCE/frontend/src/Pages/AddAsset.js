@@ -93,7 +93,7 @@ const AddAsset =()=>{
                         }
                         {showAssetButton &&
                             <Link to="/">
-                            <button className="btn btn-primary">Show Asset</button>
+                            <button class="btn btn-success">Show Asset</button>
                             </Link> }
                     </div>
                     </Row>
