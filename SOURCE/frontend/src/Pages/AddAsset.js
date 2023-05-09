@@ -4,12 +4,20 @@ import {errorHandling, setErrorHandling} from "../components/errorHandling";
 import React, {useState} from "react";
 import axios from "axios";
 import {API_URL} from "../utils/constanst";
+import {Link} from "react-router-dom";
 
 const AddAsset =()=>{
     const [selectedFile, setSelectedFile] = useState();
     const [selectedAasId, setselectedAasId] = useState("");
     const [isSelected, setIsSelected] = useState(false);
-    let fileSizeExceeded = false;
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [showAssetButton, setShowAssetButton] = useState(false);
+
+    const setUploaded = () => {
+        setIsSubmitted(true);
+        setShowAssetButton(true);
+    }
+
     const changeHandlerFile = (event) => {
         setSelectedFile(event.target.files[0]);
         console.log(event.target.files[0]);
@@ -80,7 +88,13 @@ const AddAsset =()=>{
                         </div>
                     )}
                     <div>
-                        <input className="btn btn-primary" type="submit" value="Submit" onClick={handleSubmission}/>
+                        {!isSubmitted &&
+                            <input className="btn btn-primary" type="submit" value="Submit" onClick={setUploaded}/>
+                        }
+                        {showAssetButton &&
+                            <Link to="/">
+                            <button className="btn btn-primary">Show Asset</button>
+                            </Link> }
                     </div>
                     </Row>
                 </Container>
