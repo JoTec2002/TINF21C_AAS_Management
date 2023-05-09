@@ -89,7 +89,7 @@ const AddAsset =()=>{
                     )}
                     <div>
                         {!isSubmitted &&
-                            <input className="btn btn-primary" type="submit" value="Submit" onClick={setUploaded}/>
+                            <input className="btn btn-primary" type="submit" value="Submit" onClick={event => {setUploaded(); handleSubmission()}}/>
                         }
                         {showAssetButton &&
                             <Link to="/">
