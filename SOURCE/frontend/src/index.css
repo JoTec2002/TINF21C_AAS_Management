@@ -54,24 +54,20 @@ img{
 /*Assets*/
 .assets{
   width:25rem;
-  height: 1rem;
   transition: 0.3s;
   border: 2px solid gray;
   border-radius: 10px;
   display: flex;
-
   align-items: center;
-  padding: 20px;
-  margin: auto;
+  padding: 0.5em 0.5em 0.5em 1em;
+  margin: 5px auto;
 }
 .assets:hover{
-  background-color: rgb(122, 103, 208);
-  color: white;
+  background-color: #b1b2de;
   cursor: pointer;
 }
 .active{
-  background-color: rgb(122, 103, 208);
-  color: white;
+  background-color: #b1b2de;
   cursor: pointer;
 }
 
@@ -79,12 +75,12 @@ img{
 /*Submodels*/
 .card{
   margin-top: 0;
-  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
   transition: 0.3s;
-  border-radius: 5px;
   width: auto;
-  height: 45rem;
+  height: 100%;
   padding:2rem 2rem 2rem 2rem;
+  overflow: scroll;
+  overflow-x: hidden;
 }
 .Collapsible {
   background-color: #fff;
@@ -156,8 +152,7 @@ img{
 .server{
   width:35rem;
   justify-content: center;
-  margin: auto;
-  margin-top: 1rem;
+  margin: 1rem auto auto;
 }
 
 .tab { margin-left: 30px; }
@@ -172,31 +167,22 @@ img{
 }
 
 .scrollbox{
-
   position: fixed;
-  height: 70%;
+  height: 75%;
   display: flex;
   flex-direction: column;
   width: 32%;
-
-
 }
 .scrollbox-inner{
   overflow:scroll ;
   overflow-x: hidden;
-
-
-
 }
 .scrollbox-submod {
-
   position: fixed;
   height: 70%;
   display: flex;
   flex-direction: column;
   width: 62%;
-
-
 }
 .innersubmod{
 

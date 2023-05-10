@@ -1,8 +1,7 @@
 import { NavComponent } from "../components";
 import { Container, Row } from "react-bootstrap";
-//import SidebarAdmin from "../components/SidebarAdmin";
 import Dashboard from "../components/Dashboard";
-import ErrorHandling, {errorHandling} from "../components/errorHandling";
+import {errorHandling} from "../components/errorHandling";
 
 const AdminDashboard = () => {
   return (

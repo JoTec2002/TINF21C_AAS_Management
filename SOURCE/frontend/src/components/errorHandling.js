@@ -16,6 +16,7 @@ preDifinedErrors[100] = "User rights insufficient to load all data. Please login
 preDifinedErrors[150] = "Unknown Internal Server Error."
 preDifinedErrors[151] = "Internal Server Error. File already exists."
 preDifinedErrors[152] = "Internal Server Error. Requested File not found."
+preDifinedErrors[153] = "Internal Server Error. Filepath has wrong format please check AASX file."
 preDifinedErrors[500] = "AASX Server not available, please check your Server address."
 
 function closeError(id) {
@@ -29,7 +30,7 @@ const setErrorHandling = function setErrorHandling(error) {
     try {
         if (error.isAxiosError === true) {
             //Errors Thrown by Axios module - most likely http error
-            if(error.code="ERR_NETWORK" && error.response === undefined){
+            if(error.code==="ERR_NETWORK" && error.response === undefined){
                 setErrorWithId("500", "block");
                 return;
             }
@@ -53,6 +54,10 @@ const setErrorHandling = function setErrorHandling(error) {
                         setErrorWithId("151", "block");
                         return;
                     }
+                    if(errorData.text === "Cannot be an absolute URI."){
+                        setErrorWithId("153", "block");
+                        return;
+                    }
                 }
 
             }
@@ -71,7 +76,7 @@ const setErrorHandling = function setErrorHandling(error) {
 const errorHandling = () => {
     return (<div id={"error"}>
         {preDifinedErrors.map((preDifinedError, index) =>
-            <div id={index} style={{display: 'none'}}><p>{preDifinedError}</p>
+            <div key={index} id={index} style={{display: 'none'}}><p>{preDifinedError}</p>
                 <button onClick={() => closeError(index)}>x</button>
             </div>
         )}
