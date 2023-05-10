@@ -197,7 +197,7 @@ const AssetDetails = ({ data }) => {
             </h4>
             <hr />
             <div className="card">
-                    <div className="card-header">
+                    <div className="card-header" >
                             <Row>
                                 <Col>
                                 <h4 >{produktData.idShort}</h4>
@@ -212,6 +212,7 @@ const AssetDetails = ({ data }) => {
                             </Row>
 
                     </div>
+                            <div style={{marginTop:'0.5rem'}}>
                             <div className='scrollbox-submod'>
                                 <div className='innersubmod'>
                                 {submodelContent.map((submodel)=>//hier display submodels
@@ -226,6 +227,7 @@ const AssetDetails = ({ data }) => {
                                     </Collapsible>
                                 )}
                                 </div>
+                            </div>
                             </div>
             </div>
         </Col>
