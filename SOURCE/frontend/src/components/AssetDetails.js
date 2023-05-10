@@ -101,7 +101,8 @@ const AssetDetails = ({data}) => {
             return (
                 <Collapsible trigger={submodelElement.idShort}>
                     {submodelElement.semanticId.keys.length !== 0 ?
-                        (<p key={submodelElement.idShort}><strong>Semantic ID: </strong>{submodelElement.semanticId.keys[0].value}</p>) :
+                        (<p key={submodelElement.idShort}><strong>Semantic
+                            ID: </strong>{submodelElement.semanticId.keys[0].value}</p>) :
                         (<a></a>)
                     }
                     {
@@ -116,13 +117,26 @@ const AssetDetails = ({data}) => {
             return (
                 <div>
                     <p key={submodelElement.idShort}><strong>{submodelElement.idShort}:</strong><br/></p>
-                    <p key={submodelElement.idShort} class="tab">
-                        <strong>language={submodelElement.value.langStrings[0].language}</strong> {submodelElement.value.langStrings[0].text}
-                    </p>
-                    <p key={submodelElement.idShort} class="tab">
-                        <strong>language={submodelElement.value.langStrings[1].language} </strong>{submodelElement.value.langStrings[1].text}
-                    </p>
+                    {submodelElement.value.langStrings.map((languageElement) => (
+                        <p key={submodelElement.idShort + languageElement.language} className={"tab"}>
+                            <strong>{languageElement.language}</strong> {languageElement.text}
+                        </p>
+                    ))}
                 </div>)
+        }
+        if (submodelElement.modelType === "Entity") {
+            return (
+                <p key={submodelElement.idShort + "GlobalAssetId"}>
+                    <strong>{submodelElement.entityType}: </strong>
+                    <a href={submodelElement.globalAssetId.keys[0].value}
+                       target={"_blank"}>{submodelElement.globalAssetId.keys[0].value}
+                    </a>
+                </p>
+            )
+
+            {
+                console.log(submodelElement)
+            }
         }
         if (submodelElement.modelType === "File") {
             if (submodelElement.contentType === "application/pdf") {
@@ -139,7 +153,7 @@ const AssetDetails = ({data}) => {
         }
 
         return (<div className="alert alert-danger" role="alert">Error: submodelContent not
-            found {submodelElement.modelType}</div>);
+            implemented {submodelElement.modelType}</div>);
     }
 
     useEffect(() => {
