@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Col, Card, Button } from "react-bootstrap";
+import {Col, Card, Button, Row} from "react-bootstrap";
 import Collapsible from 'react-collapsible';
 import { API_URL } from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
