@@ -231,10 +231,12 @@ const AssetDetails = ({data}) => {
                 </div>
                 <div style={{marginTop: '0.5rem'}}>
                     {submodelContent.map((submodel) =>//hier display submodels
-                        <Collapsible key={submodel.id} trigger={submodel.idShort}
-                                     open={submodel.idShort === "Nameplate"}>
+                        <Collapsible key={submodel.id} trigger={submodel.idShort} open={submodel.idShort === "Nameplate"}>
                             {console.log(submodel)}
-                            <p key={submodel.semanticId.keys[0].value}><strong>Semantic ID: </strong>{submodel.semanticId.keys[0].value}</p>
+                            {submodel.semanticId.keys.length !== 0 ?
+                                (<p key={submodel.semanticId.keys[0].value}><strong>Semantic ID: </strong>{submodel.semanticId.keys[0].value}</p>) :
+                                (<a></a>)
+                            }
                             {
                                 submodel.submodelElements.map((submodelElement) =>
                                     returnSubmodelContent(submodelElement, endcode(submodel.id), "")
