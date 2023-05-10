@@ -54,24 +54,20 @@ img{
 /*Assets*/
 .assets{
   width:25rem;
-  height: 1rem;
   transition: 0.3s;
   border: 2px solid gray;
   border-radius: 10px;
   display: flex;
-
   align-items: center;
-  padding: 20px;
-  margin: auto;
+  padding: 0.5em 0.5em 0.5em 1em;
+  margin: 5px auto;
 }
 .assets:hover{
-  background-color: rgb(122, 103, 208);
-  color: white;
+  background-color: #b1b2de;
   cursor: pointer;
 }
 .active{
-  background-color: rgb(122, 103, 208);
-  color: white;
+  background-color: #b1b2de;
   cursor: pointer;
 }
 

@@ -13,8 +13,6 @@ function Guest() {
 
         <div style={{marginLeft:"2rem", marginRight:"2rems"}}>
       {errorHandling()}
-
-
           <Container fluid >
           <Row>
             <Assets onSelect={setSelectedData} />
