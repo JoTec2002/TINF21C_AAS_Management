@@ -110,8 +110,9 @@ const AssetDetails = ({ data }) => {
         if(submodelElement.modelType==="MultiLanguageProperty") {
             return (
                 <div>
-                    <p key={submodelElement.idShort}><strong>{submodelElement.idShort}:<br/> language={submodelElement.value.langStrings[0].language} </strong>{submodelElement.value.langStrings[0].text}</p>
-                    <p key={submodelElement.idShort}><strong>language={submodelElement.value.langStrings[1].language} </strong>{submodelElement.value.langStrings[1].text}</p>
+                    <p key={submodelElement.idShort}><strong>{submodelElement.idShort}:</strong><br/></p>
+                    <p key={submodelElement.idShort} class="tab"><strong>language={submodelElement.value.langStrings[0].language}</strong> {submodelElement.value.langStrings[0].text}</p>
+                    <p key={submodelElement.idShort} class="tab"><strong>language={submodelElement.value.langStrings[1].language} </strong>{submodelElement.value.langStrings[1].text}</p>
                 </div>)
         }
         if(submodelElement.modelType === "File"){
