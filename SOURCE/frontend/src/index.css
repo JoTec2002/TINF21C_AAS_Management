@@ -4,6 +4,7 @@ body {
   font-family: 'Public Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
 }
 p{
   margin-bottom: 0.2rem;
@@ -75,7 +76,16 @@ img{
 
 
 /*Submodels*/
+.card{
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  transition: 0.3s;
+  border-radius: 5px;
+  width: auto;
+  height: 45rem;
+  padding:2rem 2rem 2rem 2rem;
+}
 .Collapsible {
+
   background-color: #fff;
   margin-bottom: 0.5em;
 }
@@ -165,6 +175,25 @@ img{
 .scrollbox-inner{
   overflow:scroll ;
   overflow-x: hidden;
+
+
+
+}
+.scrollbox-submod {
+  margin-top:auto ;
+  position: fixed;
+  height: 70%;
+  display: flex;
+  flex-direction: column;
+  width: 62%;
+
+
+}
+.innersubmod{
+  margin-top:5rem;
+  overflow:scroll ;
+  overflow-x: hidden;
+
 
 
 }

@@ -12,6 +12,7 @@ const AssetDetails = ({ data }) => {
     const [submodelContent, setSubmodelContent]= useState([]);
     const [loading, setLoading] = useState(false);
 
+
     const endcode=(id)=>{
         let idchange = base64url.fromBase64(window.btoa(id));
         return idchange;
@@ -195,11 +196,24 @@ const AssetDetails = ({ data }) => {
                 <strong>Submodels</strong>
             </h4>
             <hr />
-                    <Card  style={{ border: "none" }}>
-                        <Card.Header>
-                            <Card.Title>{produktData.idShort}</Card.Title>
-                        </Card.Header>
-                        <Card.Body>
+            <div className="card">
+                    <div className="card-header">
+                            <Row>
+                                <Col>
+                                <h4 >{produktData.idShort}</h4>
+                                </Col>
+                                <Col>
+                            {localStorage.getItem("email")?(
+                                <Button style={{ float:"right" }} href={'#/deleteAsset?aasId='+produktData.id} variant="danger">
+                                    Delete Asset
+                                </Button>
+                            ):(<a></a>)}
+                                </Col>
+                            </Row>
+
+                    </div>
+                            <div className='scrollbox-submod'>
+                                <div className='innersubmod'>
                                 {submodelContent.map((submodel)=>//hier display submodels
                                     <Collapsible  key={submodel.id} trigger={submodel.idShort} open={submodel.idShort === "Nameplate"}>
                                         {console.log(submodel)}
@@ -211,14 +225,9 @@ const AssetDetails = ({ data }) => {
                                         }
                                     </Collapsible>
                                 )}
-                        </Card.Body>
-                    </Card>
-                {localStorage.getItem("email")?(
-                    <Button href={'#/deleteAsset?aasId='+produktData.id} variant="danger">
-                        Delete Asset
-                    </Button>
-                ):(<a></a>)}
-
+                                </div>
+                            </div>
+            </div>
         </Col>
     );
 };
