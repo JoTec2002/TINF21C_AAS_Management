@@ -98,16 +98,19 @@ const AssetDetails = ({data}) => {
             </p>)
         }
         if (submodelElement.modelType === "SubmodelElementCollection") {
-            return (<Collapsible trigger={submodelElement.idShort}>
-                <p key={submodelElement.idShort}><strong>Semantic
-                    ID: </strong>{submodelElement.semanticId.keys[0].value}</p>
-                {
-                    submodelElement.value.map((innerSubmodelElement) =>
+            return (
+                <Collapsible trigger={submodelElement.idShort}>
+                    {submodelElement.semanticId.keys.length !== 0 ?
+                        (<p key={submodelElement.idShort}><strong>Semantic ID: </strong>{submodelElement.semanticId.keys[0].value}</p>) :
+                        (<a></a>)
+                    }
+                    {
+                        submodelElement.value.map((innerSubmodelElement) =>
 
-                        returnSubmodelContent(innerSubmodelElement, submodelid, idShortPath)
-                    )
-                }
-            </Collapsible>)
+                            returnSubmodelContent(innerSubmodelElement, submodelid, idShortPath)
+                        )
+                    }
+                </Collapsible>)
         }
         if (submodelElement.modelType === "MultiLanguageProperty") {
             return (
@@ -213,39 +216,41 @@ const AssetDetails = ({data}) => {
             </h4>
             <hr/>
             <div style={{height: "80vh"}}>
-            <div className="card">
-                <div className="card-header">
-                    <Row>
-                        <Col>
-                            <h4>{produktData.idShort}</h4>
-                        </Col>
-                        <Col>
-                            {localStorage.getItem("email") ? (
-                                <Button style={{float: "right"}} href={'#/deleteAsset?aasId=' + produktData.id}
-                                        variant="danger">
-                                    Delete Asset
-                                </Button>
-                            ) : (<a></a>)}
-                        </Col>
-                    </Row>
+                <div className="card">
+                    <div className="card-header">
+                        <Row>
+                            <Col>
+                                <h4>{produktData.idShort}</h4>
+                            </Col>
+                            <Col>
+                                {localStorage.getItem("email") ? (
+                                    <Button style={{float: "right"}} href={'#/deleteAsset?aasId=' + produktData.id}
+                                            variant="danger">
+                                        Delete Asset
+                                    </Button>
+                                ) : (<a></a>)}
+                            </Col>
+                        </Row>
+                    </div>
+                    <div style={{marginTop: '0.5rem'}}>
+                        {submodelContent.map((submodel) =>//hier display submodels
+                            <Collapsible key={submodel.id} trigger={submodel.idShort}
+                                         open={submodel.idShort === "Nameplate"}>
+                                {console.log(submodel)}
+                                {submodel.semanticId.keys.length !== 0 ?
+                                    (<p key={submodel.semanticId.keys[0].value}><strong>Semantic
+                                        ID: </strong>{submodel.semanticId.keys[0].value}</p>) :
+                                    (<a></a>)
+                                }
+                                {
+                                    submodel.submodelElements.map((submodelElement) =>
+                                        returnSubmodelContent(submodelElement, endcode(submodel.id), "")
+                                    )
+                                }
+                            </Collapsible>
+                        )}
+                    </div>
                 </div>
-                <div style={{marginTop: '0.5rem'}}>
-                    {submodelContent.map((submodel) =>//hier display submodels
-                        <Collapsible key={submodel.id} trigger={submodel.idShort} open={submodel.idShort === "Nameplate"}>
-                            {console.log(submodel)}
-                            {submodel.semanticId.keys.length !== 0 ?
-                                (<p key={submodel.semanticId.keys[0].value}><strong>Semantic ID: </strong>{submodel.semanticId.keys[0].value}</p>) :
-                                (<a></a>)
-                            }
-                            {
-                                submodel.submodelElements.map((submodelElement) =>
-                                    returnSubmodelContent(submodelElement, endcode(submodel.id), "")
-                                )
-                            }
-                        </Collapsible>
-                    )}
-                </div>
-            </div>
             </div>
         </Col>
     );
