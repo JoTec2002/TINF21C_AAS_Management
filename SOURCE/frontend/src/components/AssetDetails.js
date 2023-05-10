@@ -107,6 +107,13 @@ const AssetDetails = ({ data }) => {
                 }
             </Collapsible>)
         }
+        if(submodelElement.modelType==="MultiLanguageProperty") {
+            return (
+                <div>
+                    <p key={submodelElement.idShort}><strong>{submodelElement.idShort}:<br/> language={submodelElement.value.langStrings[0].language} </strong>{submodelElement.value.langStrings[0].text}</p>
+                    <p key={submodelElement.idShort}><strong>language={submodelElement.value.langStrings[1].language} </strong>{submodelElement.value.langStrings[1].text}</p>
+                </div>)
+        }
         if(submodelElement.modelType === "File"){
             if(submodelElement.contentType === "application/pdf"){
                 //PDF
@@ -168,7 +175,7 @@ const AssetDetails = ({ data }) => {
                     <Spinner animation="border" role="status">
                         <span className="visually-hidden">Loading...</span>
                     </Spinner>
-                    <h4 style={{ marginLeft:10 }}> Loding Details ...</h4>
+                    <h4 style={{ marginLeft:10 }}> Loading Details ...</h4>
                 </div>
             </Col>
         );
