@@ -4,6 +4,8 @@ body {
   font-family: 'Public Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 p{
   margin-bottom: 0.2rem;
@@ -51,9 +53,8 @@ img{
 
 /*Assets*/
 .assets{
-  width:50rem;
+  width:25rem;
   height: 1rem;
-  margin-top: 5px;
   transition: 0.3s;
   border: 2px solid gray;
   border-radius: 10px;
@@ -61,6 +62,7 @@ img{
 
   align-items: center;
   padding: 20px;
+  margin: auto;
 }
 .assets:hover{
   background-color: rgb(122, 103, 208);
@@ -75,9 +77,20 @@ img{
 
 
 /*Submodels*/
+.card{
+  margin-top: 0;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  transition: 0.3s;
+  border-radius: 5px;
+  width: auto;
+  height: 45rem;
+  padding:2rem 2rem 2rem 2rem;
+}
 .Collapsible {
   background-color: #fff;
-  margin-bottom: 0.5em;
+  margin-bottom: 0.5rem;
+  margin-right: 0.5rem;
+
 }
 .Collapsible__contentInner {
   padding: 10px;
@@ -100,6 +113,7 @@ img{
   padding: 10px;
   background: #b1b2de;
   border-radius: 10px;
+  margin-right: 1rem;
 }
 .Collapsible__trigger:after {
   content: '\02C5';
@@ -108,6 +122,7 @@ img{
   top: 10px;
   display: block;
   transition: transform 300ms;
+
 }
 .Collapsible__trigger.is-open:after {
   transform: rotateZ(180deg);
@@ -146,3 +161,48 @@ img{
 }
 
 .tab { margin-left: 30px; }
+
+/*scrollbar*/
+::-webkit-scrollbar{
+  width: 0.5rem;
+}
+::-webkit-scrollbar-thumb{
+  background: #22668A;
+  border-radius: 10px;
+}
+
+.scrollbox{
+
+  position: fixed;
+  height: 70%;
+  display: flex;
+  flex-direction: column;
+  width: 32%;
+
+
+}
+.scrollbox-inner{
+  overflow:scroll ;
+  overflow-x: hidden;
+
+
+
+}
+.scrollbox-submod {
+
+  position: fixed;
+  height: 70%;
+  display: flex;
+  flex-direction: column;
+  width: 62%;
+
+
+}
+.innersubmod{
+
+  overflow:scroll ;
+  overflow-x: hidden;
+
+
+
+}

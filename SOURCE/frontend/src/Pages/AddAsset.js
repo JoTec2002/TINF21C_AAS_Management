@@ -4,16 +4,30 @@ import {errorHandling, setErrorHandling} from "../components/errorHandling";
 import React, {useState} from "react";
 import axios from "axios";
 import {API_URL} from "../utils/constanst";
+import {Link} from "react-router-dom";
 
 const AddAsset =()=>{
     const [selectedFile, setSelectedFile] = useState();
     const [selectedAasId, setselectedAasId] = useState("");
     const [isSelected, setIsSelected] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [showAssetButton, setShowAssetButton] = useState(false);
+
+    const setUploaded = () => {
+        setIsSubmitted(true);
+        setShowAssetButton(true);
+    }
 
     const changeHandlerFile = (event) => {
         setSelectedFile(event.target.files[0]);
         console.log(event.target.files[0]);
         setIsSelected(true);
+
+        const fileSize = event.target.files[0].size / 1024 / 1024; // in MiB
+        if (fileSize > 28.6) {
+            alert("File size exceeded! File has to be replaced for successful upload!")
+        }
+
     };
     const changeHandlerAasId = (event) => {
         setselectedAasId(event.target.value)
@@ -25,22 +39,24 @@ const AddAsset =()=>{
             bodyFormData.append("aasIds", selectedAasId);
             bodyFormData.append("file", selectedFile)
             bodyFormData.append("fileName", selectedFile.name)
-            axios.post(`${API_URL}packages`,bodyFormData,{
-                auth:{
-                    username:localStorage.getItem("email"),
-                    password:localStorage.getItem("password")
-                }}
-            ).then((res)=>{
-                console.log(res);
-                if(res.status === 201){
-                    alert("File added sucessfully.")
+            axios.post(`${API_URL}packages`, bodyFormData, {
+                auth: {
+                    username: localStorage.getItem("email"),
+                    password: localStorage.getItem("password")
                 }
-            })
-            .catch((error) =>{
-                setErrorHandling(error);
-            })
+            }
+                ).then((res) => {
+                    console.log(res);
+                    if (res.status === 201) {
+                        alert("File added successfully.")
+                    }
+                })
+                    .catch((error) => {
+                        setErrorHandling(error);
+                    })
+
         }else {
-            alert("please fill out the form completly")
+            alert("please fill out the form completely")
         }
     };
 
@@ -72,7 +88,13 @@ const AddAsset =()=>{
                         </div>
                     )}
                     <div>
-                        <input className="btn btn-primary" type="submit" value="Submit" onClick={handleSubmission}/>
+                        {!isSubmitted &&
+                            <input className="btn btn-primary" type="submit" value="Submit" onClick={event => {setUploaded(); handleSubmission()}}/>
+                        }
+                        {showAssetButton &&
+                            <Link to="/">
+                            <button class="btn btn-success">Show Asset</button>
+                            </Link> }
                     </div>
                     </Row>
                 </Container>
