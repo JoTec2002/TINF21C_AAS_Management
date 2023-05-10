@@ -57,6 +57,12 @@ export default class Assets extends Component {
                 </h4>
                 <hr/>
 
+                {localStorage.getItem("email") ? (
+                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
+                        <Button variant="primary" style={{margin: "auto auto 0.6em auto"}} href={"#/addAsset"}> Add Asset </Button>
+                    </div>
+                ) : (<a></a>)}
+
                 <Form className="d-flex">
                     <Form.Control
                         type="search"
