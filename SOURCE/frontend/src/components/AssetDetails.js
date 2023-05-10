@@ -1,6 +1,6 @@
 import React, {useState, useEffect} from "react";
 import axios from "axios";
-import {Col, Card, Button, Row} from "react-bootstrap";
+import {Col, Button, Row} from "react-bootstrap";
 import Collapsible from 'react-collapsible';
 import {API_URL} from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
@@ -140,7 +140,6 @@ const AssetDetails = ({data}) => {
     }
 
     useEffect(() => {
-        //console.log("effekt"+ data);
         if (data !== "dW5kZWZpbmVk") {
             setLoading(true);
             //reset details
@@ -235,8 +234,7 @@ const AssetDetails = ({data}) => {
                         <Collapsible key={submodel.id} trigger={submodel.idShort}
                                      open={submodel.idShort === "Nameplate"}>
                             {console.log(submodel)}
-                            <p key={submodel.semanticId.keys[0].value}><strong>Semantic
-                                ID: </strong>{submodel.semanticId.keys[0].value}</p>
+                            <p key={submodel.semanticId.keys[0].value}><strong>Semantic ID: </strong>{submodel.semanticId.keys[0].value}</p>
                             {
                                 submodel.submodelElements.map((submodelElement) =>
                                     returnSubmodelContent(submodelElement, endcode(submodel.id), "")

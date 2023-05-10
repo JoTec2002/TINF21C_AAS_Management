@@ -29,7 +29,7 @@ const setErrorHandling = function setErrorHandling(error) {
     try {
         if (error.isAxiosError === true) {
             //Errors Thrown by Axios module - most likely http error
-            if(error.code="ERR_NETWORK" && error.response === undefined){
+            if(error.code==="ERR_NETWORK" && error.response === undefined){
                 setErrorWithId("500", "block");
                 return;
             }

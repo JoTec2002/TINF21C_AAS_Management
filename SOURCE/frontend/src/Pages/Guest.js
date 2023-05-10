@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { AssetDetails, Mydocs, NavComponent, Assets } from '../components';
-import { Col, Row, Container } from 'react-bootstrap';
+import { AssetDetails, NavComponent, Assets } from '../components';
+import { Row, Container } from 'react-bootstrap';
 import {errorHandling} from "../components/errorHandling";
 
 function Guest() {

@@ -1,10 +1,9 @@
 import React, {Component} from 'react';
-import {Col, Form, Button, Row} from "react-bootstrap";
+import {Col, Form, Button} from "react-bootstrap";
 import axios from "axios";
 import {API_URL} from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
-import base64url from "base64url";
-import {errorHandling, setErrorHandling} from "./errorHandling";
+import {setErrorHandling} from "./errorHandling";
 
 export default class Assets extends Component {
     constructor(props) {
@@ -51,9 +50,7 @@ export default class Assets extends Component {
         const filteredShells = shells.filter((shell) =>
             shell.idShort.toLowerCase().includes(searchTerm.toLowerCase())
         );
-        const base64url = require('base64url');
         return (
-
             <Col xs={6} md={4}>
                 <h4>
                     <strong>Assets</strong>
