@@ -107,6 +107,14 @@ const AssetDetails = ({ data }) => {
                 }
             </Collapsible>)
         }
+        if(submodelElement.modelType==="MultiLanguageProperty") {
+            return (
+                <div>
+                    <p key={submodelElement.idShort}><strong>{submodelElement.idShort}:</strong><br/></p>
+                    <p key={submodelElement.idShort} class="tab"><strong>language={submodelElement.value.langStrings[0].language}</strong> {submodelElement.value.langStrings[0].text}</p>
+                    <p key={submodelElement.idShort} class="tab"><strong>language={submodelElement.value.langStrings[1].language} </strong>{submodelElement.value.langStrings[1].text}</p>
+                </div>)
+        }
         if(submodelElement.modelType === "File"){
             if(submodelElement.contentType === "application/pdf"){
                 //PDF
@@ -119,7 +127,7 @@ const AssetDetails = ({ data }) => {
             return (<p>Error: Filetype not implementet {submodelElement.contentType}</p>)
         }
 
-        return (<p>Error: submodelContent not found {submodelElement.modelType}</p>);
+        return (<div className="alert alert-danger" role="alert">Error: submodelContent not found {submodelElement.modelType}</div>);
     }
 
     useEffect(() => {
