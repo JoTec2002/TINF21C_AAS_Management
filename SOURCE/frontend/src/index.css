@@ -83,8 +83,10 @@ img{
   transition: 0.3s;
   border-radius: 5px;
   width: auto;
-  height: 45rem;
+  height: 100%;
   padding:2rem 2rem 2rem 2rem;
+  overflow: scroll;
+  overflow-x: hidden;
 }
 .Collapsible {
   background-color: #fff;
@@ -174,7 +176,7 @@ img{
 .scrollbox{
 
   position: fixed;
-  height: 70%;
+  height: 80%;
   display: flex;
   flex-direction: column;
   width: 32%;
