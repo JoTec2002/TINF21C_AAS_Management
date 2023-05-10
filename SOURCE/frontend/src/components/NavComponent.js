@@ -93,21 +93,23 @@ export default class NavComponent extends Component {
               <Navbar.Collapse id="basic-navbar-nav">
                 <Nav className="ms-auto">
 
-                    {!loggedIn ? (
-                    <Button variant="success" onClick={() => this.handelShow()}>Login</Button>
-                  ) : (
-                    <div className="d-flex align-items-center">
-                      <p className="my-0 me-3 text-white">{localStorage.getItem('email')}</p>
-                      <Button
-                        variant="danger"
-                        onClick={() => {
-                          this.handleLogout();
-                          this.setState({ loggedIn: false });
-                        }}>Logout</Button>
-                      <Button variant="primary" style={{ marginLeft:10 }} href={"#/addAsset"}> Add Asset </Button>
-                        <Nav.Link href="#/admin">User management</Nav.Link>
-                    </div>
-                  )}
+                            {!loggedIn ? (
+                                <Button variant="success" onClick={() => this.handelShow()}>Login</Button>
+                            ) : (
+                                <div className="d-flex align-items-center">
+                                    <p className="my-0 me-3 text-white">{localStorage.getItem('email')}</p>
+
+                                    <Button variant="primary" style={{ marginLeft: 10 }} href={"#/addAsset"}> Add Asset </Button>
+                                    <Button
+                                        variant="danger"
+                                        style={{ marginLeft: 10 }}
+                                        onClick={() => {
+                                            this.handleLogout();
+                                            this.setState({ loggedIn: false });
+                                        }}>Logout</Button>
+                                    <Nav.Link href="#/admin">User management</Nav.Link>
+                                </div>
+                            )}
                   <PopUpLogin
                     loggedIn={loggedIn}
                     setLoggedIn={this.handleLogin}
