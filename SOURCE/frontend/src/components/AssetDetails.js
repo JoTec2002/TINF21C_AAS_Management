@@ -133,23 +133,18 @@ const AssetDetails = ({data}) => {
                     </a>
                 </p>
             )
-
-            {
-                console.log(submodelElement)
-            }
         }
         if (submodelElement.modelType === "File") {
-            if (submodelElement.contentType === "application/pdf") {
-                //PDF
+            if (submodelElement.contentType.startsWith("image/") || submodelElement.contentType === "application/png") {
+                getFileContentBase64(submodelid, idShortPath, submodelElement.contentType);
+                return (<p>{submodelElement.idShort}: <img id={submodelid + "-" + idShortPath}/></p>)
+            }
+            else {
+                //Just make each other filetype downloadable
                 return (<p>{submodelElement.idShort}: <a id={submodelid + "-" + idShortPath}
                                                          onClick={() => getFileContentDownload(submodelid, idShortPath, submodelElement.contentType)}>Download</a>
                 </p>)
             }
-            if (submodelElement.contentType.startsWith("image/")) {
-                getFileContentBase64(submodelid, idShortPath, submodelElement.contentType);
-                return (<p>{submodelElement.idShort}: <img id={submodelid + "-" + idShortPath}/></p>)
-            }
-            return (<p>Error: Filetype not implementet {submodelElement.contentType}</p>)
         }
 
         return (<div className="alert alert-danger" role="alert">Error: submodelContent not

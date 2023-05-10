@@ -16,6 +16,7 @@ preDifinedErrors[100] = "User rights insufficient to load all data. Please login
 preDifinedErrors[150] = "Unknown Internal Server Error."
 preDifinedErrors[151] = "Internal Server Error. File already exists."
 preDifinedErrors[152] = "Internal Server Error. Requested File not found."
+preDifinedErrors[153] = "Internal Server Error. Filepath has wrong format please check AASX file."
 preDifinedErrors[500] = "AASX Server not available, please check your Server address."
 
 function closeError(id) {
@@ -51,6 +52,10 @@ const setErrorHandling = function setErrorHandling(error) {
                 if(statusCode === 500){
                     if(errorData.text === "File already exists"){
                         setErrorWithId("151", "block");
+                        return;
+                    }
+                    if(errorData.text === "Cannot be an absolute URI."){
+                        setErrorWithId("153", "block");
                         return;
                     }
                 }
