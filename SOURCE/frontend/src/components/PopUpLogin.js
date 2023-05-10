@@ -1,11 +1,9 @@
-import { useState, useEffect } from "react";
-import { Button, Modal, Form } from "react-bootstrap";
-import NavComponent from "./NavComponent";
-import { API_URL } from "../utils/constanst";
+import {useState, useEffect} from "react";
+import {Button, Modal, Form} from "react-bootstrap";
+import {API_URL} from "../utils/constanst";
 import axios from "axios";
-import { setErrorHandling } from "./errorHandling";
 
-const PopUpLogin = ({ showModal, handleClose }) => {
+const PopUpLogin = ({showModal, handleClose}) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loggedIn, setLoggedIn] = useState(false);
@@ -57,10 +55,10 @@ const PopUpLogin = ({ showModal, handleClose }) => {
             <Modal.Header closeButton>
                 <Modal.Title>AAS Management</Modal.Title>
             </Modal.Header>
-            <Modal.Body>
-                {!loggedIn ? (
+
+            {!loggedIn ? (
+                <Modal.Body>
                     <Form onSubmit={handleSubmit}>
-                        {loginStatus}
                         <Form.Group className="mb-2" controlId="formBasicEmail">
                             <Form.Label>Email address</Form.Label>
                             <Form.Control
@@ -81,22 +79,24 @@ const PopUpLogin = ({ showModal, handleClose }) => {
                             />
                         </Form.Group>
                         <Form.Group className="mb-2" controlId="formBasicCheckbox">
-                            <Form.Check type="checkbox" label="Remember me" />
+                            <Form.Check type="checkbox" label="Remember me"/>
                         </Form.Group>
                         <Button variant="success" type="submit">
                             Login
                         </Button>
                     </Form>
-                ) : (
+                    <p style={{background: "red", marginTop: "0.4em"}}>{loginStatus}</p>
+                </Modal.Body>
+            ) : (
+                <Modal.Body>
                     <div>
                         <p>You are logged in as {email}.</p>
                         <Button variant="danger" onClick={handleLogout}>
                             Logout
                         </Button>
                     </div>
-                )}
-            </Modal.Body>
-
+                </Modal.Body>
+            )}
         </Modal>
     );
 };
