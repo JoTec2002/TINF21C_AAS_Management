@@ -108,7 +108,6 @@ const AssetDetails = ({data}) => {
                     }
                     {
                         submodelElement.value.map((innerSubmodelElement) =>
-
                             returnSubmodelContent(innerSubmodelElement, submodelid, idShortPath)
                         )
                     }
@@ -126,28 +125,44 @@ const AssetDetails = ({data}) => {
                 </div>)
         }
         if (submodelElement.modelType === "Entity") {
-            return (
-                <p key={submodelElement.idShort + "GlobalAssetId"}>
-                    <strong>{submodelElement.entityType}: </strong>
-                    <a href={submodelElement.globalAssetId.keys[0].value}
-                       target={"_blank"}>{submodelElement.globalAssetId.keys[0].value}
-                    </a>
-                </p>
-            )
+            if(submodelElement.entityType === "SelfManagedEntity"){
+                return (
+                    <p key={submodelElement.idShort + "GlobalAssetId"}>
+                        <strong>{submodelElement.entityType}: </strong>
+                        <a href={submodelElement.globalAssetId.keys[0].value}
+                           target={"_blank"}>{submodelElement.globalAssetId.keys[0].value}
+                        </a>
+                    </p>
+                )
+            }
+            if(submodelElement.entityType === "CoManagedEntity"){
+                return (
+                    <p key={submodelElement.idShort + "SemanticId"}>
+                        <strong>{submodelElement.entityType}: </strong>
+                        <a href={submodelElement.semanticId.keys[0].value}
+                           target={"_blank"}>{submodelElement.semanticId.keys[0].value}
+                        </a>
+                    </p>
+                )
+            }
+            console.log(submodelElement);
+            return(<div className="alert alert-danger" role="alert">Error: EntityType not
+                implemented {submodelElement.entityType}</div>)
+
+
         }
         if (submodelElement.modelType === "File") {
             if (submodelElement.contentType.startsWith("image/") || submodelElement.contentType === "application/png") {
                 getFileContentBase64(submodelid, idShortPath, submodelElement.contentType);
                 return (<p>{submodelElement.idShort}: <img id={submodelid + "-" + idShortPath}/></p>)
-            }
-            else {
+            } else {
                 //Just make each other filetype downloadable
                 return (<p>{submodelElement.idShort}: <a id={submodelid + "-" + idShortPath}
                                                          onClick={() => getFileContentDownload(submodelid, idShortPath, submodelElement.contentType)}>Download</a>
                 </p>)
             }
         }
-
+        console.log(submodelElement);
         return (<div className="alert alert-danger" role="alert">Error: submodelContent not
             implemented {submodelElement.modelType}</div>);
     }
