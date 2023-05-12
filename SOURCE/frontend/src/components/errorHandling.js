@@ -1,4 +1,5 @@
 import React from "react";
+import Button from 'react-bootstrap/Button';
 
 function setErrorWithId(innerId, state) {
     let element = document.getElementById("error");
@@ -77,7 +78,7 @@ const errorHandling = () => {
     return (<div id={"error"}>
         {preDifinedErrors.map((preDifinedError, index) =>
             <div key={index} id={index} style={{display: 'none'}}><p>{preDifinedError}</p>
-                <button onClick={() => closeError(index)}>x</button>
+                <Button variant="outline-warning" size="sm" onClick={() => closeError(index)}>x</Button>
             </div>
         )}
     </div>)

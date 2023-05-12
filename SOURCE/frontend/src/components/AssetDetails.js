@@ -220,7 +220,7 @@ const AssetDetails = ({data}) => {
     }
 
     return (
-        <Col md={8} mt="2">
+        <Col md={9} mt="2">
             <h4>
                 <strong>Submodels</strong>
             </h4>

@@ -6,6 +6,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   overflow-y: hidden;
+
 }
 p{
   margin-bottom: 0.2rem;
@@ -46,7 +47,7 @@ img{
 
 /*Error Display */
 #error > div{
-  background-color: red;
+  background-color: #FFFF66;
   text-align: center;
   height: 2em;
 }
@@ -61,14 +62,14 @@ img{
 
 /*Assets*/
 .assets{
-  width:25rem;
+
   transition: 0.3s;
   border: 2px solid gray;
   border-radius: 10px;
   display: flex;
   align-items: center;
   padding: 0.5em 0.5em 0.5em 1em;
-  margin: 5px auto;
+
 }
 .assets:hover{
   background-color: #b1b2de;
@@ -86,7 +87,8 @@ img{
   transition: 0.3s;
   width: auto;
   height: 100%;
-  padding:2rem 2rem 2rem 2rem;
+  border: none;
+
   overflow: scroll;
   overflow-x: hidden;
 }
@@ -174,28 +176,12 @@ img{
 }
 
 .scrollbox{
-  position: fixed;
-  height: 75%;
+  height: 40%;
   display: flex;
-  flex-direction: column;
-  width: 32%;
+  width: 100%;
 }
 .scrollbox-inner{
   overflow:scroll ;
   overflow-x: hidden;
 }
-.scrollbox-submod {
-  position: fixed;
-  height: 70%;
-  display: flex;
-  flex-direction: column;
-  width: 62%;
-}
-.innersubmod{
 
-  overflow:scroll ;
-  overflow-x: hidden;
-
-
-
-}

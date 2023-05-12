@@ -68,6 +68,7 @@ export default class NavComponent extends Component {
                 </Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav"/>
                 <Navbar.Collapse id="basic-navbar-nav">
+                    <Nav>
                     <Nav.Item className={"text-white"}>
                             <Form className="d-flex server">
                                 <Form.Control type="text" onSubmit={this.handleURL}
@@ -79,9 +80,13 @@ export default class NavComponent extends Component {
                                 <Button variant="success" type="submit">Change</Button>
                             </Form>
                     </Nav.Item>
-                    <Nav.Link href={"#"}>Home</Nav.Link>
+                    <Nav.Link href="/#">Home</Nav.Link>
+                    </Nav>
                     {loggedIn ? (
+                       <Nav>
                         <Nav.Link href="#/admin">User management</Nav.Link>
+                        <Nav.Link href="#/addAsset">Add Asset</Nav.Link>
+                       </Nav>
                     ) : (<></>)}
                     <Nav className="ms-auto" style={{marginRight: "5%"}}>
                         {!loggedIn ? (
@@ -89,6 +94,7 @@ export default class NavComponent extends Component {
                         ) : (
                             <NavDropdown id="basic-nav-dropdown" title={getCookie("user")?.email}>
                                 <NavDropdown.Item><Button
+                                    size="sm"
                                     variant="danger"
                                     style={{marginLeft: 10}}
                                     onClick={() => {

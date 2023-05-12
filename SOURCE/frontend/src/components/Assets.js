@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Col, Form, Button} from "react-bootstrap";
+import {Col, Form, Button,Row,ListGroup} from "react-bootstrap";
 import axios from "axios";
 import {API_URL} from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
@@ -52,17 +52,11 @@ export default class Assets extends Component {
             shell.idShort.toLowerCase().includes(searchTerm.toLowerCase())
         );
         return (
-            <Col xs={6} md={4}>
+            <Col md={3}>
                 <h4>
                     <strong>Assets</strong>
                 </h4>
                 <hr/>
-
-                {getCookie("user")?.email ? (
-                    <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
-                        <Button variant="primary" style={{margin: "auto auto 0.6em auto"}} href={"#/addAsset"}> Add Asset </Button>
-                    </div>
-                ) : (<a></a>)}
 
                 <Form className="d-flex">
                     <Form.Control
@@ -88,18 +82,24 @@ export default class Assets extends Component {
 
                 ) : (
 
-                    <Col xs={6} md={4} className='scrollbox'>
+
+                    <Col md={3} className='scrollbox'>
                         <Col className='scrollbox-inner'>
 
+
                             {filteredShells && filteredShells.map((shells) => (
+
+                                <Row>
                                 <div key={shells.id}
                                      className={`assets ${shells.id === this.state.activeProdukt ? "active" : ""}`}
                                      onClick={() => this.chooseShell(shells.id)}
                                      id={shells.id}
                                 >
-                                    <h6 style={{margin: 0}}>{shells.idShort}</h6>
+                                    {shells.idShort}
                                 </div>
+                                </Row>
                             ))}
+
 
                         </Col>
                     </Col>
