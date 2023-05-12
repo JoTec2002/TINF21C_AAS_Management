@@ -3,6 +3,7 @@ import {Button, Modal, Form} from "react-bootstrap";
 import {API_URL} from "../utils/constanst";
 import axios from "axios";
 import {deleteCookie} from "./helpers";
+import {setErrorHandling} from "./errorHandling";
 
 const PopUpLogin = ({showModal, handleClose, loggedIn}) => {
     const [email, setEmail] = useState("");
@@ -28,14 +29,43 @@ const PopUpLogin = ({showModal, handleClose, loggedIn}) => {
                     setEmail(email);
                     setPassword(password);
 
-                    if(remember){
-                        console.log("remember");
-                        document.cookie = "user="+JSON.stringify({email: email, password: password})+";max-age=2592000";
-                    }else {
-                        document.cookie = "user="+JSON.stringify({email: email, password: password})
-                    }
-                    console.log("Login sucessfully")
-                    window.location.reload();
+                    axios.get(API_URL + "submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping", {
+                        auth: {
+                            username: email,
+                            password: password
+                        }
+                    })
+                        .then(res => {
+                            const roleMappings = res.data.value;
+                            roleMappings.forEach(roleMapping => {
+                                roleMapping.value[0].value.forEach(user => {
+                                    if (user.idShort === email) {
+                                        let role = roleMapping.value[1].value[0].idShort;
+                                        if (remember) {
+                                            console.log("remember");
+                                            document.cookie = "user=" + JSON.stringify({
+                                                email: email,
+                                                password: password,
+                                                role: role
+                                            }) + ";max-age=2592000";
+                                        } else {
+                                            document.cookie = "user=" + JSON.stringify({
+                                                email: email,
+                                                password: password,
+                                                role: role
+                                            })
+                                        }
+                                        console.log("Login sucessfully")
+                                        window.location.reload();
+                                    }
+                                });
+                            })
+                        })
+                        .catch(error => {
+                            console.log("Login failed", error)
+                            setLoginStatus("Login Failed")
+                            setErrorHandling(error)
+                        })
                 }
             })
             .catch(async (error) => {
@@ -73,7 +103,8 @@ const PopUpLogin = ({showModal, handleClose, loggedIn}) => {
                             />
                         </Form.Group>
                         <Form.Group className="mb-2" controlId="formBasicCheckbox">
-                            <Form.Check type="checkbox" label="Remember me (30 days)" onChange={(e) => setRemember(e.target.checked)}/>
+                            <Form.Check type="checkbox" label="Remember me (30 days)"
+                                        onChange={(e) => setRemember(e.target.checked)}/>
                         </Form.Group>
                         <Button variant="success" type="submit">
                             Login
