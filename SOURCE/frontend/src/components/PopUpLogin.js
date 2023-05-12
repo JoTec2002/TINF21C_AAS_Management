@@ -1,26 +1,17 @@
-import {useState, useEffect} from "react";
+import {useState,} from "react";
 import {Button, Modal, Form} from "react-bootstrap";
 import {API_URL} from "../utils/constanst";
 import axios from "axios";
+import {deleteCookie} from "./helpers";
 
-const PopUpLogin = ({showModal, handleClose}) => {
+const PopUpLogin = ({showModal, handleClose, loggedIn}) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [loggedIn, setLoggedIn] = useState(false);
+    const [remember, setRemember] = useState(false);
     const [loginStatus, setLoginStatus] = useState("");
 
-    useEffect(() => {
-        const email = localStorage.getItem("email");
-        const password = localStorage.getItem("password");
-        if (email && password) {
-
-        }
-    }, []);
-
     const handleLogout = () => {
-        localStorage.removeItem("email");
-        localStorage.removeItem("password");
-        setLoggedIn(false);
+        deleteCookie("user");
         window.location.reload(false);
     };
 
@@ -36,17 +27,20 @@ const PopUpLogin = ({showModal, handleClose}) => {
                 if (res?.status === 200) {
                     setEmail(email);
                     setPassword(password);
-                    localStorage.setItem("email", email);
-                    localStorage.setItem("password", password);
-                    setLoggedIn(true);
+
+                    if(remember){
+                        console.log("remember");
+                        document.cookie = "user="+JSON.stringify({email: email, password: password})+";max-age=2592000";
+                    }else {
+                        document.cookie = "user="+JSON.stringify({email: email, password: password})
+                    }
                     console.log("Login sucessfully")
                     window.location.reload();
                 }
             })
             .catch(async (error) => {
-                console.log("Login failed")
+                console.log("Login failed", error)
                 setLoginStatus("Login Failed")
-                setLoggedIn(false)
             })
     };
 
@@ -79,7 +73,7 @@ const PopUpLogin = ({showModal, handleClose}) => {
                             />
                         </Form.Group>
                         <Form.Group className="mb-2" controlId="formBasicCheckbox">
-                            <Form.Check type="checkbox" label="Remember me"/>
+                            <Form.Check type="checkbox" label="Remember me (30 days)" onChange={(e) => setRemember(e.target.checked)}/>
                         </Form.Group>
                         <Button variant="success" type="submit">
                             Login

@@ -7,6 +7,7 @@ import axios from "axios";
 import {API_URL} from "../utils/constanst";
 import base64url from "base64url";
 import {useNavigate} from 'react-router-dom'
+import {getCookie} from "../components/helpers";
 
 const AddAsset =()=>{
     const [packageId, setpackageId] = useState(-1);
@@ -17,8 +18,8 @@ const AddAsset =()=>{
     function getPackageIdFromAasId(aasId){
         axios.get(`${API_URL}packages`, {
                 auth: {
-                    username: localStorage.getItem("email"),
-                    password: localStorage.getItem("password")
+                    username: getCookie("user")?.email,
+                    password: getCookie("user")?.password
                 }
             })
             .then(async (res) => {
@@ -43,8 +44,8 @@ const AddAsset =()=>{
             let b64packageId = base64url.fromBase64(window.btoa(packageId));
             axios.delete(`${API_URL}packages/${b64packageId}`, {
                 auth: {
-                    username: localStorage.getItem("email"),
-                    password: localStorage.getItem("password")
+                    username: getCookie("user")?.email,
+                    password: getCookie("user")?.password
                 }
             })
                 .then(async (res) => {

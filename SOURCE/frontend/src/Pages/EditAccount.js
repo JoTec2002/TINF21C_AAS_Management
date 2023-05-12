@@ -6,6 +6,7 @@ import { Col, Row } from "react-bootstrap";
 import {API_URL} from "../utils/constanst";
 import React, { useState } from 'react';
 import axios from 'axios';
+import {getCookie} from "../components/helpers";
 
 const EditAccount = () => { // ({formData})
 
@@ -69,8 +70,8 @@ const EditAccount = () => { // ({formData})
 
             axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth/`, formDataJsonBasicAuth, {
                 auth: {
-                    username: localStorage.getItem('email'),
-                    password: localStorage.getItem('password')
+                    username: getCookie("user")?.email,
+                    password: getCookie("user")?.password
                 }
             }).then((res)=>{
                 console.log(res);
@@ -80,8 +81,8 @@ const EditAccount = () => { // ({formData})
 
             axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, formDataJsonRoleMapping, {
                 auth: {
-                    username: localStorage.getItem('email'),
-                    password: localStorage.getItem('password')
+                    username: getCookie("user")?.email,
+                    password: getCookie("user")?.password
                 }
             }).then((res)=>{
                 console.log(res);

@@ -5,6 +5,7 @@ import React, {useState} from "react";
 import axios from "axios";
 import {API_URL} from "../utils/constanst";
 import {Link} from "react-router-dom";
+import {getCookie} from "../components/helpers";
 
 const AddAsset =()=>{
     const [selectedFile, setSelectedFile] = useState();
@@ -41,8 +42,8 @@ const AddAsset =()=>{
             bodyFormData.append("fileName", selectedFile.name)
             axios.post(`${API_URL}packages`, bodyFormData, {
                 auth: {
-                    username: localStorage.getItem("email"),
-                    password: localStorage.getItem("password")
+                    username: getCookie("user")?.email,
+                    password: getCookie("user")?.password
                 }
             }
                 ).then((res) => {

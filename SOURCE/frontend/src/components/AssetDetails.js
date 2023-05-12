@@ -6,6 +6,7 @@ import {API_URL} from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
 import base64url from "base64url";
 import {setErrorHandling} from "./errorHandling";
+import {getCookie} from "./helpers";
 
 const AssetDetails = ({data}) => {
     const [produktData, setProduktData] = useState(null);
@@ -26,8 +27,8 @@ const AssetDetails = ({data}) => {
             let res =
                 await axios.get(`${API_URL}shells/${data}/submodels/${id}/submodel`, {
                     auth: {
-                        username: localStorage.getItem("email"),
-                        password: localStorage.getItem("password")
+                        username: getCookie("user")?.email,
+                        password: getCookie("user")?.password
                     }
                 })
             return res.data;
@@ -38,8 +39,8 @@ const AssetDetails = ({data}) => {
     const getFileContentBase64 = (id, path, contentType) => {
         axios.get(`${API_URL}submodels/${id}/submodelelements/${path}/attachment`, {
             auth: {
-                username: localStorage.getItem("email"),
-                password: localStorage.getItem("password")
+                username: getCookie("user")?.email,
+                password: getCookie("user")?.password
             },
             responseType: 'blob'
         })
@@ -63,8 +64,8 @@ const AssetDetails = ({data}) => {
         console.log("RUN")
         axios.get(`${API_URL}submodels/${id}/submodelelements/${path}/attachment`, {
             auth: {
-                username: localStorage.getItem("email"),
-                password: localStorage.getItem("password")
+                username: getCookie("user")?.email,
+                password: getCookie("user")?.password
             },
             responseType: 'blob'
         })
@@ -160,8 +161,8 @@ const AssetDetails = ({data}) => {
             axios
                 .get(`${API_URL}shells/${data}`, {
                     auth: {
-                        username: localStorage.getItem("email"),
-                        password: localStorage.getItem("password")
+                        username: getCookie("user")?.email,
+                        password: getCookie("user")?.password
                     }
                 })
                 .then(async (res) => {
@@ -232,7 +233,7 @@ const AssetDetails = ({data}) => {
                                 <h4>{produktData.idShort}</h4>
                             </Col>
                             <Col>
-                                {localStorage.getItem("email") ? (
+                                {getCookie("user")?.email ? (
                                     <Button style={{float: "right"}} href={'#/deleteAsset?aasId=' + produktData.id}
                                             variant="danger">
                                         Delete Asset

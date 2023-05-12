@@ -34,7 +34,15 @@ img{
 .d-flex{
   margin-bottom: 0.5rem;
 }
-
+.dropdown-menu{
+  text-align: right;
+}
+.nav-link{
+  margin-right: 0.5rem;
+}
+.nav-item{
+  margin-right: 0.5rem;
+}
 
 /*Error Display */
 #error > div{
@@ -134,7 +142,6 @@ img{
   display: flex;
   width: 1000px;
   height: 725px;
-
   padding: 10px;
   margin: auto;
   box-shadow: rgba(49, 50, 49, 0.88) 0px 7px 29px 0px ;
@@ -152,7 +159,7 @@ img{
 .server{
   width:35rem;
   justify-content: center;
-  margin: 1rem auto auto;
+  margin: auto;
 }
 
 .tab { margin-left: 30px; }
