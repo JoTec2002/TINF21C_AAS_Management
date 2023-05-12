@@ -7,6 +7,7 @@ import Spinner from "react-bootstrap/Spinner";
 import {API_URL} from "../utils/constanst";
 import {setErrorHandling} from "./errorHandling";
 import PopUpEditAccount from "./PopUpEditAccount";
+import {getCookie} from "./helpers";
 
 export default class Dashboard extends Component {
 
@@ -30,8 +31,8 @@ export default class Dashboard extends Component {
 
         axios.get(API_URL + "submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping", {
             auth: {
-                username: localStorage.getItem('email'),
-                password: localStorage.getItem('password')
+                username: getCookie("user")?.email,
+                password: getCookie("user")?.password
             }
         })
             .then(res => {
@@ -56,8 +57,8 @@ export default class Dashboard extends Component {
 
         await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.specificUser[1])}.subjects`, {
             auth: {
-                username: localStorage.getItem("email"),
-                password: localStorage.getItem("password")
+                username: getCookie("user")?.email,
+                password: getCookie("user")?.password
             }
         }).then(async (res) => {
             let users = res.data.value;
@@ -74,8 +75,8 @@ export default class Dashboard extends Component {
 
             axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.specificUser[1])}.subjects`, res.data, {
                 auth: {
-                    username: localStorage.getItem('email'),
-                    password: localStorage.getItem('password')
+                    username: getCookie("user")?.email,
+                    password: getCookie("user")?.password
                 }
             }).then((res) => {
                 console.log("roleMapping Put-Res", res);
@@ -95,8 +96,8 @@ export default class Dashboard extends Component {
 
         axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
             auth: {
-                username: localStorage.getItem("email"),
-                password: localStorage.getItem("password")
+                username: getCookie("user")?.email,
+                password: getCookie("user")?.password
             }
         }).then(async (res) => {
             let users = res.data.value;
@@ -113,8 +114,8 @@ export default class Dashboard extends Component {
 
             axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, res.data, {
                 auth: {
-                    username: localStorage.getItem('email'),
-                    password: localStorage.getItem('password')
+                    username: getCookie("user")?.email,
+                    password: getCookie("user")?.password
                 }
             }).then((res) => {
                 if (res.status === 204) {
@@ -145,8 +146,8 @@ export default class Dashboard extends Component {
 
         await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
             auth: {
-                username: localStorage.getItem('email'),
-                password: localStorage.getItem('password')
+                username: getCookie("user")?.email,
+                password: getCookie("user")?.password
             }
         }).then((res) => {
             let dataResBasicAuth = res.data;
@@ -156,8 +157,8 @@ export default class Dashboard extends Component {
 
             axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, dataResBasicAuth, {
                 auth: {
-                    username: localStorage.getItem('email'),
-                    password: localStorage.getItem('password')
+                    username: getCookie("user")?.email,
+                    password: getCookie("user")?.password
                 }
             }).then((res) => {
                 if (res.status === 204) {
@@ -174,8 +175,8 @@ export default class Dashboard extends Component {
 
         axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, {
             auth: {
-                username: localStorage.getItem('email'),
-                password: localStorage.getItem('password')
+                username: getCookie("user")?.email,
+                password: getCookie("user")?.password
             }
         }).then((res) => {
             let dataResRoleMapping = res.data;
@@ -185,8 +186,8 @@ export default class Dashboard extends Component {
 
             axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, dataResRoleMapping, {
                 auth: {
-                    username: localStorage.getItem('email'),
-                    password: localStorage.getItem('password')
+                    username: getCookie("user")?.email,
+                    password: getCookie("user")?.password
                 }
             }).then((res) => {
                 console.log(res);

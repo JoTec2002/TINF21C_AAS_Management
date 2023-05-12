@@ -1,26 +1,18 @@
-import {useState, useEffect} from "react";
+import {useState,} from "react";
 import {Button, Modal, Form} from "react-bootstrap";
 import {API_URL} from "../utils/constanst";
 import axios from "axios";
+import {deleteCookie} from "./helpers";
+import {setErrorHandling} from "./errorHandling";
 
-const PopUpLogin = ({showModal, handleClose}) => {
+const PopUpLogin = ({showModal, handleClose, loggedIn}) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [loggedIn, setLoggedIn] = useState(false);
+    const [remember, setRemember] = useState(false);
     const [loginStatus, setLoginStatus] = useState("");
 
-    useEffect(() => {
-        const email = localStorage.getItem("email");
-        const password = localStorage.getItem("password");
-        if (email && password) {
-
-        }
-    }, []);
-
     const handleLogout = () => {
-        localStorage.removeItem("email");
-        localStorage.removeItem("password");
-        setLoggedIn(false);
+        deleteCookie("user");
         window.location.reload(false);
     };
 
@@ -36,17 +28,49 @@ const PopUpLogin = ({showModal, handleClose}) => {
                 if (res?.status === 200) {
                     setEmail(email);
                     setPassword(password);
-                    localStorage.setItem("email", email);
-                    localStorage.setItem("password", password);
-                    setLoggedIn(true);
-                    console.log("Login sucessfully")
-                    window.location.reload();
+
+                    axios.get(API_URL + "submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping", {
+                        auth: {
+                            username: email,
+                            password: password
+                        }
+                    })
+                        .then(res => {
+                            const roleMappings = res.data.value;
+                            roleMappings.forEach(roleMapping => {
+                                roleMapping.value[0].value.forEach(user => {
+                                    if (user.idShort === email) {
+                                        let role = roleMapping.value[1].value[0].idShort;
+                                        if (remember) {
+                                            console.log("remember");
+                                            document.cookie = "user=" + JSON.stringify({
+                                                email: email,
+                                                password: password,
+                                                role: role
+                                            }) + ";max-age=2592000";
+                                        } else {
+                                            document.cookie = "user=" + JSON.stringify({
+                                                email: email,
+                                                password: password,
+                                                role: role
+                                            })
+                                        }
+                                        console.log("Login sucessfully")
+                                        window.location.reload();
+                                    }
+                                });
+                            })
+                        })
+                        .catch(error => {
+                            console.log("Login failed", error)
+                            setLoginStatus("Login Failed")
+                            setErrorHandling(error)
+                        })
                 }
             })
             .catch(async (error) => {
-                console.log("Login failed")
+                console.log("Login failed", error)
                 setLoginStatus("Login Failed")
-                setLoggedIn(false)
             })
     };
 
@@ -79,7 +103,8 @@ const PopUpLogin = ({showModal, handleClose}) => {
                             />
                         </Form.Group>
                         <Form.Group className="mb-2" controlId="formBasicCheckbox">
-                            <Form.Check type="checkbox" label="Remember me"/>
+                            <Form.Check type="checkbox" label="Remember me (30 days)"
+                                        onChange={(e) => setRemember(e.target.checked)}/>
                         </Form.Group>
                         <Button variant="success" type="submit">
                             Login

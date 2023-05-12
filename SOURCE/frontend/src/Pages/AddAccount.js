@@ -7,6 +7,7 @@ import {API_URL} from "../utils/constanst";
 import React, {useState} from 'react';
 import axios from 'axios';
 import {setErrorHandling} from "../components/errorHandling";
+import {getCookie} from "../components/helpers";
 
 const AddAccount = () => {
 
@@ -73,8 +74,8 @@ const AddAccount = () => {
 
     await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
       auth: {
-        username: localStorage.getItem('email'),
-        password: localStorage.getItem('password')
+        username: getCookie("user")?.email,
+        password: getCookie("user")?.password
       }
     }).then((res) => {
       let dataResBasicAuth = res.data;
@@ -84,8 +85,8 @@ const AddAccount = () => {
 
       axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, dataResBasicAuth, {
         auth: {
-          username: localStorage.getItem('email'),
-          password: localStorage.getItem('password')
+          username: getCookie("user")?.email,
+          password: getCookie("user")?.password
         }
       }).then((res) => {
         console.log("basic auth put res", res);
@@ -98,8 +99,8 @@ const AddAccount = () => {
 
     axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, {
       auth: {
-        username: localStorage.getItem('email'),
-        password: localStorage.getItem('password')
+        username: getCookie("user")?.email,
+        password: getCookie("user")?.password
       }
     }).then((res) => {
       let dataResRoleMapping = res.data;
@@ -109,8 +110,8 @@ const AddAccount = () => {
 
       axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${routToAssociatedRoleMapping(formValue.role)}.subjects`, dataResRoleMapping, {
         auth: {
-          username: localStorage.getItem('email'),
-          password: localStorage.getItem('password')
+          username: getCookie("user")?.email,
+          password: getCookie("user")?.password
         }
       }).then((res) => {
         console.log(res);

@@ -4,6 +4,7 @@ import axios from "axios";
 import {API_URL} from "../utils/constanst";
 import Spinner from 'react-bootstrap/Spinner';
 import {setErrorHandling} from "./errorHandling";
+import {getCookie} from "./helpers";
 
 export default class Assets extends Component {
     constructor(props) {
@@ -24,8 +25,8 @@ export default class Assets extends Component {
     componentDidMount() {
         axios.get(API_URL + "shells", {
             auth: {
-                username: localStorage.getItem("email"),
-                password: localStorage.getItem("password")
+                username: getCookie("user")?.email,
+                password: getCookie("user")?.password
             }
         })
             .then(res => {
@@ -57,7 +58,7 @@ export default class Assets extends Component {
                 </h4>
                 <hr/>
 
-                {localStorage.getItem("email") ? (
+                {getCookie("user")?.email ? (
                     <div style={{display: "flex", justifyContent: "center", alignItems: "center"}}>
                         <Button variant="primary" style={{margin: "auto auto 0.6em auto"}} href={"#/addAsset"}> Add Asset </Button>
                     </div>
