@@ -75,8 +75,8 @@ const setErrorHandling = function setErrorHandling(error) {
 }
 const errorHandling = () => {
     return (<div id={"error"}>
-        {preDefinedErrors.map((preDifinedError, index) =>
-            <div key={index} id={index} style={{display: 'none'}}><p>{preDifinedError}</p>
+        {preDefinedErrors.map((preDefinedError, index) =>
+            <div key={index} id={index} style={{display: 'none'}}><p>{preDefinedError}</p>
                 <button onClick={() => closeError(index)}>x</button>
             </div>
         )}
