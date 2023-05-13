@@ -10,14 +10,14 @@ function setErrorWithId(innerId, state) {
     }
 }
 
-let preDifinedErrors = [];
+let preDefinedErrors = [];
 //Axios Errors
-preDifinedErrors[100] = "User rights insufficient to load all data. Please login to see all Data.";
-preDifinedErrors[150] = "Unknown Internal Server Error."
-preDifinedErrors[151] = "Internal Server Error. File already exists."
-preDifinedErrors[152] = "Internal Server Error. Requested File not found."
-preDifinedErrors[153] = "Internal Server Error. Filepath has wrong format please check AASX file."
-preDifinedErrors[500] = "AASX Server not available, please check your Server address."
+preDefinedErrors[100] = "User rights insufficient to load all data. Please login to see all Data.";
+preDefinedErrors[150] = "Unknown Internal Server Error."
+preDefinedErrors[151] = "Internal Server Error. File already exists."
+preDefinedErrors[152] = "Internal Server Error. Requested File not found."
+preDefinedErrors[153] = "Internal Server Error. Filepath has wrong format please check AASX file."
+preDefinedErrors[500] = "AASX Server not available, please check your Server address."
 
 function closeError(id) {
     id = "" + id;
@@ -75,7 +75,7 @@ const setErrorHandling = function setErrorHandling(error) {
 }
 const errorHandling = () => {
     return (<div id={"error"}>
-        {preDifinedErrors.map((preDifinedError, index) =>
+        {preDefinedErrors.map((preDifinedError, index) =>
             <div key={index} id={index} style={{display: 'none'}}><p>{preDifinedError}</p>
                 <button onClick={() => closeError(index)}>x</button>
             </div>
