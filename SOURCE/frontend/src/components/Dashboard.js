@@ -85,53 +85,51 @@ export default class Dashboard extends Component {
                     console.log("File could not be deleted in roleMapping");
                     alert("File could not be deleted");
                 }
-            }).catch(error => {
-                setErrorHandling(error);
-            });
 
-        }).catch(error => {
-            setErrorHandling(error);
-        });
-
-        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
-            auth: {
-                username: localStorage.getItem("email"),
-                password: localStorage.getItem("password")
-            }
-        }).then(async (res) => {
-            let users = res.data.value;
-
-            console.log("Response basicAuth : ", users);
-            console.log(users[0].idShort.trim !== this.specificUser[0].trim);
-
-            let dataFilteredUser = users.filter((user) => {
-                return user.idShort.trim() !== this.specificUser[0].trim();
-            });
-
-            res.data.value = dataFilteredUser;
-            console.log("Filtered Response basicAuth : ", dataFilteredUser);
-
-            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, res.data, {
-                auth: {
-                    username: localStorage.getItem('email'),
-                    password: localStorage.getItem('password')
-                }
-            }).then((res) => {
-                if (res.status === 204) {
-                    console.log("File deleted successfully in basicAuth : ", res);
-                    if (this.sortModal === "delete") {
-                        window.location.reload(false);
+                axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
+                    auth: {
+                        username: localStorage.getItem("email"),
+                        password: localStorage.getItem("password")
                     }
-                } else {
-                    console.log("File could not be deleted in basicAuth : ", res);
-                }
+                }).then(async (res) => {
+                    let users = res.data.value;
+
+                    console.log("Response basicAuth : ", users);
+                    console.log(users[0].idShort.trim !== this.specificUser[0].trim);
+
+                    let dataFilteredUser = users.filter((user) => {
+                        return user.idShort.trim() !== this.specificUser[0].trim();
+                    });
+
+                    res.data.value = dataFilteredUser;
+                    console.log("Filtered Response basicAuth : ", dataFilteredUser);
+
+                    axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, res.data, {
+                        auth: {
+                            username: localStorage.getItem('email'),
+                            password: localStorage.getItem('password')
+                        }
+                    }).then((res) => {
+                        if (res.status === 204) {
+                            console.log("File deleted successfully in basicAuth : ", res);
+                            if (this.sortModal === "delete") {
+                                window.location.reload(false);
+                            }
+                        } else {
+                            console.log("File could not be deleted in basicAuth : ", res);
+                        }
+                    }).catch(error => {
+                        setErrorHandling(error);
+                    });
+                }).catch(error => {
+                    setErrorHandling(error);
+                });
             }).catch(error => {
                 setErrorHandling(error);
             });
         }).catch(error => {
             setErrorHandling(error);
         });
-
     };
 
     handleEdit = async (formValue) => {
@@ -165,42 +163,42 @@ export default class Dashboard extends Component {
                 } else {
                     console.log("File could not be deleted in basicAuth : ", res);
                 }
+
+                axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, {
+                    auth: {
+                        username: localStorage.getItem('email'),
+                        password: localStorage.getItem('password')
+                    }
+                }).then((res) => {
+                    let dataResRoleMapping = res.data;
+                    dataResRoleMapping.value.push(formDataJsonRoleMapping)
+
+                    console.log("New roleMapping : ", dataResRoleMapping);
+
+                    axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, dataResRoleMapping, {
+                        auth: {
+                            username: localStorage.getItem('email'),
+                            password: localStorage.getItem('password')
+                        }
+                    }).then((res) => {
+                        console.log(res);
+                        if (res.status === 204) {
+                            console.log("File updated successfully in roleMapping : ", res);
+                            window.location.reload(false);
+                        } else {
+                            console.log("File could not be updated in roleMapping : ", res);
+                        }
+                    }).catch(error => {
+                        setErrorHandling(error)
+                    });
+                }).catch(error => {
+                    setErrorHandling(error)
+                });
             }).catch(error => {
                 setErrorHandling(error);
             });
         }).catch(error => {
             setErrorHandling(error);
-        });
-
-        axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, {
-            auth: {
-                username: localStorage.getItem('email'),
-                password: localStorage.getItem('password')
-            }
-        }).then((res) => {
-            let dataResRoleMapping = res.data;
-            dataResRoleMapping.value.push(formDataJsonRoleMapping)
-
-            console.log("New roleMapping : ", dataResRoleMapping);
-
-            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, dataResRoleMapping, {
-                auth: {
-                    username: localStorage.getItem('email'),
-                    password: localStorage.getItem('password')
-                }
-            }).then((res) => {
-                console.log(res);
-                if (res.status === 204) {
-                    console.log("File updated successfully in roleMapping : ", res);
-                    window.location.reload(false);
-                } else {
-                    console.log("File could not be updated in roleMapping : ", res);
-                }
-            }).catch(error => {
-                setErrorHandling(error)
-            });
-        }).catch(error => {
-            setErrorHandling(error)
         });
     };
 
