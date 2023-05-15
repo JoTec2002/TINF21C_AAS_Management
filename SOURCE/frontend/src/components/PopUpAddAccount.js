@@ -37,7 +37,7 @@ const PopUpAddAccount = ({ showModal, handleClose, handleAdd }) => {
     return (
         <Modal show={showModal} onHide={handleClose}>
             <Modal.Header closeButton>
-                <Modal.Title>Edit Account</Modal.Title>
+                <Modal.Title>Create Account</Modal.Title>
             </Modal.Header>
             <Form noValidate validated={validated} onSubmit={handleSubmit}>
                 <Modal.Body>
@@ -109,7 +109,7 @@ const PopUpAddAccount = ({ showModal, handleClose, handleAdd }) => {
                         Close
                     </Button>
                     <Button variant="btn btn-success btn-sm" type="submit">
-                        Submit edited account
+                        Submit new account
                     </Button>
                 </Modal.Footer>
             </Form>

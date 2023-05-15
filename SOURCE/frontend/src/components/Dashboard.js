@@ -95,7 +95,7 @@ export default class Dashboard extends Component {
                 }
             }).then((res) => {
                 console.log("basic auth put res", res);
-                axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(formValue.role)}.subjects`, {
+                axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, {
                     auth: {
                         username: getCookie("user")?.email,
                         password: getCookie("user")?.password
@@ -106,7 +106,7 @@ export default class Dashboard extends Component {
 
                     console.log("New roleMapping : ", dataResRoleMapping);
 
-                    axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(formValue.role)}.subjects`, dataResRoleMapping, {
+                    axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, dataResRoleMapping, {
                         auth: {
                             username: getCookie("user")?.email,
                             password: getCookie("user")?.password
