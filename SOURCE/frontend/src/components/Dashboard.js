@@ -112,8 +112,8 @@ export default class Dashboard extends Component {
                             password: getCookie("user")?.password
                         }
                     }).then((res) => {
+                        window.location.reload(false);
                         console.log(res);
-
                     }).catch(error => {
                         setErrorHandling(error)
                     });
@@ -157,6 +157,7 @@ export default class Dashboard extends Component {
                 console.log("roleMapping Put-Res", res);
                 if (res.status === 204) {
                     console.log("File deleted successfully in roleMapping");
+                    window.location.reload(false);
                 } else {
                     console.log("File could not be deleted in roleMapping");
                     alert("File could not be deleted");
