@@ -69,8 +69,8 @@ export default class NavComponent extends Component {
                 <Navbar.Toggle aria-controls="basic-navbar-nav"/>
                 <Navbar.Collapse id="basic-navbar-nav">
                     <Nav.Item className={"text-white"}>
-                            <Form className="d-flex server">
-                                <Form.Control type="text" onSubmit={this.handleURL}
+                            <Form className="d-flex server" onSubmit={this.handleURL}>
+                                <Form.Control type="text"
                                               className="me-2"
                                               aria-label="Search"
                                               value={this.state.server}
