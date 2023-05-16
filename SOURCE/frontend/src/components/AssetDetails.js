@@ -99,11 +99,12 @@ const AssetDetails = ({data}) => {
             </p>)
         }
         if (submodelElement.modelType === "SubmodelElementCollection") {
+            console.log(submodelElement)
             return (
                 <Collapsible trigger={submodelElement.idShort}>
-                    {submodelElement.semanticId.keys.length !== 0 ?
+                    {submodelElement.semanticId?.keys.length !== 0 ?
                         (<p key={submodelElement.idShort}><strong>Semantic
-                            ID: </strong>{submodelElement.semanticId.keys[0].value}</p>) :
+                            ID: </strong>{submodelElement.semanticId?.keys[0].value}</p>) :
                         (<a></a>)
                     }
                     {
