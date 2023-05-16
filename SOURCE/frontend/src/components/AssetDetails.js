@@ -129,8 +129,8 @@ const AssetDetails = ({data}) => {
             return (
                 <p key={submodelElement.idShort + "GlobalAssetId"}>
                     <strong>{submodelElement.entityType}: </strong>
-                    <a href={submodelElement.globalAssetId.keys[0].value}
-                       target={"_blank"}>{submodelElement.globalAssetId.keys[0].value}
+                    <a href={submodelElement.globalAssetId?.keys[0].value}
+                       target={"_blank"}>{submodelElement.globalAssetId?.keys[0].value}
                     </a>
                 </p>
             )
