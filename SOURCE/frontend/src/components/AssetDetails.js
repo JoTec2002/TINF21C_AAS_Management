@@ -100,7 +100,7 @@ const AssetDetails = ({data}) => {
         }
         if (submodelElement.modelType === "SubmodelElementCollection") {
             return (
-                <Collapsible trigger={submodelElement.idShort}>
+                <Collapsible className={"text-white"} trigger={submodelElement.idShort}>
                     {submodelElement.semanticId.keys.length !== 0 ?
                         (<p key={submodelElement.idShort}><strong>Semantic
                             ID: </strong>{submodelElement.semanticId.keys[0].value}</p>) :
@@ -244,7 +244,7 @@ const AssetDetails = ({data}) => {
                     </div>
                     <div style={{marginTop: '0.5rem'}}>
                         {submodelContent.map((submodel) =>//hier display submodels
-                            <Collapsible key={submodel.id} trigger={submodel.idShort}
+                            <Collapsible className={"text-white"} key={submodel.id} trigger={submodel.idShort}
                                          open={submodel.idShort === "Nameplate"}>
                                 {console.log(submodel)}
                                 {submodel.semanticId.keys.length !== 0 ?

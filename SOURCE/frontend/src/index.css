@@ -8,6 +8,11 @@ body {
   overflow-y: hidden;
 
 }
+@media screen and (min-width: 300px) {
+  .scrollbox{
+    width:2rem;
+  }
+}
 p{
   margin-bottom: 0.2rem;
 }
@@ -62,23 +67,17 @@ img{
 
 /*Assets*/
 .assets{
-
   transition: 0.3s;
-  border: 2px solid gray;
   border-radius: 10px;
   display: flex;
-  align-items: center;
-  padding: 0.5em 0.5em 0.5em 1em;
+
 
 }
 .assets:hover{
   background-color: #b1b2de;
   cursor: pointer;
 }
-.active{
-  background-color: #b1b2de;
-  cursor: pointer;
-}
+
 
 
 /*Submodels*/
@@ -117,9 +116,10 @@ img{
   text-decoration: none;
   position: relative;
   padding: 10px;
-  background: #b1b2de;
+  background: #4985f8;
   border-radius: 10px;
   margin-right: 1rem;
+
 }
 .Collapsible__trigger:after {
   content: '\02C5';
@@ -159,7 +159,7 @@ img{
   padding: 10px;
 }
 .server{
-  width:35rem;
+  width:27rem;
   justify-content: center;
   margin: auto;
 }

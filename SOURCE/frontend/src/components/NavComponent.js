@@ -77,7 +77,7 @@ export default class NavComponent extends Component {
                                               value={this.state.server}
                                               onChange={(e) => this.setState({server: e.target.value})}
                                 />
-                                <Button variant="success" type="submit">Change</Button>
+                                <Button variant="success" onClick={this.handleURL} type="submit">Change</Button>
                             </Form>
                     </Nav.Item>
                     <Nav.Link href="/#">Home</Nav.Link>

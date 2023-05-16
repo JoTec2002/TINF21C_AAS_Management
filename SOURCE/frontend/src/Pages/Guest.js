@@ -10,9 +10,9 @@ function Guest() {
     <div >
 
       <NavComponent />
+        {errorHandling()}
+      <div className="mt2" style={{ paddingTop:5}}>
 
-        <div >
-      {errorHandling()}
           <Container fluid >
           <Row>
             <Assets onSelect={setSelectedData} />

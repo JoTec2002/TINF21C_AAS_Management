@@ -52,7 +52,7 @@ export default class Assets extends Component {
             shell.idShort.toLowerCase().includes(searchTerm.toLowerCase())
         );
         return (
-            <Col md={3}>
+            <Col md={3} mt="2">
                 <h4>
                     <strong>Assets</strong>
                 </h4>
@@ -83,24 +83,24 @@ export default class Assets extends Component {
                 ) : (
 
 
-                    <Col md={3} className='scrollbox'>
+                    <Col md={3} mt="2" className='scrollbox'>
                         <Col className='scrollbox-inner'>
 
-
+                            <ListGroup >
                             {filteredShells && filteredShells.map((shells) => (
 
                                 <Row>
-                                <div key={shells.id}
+                                    <ListGroup.Item key={shells.id}
                                      className={`assets ${shells.id === this.state.activeProdukt ? "active" : ""}`}
                                      onClick={() => this.chooseShell(shells.id)}
                                      id={shells.id}
                                 >
                                     {shells.idShort}
-                                </div>
+                                </ListGroup.Item>
                                 </Row>
                             ))}
 
-
+                            </ListGroup>
                         </Col>
                     </Col>
 
