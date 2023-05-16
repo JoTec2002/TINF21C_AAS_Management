@@ -3,20 +3,17 @@ import Guest from "../Pages/Guest";
 import AdminDashboard from "../Pages/AdminDashboard";
 import Notfound from "../Pages/Notfound";
 import AddAsset from "../Pages/AddAsset";
-import AddAccount from "../Pages/AddAccount"
 import DeleteAsset from "../Pages/DeleteAsset";
-import EditAccount from "../Pages/EditAccount";
+import {getCookie} from "../components/helpers";
 
 const RouterPages =()=>{
     return (
         <Router>
             <Routes>
                 <Route path='/' element={<Guest />}/>
-                <Route path='/admin' element={<AdminDashboard />}/>
+                {(getCookie("user")?.role === "isAuthenticatedSecurityUser") ? (<Route path='/admin' element={<AdminDashboard />}/>): (<Route path='/admin' element={<Notfound />}/>)}
                 <Route path='/addAsset' element={<AddAsset />}/>
                 <Route path='/deleteAsset' element={<DeleteAsset />}/>
-                <Route path='/create' element={<AddAccount />}/>
-                <Route path='/edit' element={<EditAccount />}/>
                 <Route path='/*' element={<Notfound />}/>
             </Routes>
         </Router>
