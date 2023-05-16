@@ -68,6 +68,7 @@ export default class NavComponent extends Component {
                 </Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav"/>
                 <Navbar.Collapse id="basic-navbar-nav">
+                    <Nav>
                     <Nav.Item className={"text-white"}>
                             <Form className="d-flex server" onSubmit={this.handleURL}>
                                 <Form.Control type="text"
@@ -76,19 +77,28 @@ export default class NavComponent extends Component {
                                               value={this.state.server}
                                               onChange={(e) => this.setState({server: e.target.value})}
                                 />
-                                <Button variant="success" type="submit">Change</Button>
+
+                                <Button variant="success" onClick={this.handleURL} type="submit">Change</Button>
+
                             </Form>
                     </Nav.Item>
-                    <Nav.Link href={"#"}>Home</Nav.Link>
+                    <Nav.Link href="/#">Home</Nav.Link>
+                    </Nav>
                     {loggedIn ? (
+                       <Nav>
                         <Nav.Link href="#/admin">User management</Nav.Link>
+                        <Nav.Link href="#/addAsset">Add Asset</Nav.Link>
+                       </Nav>
                     ) : (<></>)}
                     <Nav className="ms-auto" style={{marginRight: "5%"}}>
                         {!loggedIn ? (
+                            <Nav.Link>
                             <Button variant="success" onClick={() => this.handelShow()}>Login</Button>
+                            </Nav.Link>
                         ) : (
                             <NavDropdown id="basic-nav-dropdown" title={getCookie("user")?.email}>
                                 <NavDropdown.Item><Button
+                                    size="sm"
                                     variant="danger"
                                     style={{marginLeft: 10}}
                                     onClick={() => {
