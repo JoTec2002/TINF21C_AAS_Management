@@ -11,9 +11,9 @@ const RouterPages =()=>{
         <Router>
             <Routes>
                 <Route path='/' element={<Guest />}/>
-                {(getCookie("user")?.role === "isAuthenticatedSecurityUser") ? (<Route path='/admin' element={<AdminDashboard />}/>): (<Route path='/admin' element={<Notfound />}/>)}
-                <Route path='/addAsset' element={<AddAsset />}/>
-                <Route path='/deleteAsset' element={<DeleteAsset />}/>
+                {(getCookie("user")?.role === "isAuthenticatedSecurityUser") ? (<Route path='/admin' element={<AdminDashboard />}/>)    : (<Route path='/admin' element={<Notfound />}/>)}
+                {(getCookie("user")?.role === "isAuthenticatedSecurityUser") ? (<Route path='/addAsset' element={<AddAsset />}/>)       : (<Route path='/admin' element={<Notfound />}/>)}
+                {(getCookie("user")?.role === "isAuthenticatedSecurityUser") ? (<Route path='/deleteAsset' element={<DeleteAsset />}/>) : (<Route path='/admin' element={<Notfound />}/>)}
                 <Route path='/*' element={<Notfound />}/>
             </Routes>
         </Router>

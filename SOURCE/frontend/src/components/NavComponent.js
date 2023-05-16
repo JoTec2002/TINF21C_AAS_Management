@@ -84,7 +84,7 @@ export default class NavComponent extends Component {
                     </Nav.Item>
                     <Nav.Link href="/#">Home</Nav.Link>
                     </Nav>
-                    {loggedIn ? (
+                    {(getCookie("user")?.role === "isAuthenticatedSecurityUser") ? (
                        <Nav>
                         <Nav.Link href="#/admin">User management</Nav.Link>
                         <Nav.Link href="#/addAsset">Add Asset</Nav.Link>
