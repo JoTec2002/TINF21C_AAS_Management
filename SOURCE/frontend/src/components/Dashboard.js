@@ -171,66 +171,103 @@ export default class Dashboard extends Component {
 
     handleEdit = async (formValue) => {
 
-        await this.handleDelete();
-
-        const formDataBasicAuth = `{"idShort":"${formValue.email}","kind":"Instance","semanticId":{"type":"GlobalReference","keys":[]},"dataSpecifications":[],"valueType":"xs:string","value":"${formValue.password}","modelType":"Property"}`;
-        const formDataRoleMapping = `{"idShort": "${formValue.email}", "kind": "Instance","semanticId": {"type": "GlobalReference","keys": []},"dataSpecifications": [],"valueType": "xs:string","value": "","modelType": "Property"}`;
-        const formDataJsonBasicAuth = JSON.parse(formDataBasicAuth);
-        const formDataJsonRoleMapping = JSON.parse(formDataRoleMapping);
-
-        await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
+        await axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.specificUser[1])}.subjects`, {
             auth: {
                 username: getCookie("user")?.email,
                 password: getCookie("user")?.password
             }
-        }).then((res) => {
-            let dataResBasicAuth = res.data;
-            dataResBasicAuth.value.push(formDataJsonBasicAuth);
+        }).then(async (res) => {
+            let users = res.data.value;
 
-            console.log("New basicAuth Submodel : ", dataResBasicAuth);
+            console.log("Response roleMapping : ", users);
+            console.log(users[0].idShort.trim !== this.specificUser[0].trim);
 
-            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, dataResBasicAuth, {
+            let dataFilteredUser = users.filter((user) => {
+                return user.idShort.trim() !== this.specificUser[0].trim();
+            });
+
+            res.data.value = dataFilteredUser;
+            console.log("Filtered Response roleMapping : ", dataFilteredUser);
+
+            axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.specificUser[1])}.subjects`, res.data, {
                 auth: {
                     username: getCookie("user")?.email,
                     password: getCookie("user")?.password
                 }
             }).then((res) => {
+                console.log("roleMapping Put-Res", res);
                 if (res.status === 204) {
-                    console.log("File deleted successfully in basicAuth : ", res);
-                } else {
-                    console.log("File could not be deleted in basicAuth : ", res);
-                }
+                    console.log("File deleted successfully in roleMapping");
 
-                axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, {
-                    auth: {
-                        username: getCookie("user")?.email,
-                        password: getCookie("user")?.password
-                    }
-                }).then((res) => {
-                    let dataResRoleMapping = res.data;
-                    dataResRoleMapping.value.push(formDataJsonRoleMapping)
+                    const formDataBasicAuth = `{"idShort":"${formValue.email}","kind":"Instance","semanticId":{"type":"GlobalReference","keys":[]},"dataSpecifications":[],"valueType":"xs:string","value":"${formValue.password}","modelType":"Property"}`;
+                    const formDataRoleMapping = `{"idShort": "${formValue.email}", "kind": "Instance","semanticId": {"type": "GlobalReference","keys": []},"dataSpecifications": [],"valueType": "xs:string","value": "","modelType": "Property"}`;
+                    const formDataJsonBasicAuth = JSON.parse(formDataBasicAuth);
+                    const formDataJsonRoleMapping = JSON.parse(formDataRoleMapping);
 
-                    console.log("New roleMapping : ", dataResRoleMapping);
-
-                    axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, dataResRoleMapping, {
+                    axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, {
                         auth: {
                             username: getCookie("user")?.email,
                             password: getCookie("user")?.password
                         }
                     }).then((res) => {
-                        console.log(res);
-                        if (res.status === 204) {
-                            console.log("File updated successfully in roleMapping : ", res);
-                            window.location.reload(false);
-                        } else {
-                            console.log("File could not be updated in roleMapping : ", res);
-                        }
+                        let dataResBasicAuth = res.data;
+                        dataResBasicAuth.value.push(formDataJsonBasicAuth);
+
+                        console.log("New basicAuth Submodel : ", dataResBasicAuth);
+
+                        axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/basicAuth`, dataResBasicAuth, {
+                            auth: {
+                                username: getCookie("user")?.email,
+                                password: getCookie("user")?.password
+                            }
+                        }).then((res) => {
+                            if (res.status === 204) {
+                                console.log("File deleted successfully in basicAuth : ", res);
+                            } else {
+                                console.log("File could not be deleted in basicAuth : ", res);
+                            }
+
+                            axios.get(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, {
+                                auth: {
+                                    username: getCookie("user")?.email,
+                                    password: getCookie("user")?.password
+                                }
+                            }).then((res) => {
+                                let dataResRoleMapping = res.data;
+                                dataResRoleMapping.value.push(formDataJsonRoleMapping)
+
+                                console.log("New roleMapping : ", dataResRoleMapping);
+
+                                axios.put(`${API_URL}submodels/aHR0cHM6Ly9leGFtcGxlLmNvbS9pZHMvc20vMzM4MV80MTYwXzQwMzJfMzc1Mw/submodelelements/roleMapping.roleMapping${this.routToAssociatedRoleMapping(this.sortRole(formValue.role))}.subjects`, dataResRoleMapping, {
+                                    auth: {
+                                        username: getCookie("user")?.email,
+                                        password: getCookie("user")?.password
+                                    }
+                                }).then((res) => {
+                                    console.log(res);
+                                    if (res.status === 204) {
+                                        console.log("File updated successfully in roleMapping : ", res);
+                                        window.location.reload(false);
+                                    } else {
+                                        console.log("File could not be updated in roleMapping : ", res);
+                                    }
+                                }).catch(error => {
+                                    setErrorHandling(error)
+                                });
+                            }).catch(error => {
+                                setErrorHandling(error)
+                            });
+                        }).catch(error => {
+                            setErrorHandling(error);
+                        });
                     }).catch(error => {
-                        setErrorHandling(error)
+                        setErrorHandling(error);
                     });
-                }).catch(error => {
-                    setErrorHandling(error)
-                });
+
+                } else {
+                    console.log("File could not be deleted in roleMapping");
+                    alert("File could not be deleted");
+                }
             }).catch(error => {
                 setErrorHandling(error);
             });
