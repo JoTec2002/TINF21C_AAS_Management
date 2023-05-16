@@ -175,7 +175,7 @@ img{
 }
 
 .scrollbox{
-  height: 40%;
+  height: 85vh;
   display: flex;
   width: 100%;
 }

@@ -225,7 +225,7 @@ const AssetDetails = ({data}) => {
                 <strong>Submodels</strong>
             </h4>
             <hr/>
-            <div style={{height: "80vh"}}>
+            <div style={{height: "85vh"}}>
                 <div className="card">
                     <div className="card-header">
                         <Row>
