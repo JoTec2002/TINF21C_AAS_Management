@@ -52,7 +52,7 @@ export default class Assets extends Component {
             shell.idShort.toLowerCase().includes(searchTerm.toLowerCase())
         );
         return (
-            <Col md={3} mt="2">
+            <Col md={3} xs={4}>
                 <h4>
                     <strong>Assets</strong>
                 </h4>
@@ -83,7 +83,7 @@ export default class Assets extends Component {
                 ) : (
 
 
-                    <Col md={3} mt="2" className='scrollbox'>
+                    <Col md={3} mt="4" className='scrollbox'>
                         <Col className='scrollbox-inner'>
 
                             <ListGroup >

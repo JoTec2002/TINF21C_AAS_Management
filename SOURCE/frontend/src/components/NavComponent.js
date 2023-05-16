@@ -77,7 +77,9 @@ export default class NavComponent extends Component {
                                               value={this.state.server}
                                               onChange={(e) => this.setState({server: e.target.value})}
                                 />
+
                                 <Button variant="success" onClick={this.handleURL} type="submit">Change</Button>
+
                             </Form>
                     </Nav.Item>
                     <Nav.Link href="/#">Home</Nav.Link>
@@ -90,7 +92,9 @@ export default class NavComponent extends Component {
                     ) : (<></>)}
                     <Nav className="ms-auto" style={{marginRight: "5%"}}>
                         {!loggedIn ? (
+                            <Nav.Link>
                             <Button variant="success" onClick={() => this.handelShow()}>Login</Button>
+                            </Nav.Link>
                         ) : (
                             <NavDropdown id="basic-nav-dropdown" title={getCookie("user")?.email}>
                                 <NavDropdown.Item><Button

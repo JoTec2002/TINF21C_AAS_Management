@@ -8,11 +8,7 @@ body {
   overflow-y: hidden;
 
 }
-@media screen and (min-width: 300px) {
-  .scrollbox{
-    width:2rem;
-  }
-}
+
 p{
   margin-bottom: 0.2rem;
 }
@@ -78,7 +74,10 @@ img{
   cursor: pointer;
 }
 
+.list-group-item.active{
+  background-color: #b1b2de;
 
+}
 
 /*Submodels*/
 .card{
@@ -116,7 +115,7 @@ img{
   text-decoration: none;
   position: relative;
   padding: 10px;
-  background: #4985f8;
+  background-color: #b1b2de;
   border-radius: 10px;
   margin-right: 1rem;
 
