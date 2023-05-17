@@ -8,7 +8,7 @@ const AdminDashboard = () => {
     <div>
       <NavComponent />
         {errorHandling()}
-      <div className="mt2" style={{ paddingTop:5, paddingBottom:100 }}>
+      <div className="mt2" style={{ paddingTop:17, paddingBottom:100 }}>
           <Container fluid>
           <Row>
             <Dashboard />
