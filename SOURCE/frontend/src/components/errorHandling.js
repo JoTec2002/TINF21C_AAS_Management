@@ -1,5 +1,6 @@
 import React from "react";
 import {Button} from "react-bootstrap";
+import {BsXSquare} from "react-icons/bs";
 
 function setErrorWithId(innerId, state) {
     let element = document.getElementById("error");
@@ -78,7 +79,7 @@ const errorHandling = () => {
     return (<div id={"error"}>
         {preDefinedErrors.map((preDefinedError, index) =>
             <div key={index} id={index} style={{display: 'none'}}><p>{preDefinedError}</p>
-                <Button variant="outline-warning" size="sm" onClick={() => closeError(index)}>x</Button>
+                <Button variant="outline-link" size="sm" onClick={() => closeError(index)}><BsXSquare/></Button>
             </div>
         )}
     </div>)

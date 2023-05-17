@@ -11,7 +11,7 @@ function Guest() {
 
       <NavComponent />
         {errorHandling()}
-      <div className="mt2" style={{ paddingTop:5}}>
+      <div className="mt2" style={{ paddingTop:17}}>
 
           <Container fluid >
           <Row>

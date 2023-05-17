@@ -63,12 +63,12 @@ export default class NavComponent extends Component {
 
         return (
             <Navbar variant="dark" expand="lg">
-                <Navbar.Brand href="#" style={{marginLeft: "5%"}}>
-                    <strong>AAS Management</strong>
+                <Navbar.Brand href="#" style={{ display: 'inline-flex', alignItems: 'center', marginLeft: '2%', marginRight: '2%'}}>
+                    <span><strong>AAS Management</strong></span>
                 </Navbar.Brand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav"/>
                 <Navbar.Collapse id="basic-navbar-nav">
-                    <Nav>
+                    <Nav style={{marginRight: "10px"}}>
                     <Nav.Item className={"text-white"}>
                             <Form className="d-flex server" onSubmit={this.handleURL}>
                                 <Form.Control type="text"
@@ -82,19 +82,21 @@ export default class NavComponent extends Component {
 
                             </Form>
                     </Nav.Item>
-                    <Nav.Link href="#">Home</Nav.Link>
                     </Nav>
-                    {(getCookie("user")?.role === "isAuthenticatedSecurityUser") ? (
-                       <Nav>
-                        <Nav.Link href="#/admin">User management</Nav.Link>
-                        <Nav.Link href="#/addAsset">Add Asset</Nav.Link>
-                       </Nav>
-                    ) : (<></>)}
+                    <Nav>
+                        <Nav.Link href="#/">Home</Nav.Link>
+                        {(getCookie("user")?.role === "isAuthenticatedSecurityUser") ? (
+                            <Nav>
+                                <Nav.Link href="#/admin">User management</Nav.Link>
+                                <Nav.Link href="#/addAsset">Add Asset</Nav.Link>
+                            </Nav>
+                           ) : (<></>)}
+                    </Nav>
                     <Nav className="ms-auto" style={{marginRight: "5%"}}>
                         {!loggedIn ? (
-                            <Nav.Link>
+                            <Nav.Item>
                             <Button variant="success" onClick={() => this.handelShow()}>Login</Button>
-                            </Nav.Link>
+                            </Nav.Item>
                         ) : (
                             <NavDropdown id="basic-nav-dropdown" title={getCookie("user")?.email}>
                                 <NavDropdown.Item><Button

@@ -1,5 +1,5 @@
-import {DetailsProdukt, Mydocs, NavComponent, Produkte} from "../components";
-import {Form, Button, Col, Row, Container} from "react-bootstrap";
+import {NavComponent} from "../components";
+import {Row, Container} from "react-bootstrap";
 import {errorHandling, setErrorHandling} from "../components/errorHandling";
 import React, {useState} from "react";
 import axios from "axios";
@@ -69,9 +69,9 @@ const AddAsset =()=>{
             <div style={{ paddingTop:20, paddingBottom:100 }}>
                 <Container fluid="md">
                     <Row>
-                        <label className="form-label" htmlFor="aasid_input"><strong>Please specify the AAS-ID</strong></label>
+                        <label className="form-label" htmlFor="aasid_input" style={{ paddingBottom: 10}} ><strong>Please specify the AAS-ID</strong></label>
                         <input type={"text"} class="form-control" name={"aasid"} onChange={changeHandlerAasId}/>
-                        <hr/>
+                        <div className="mt2" style={{ paddingTop:17}}/>
                         <input type="file" className="form-control" name="file" onChange={changeHandlerFile} accept={".aasx"} />
                     {isSelected ? (
                         <div>
