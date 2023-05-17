@@ -61,7 +61,7 @@ export default class Assets extends Component {
                 <Form className="d-flex">
                     <Form.Control
                         type="search"
-                        placeholder="Search Produkt Item ..."
+                        placeholder="Search Asset ..."
                         className="me-2"
                         aria-label="Search"
                         value={searchTerm}
