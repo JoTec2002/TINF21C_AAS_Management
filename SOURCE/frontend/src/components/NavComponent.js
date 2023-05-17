@@ -82,7 +82,7 @@ export default class NavComponent extends Component {
 
                             </Form>
                     </Nav.Item>
-                    <Nav.Link href="/#">Home</Nav.Link>
+                    <Nav.Link href="#">Home</Nav.Link>
                     </Nav>
                     {(getCookie("user")?.role === "isAuthenticatedSecurityUser") ? (
                        <Nav>
