@@ -1,6 +1,8 @@
 # TINF21C_AAS_Management
 AAS_ Management is a project as part of the "Software Engineering" course at DHBW Stuttgart under the supervision of Markus Rentschler and Christian Holder
 
+![image](https://github.com/JoTec2002/TINF21C_AAS_Management/assets/96117377/7eb3e339-288f-4e84-9a64-dc7e71722287)
+
 The current state of development is shown on the automatic [github-pages deployment](https://jotec2002.github.io/TINF21C_AAS_Management/).
 
 For further information on this Project please examine the [Github wiki](https://github.com/JoTec2002/TINF21C_AAS_Management/wiki) or the individual READMEs for the [Server](https://github.com/JoTec2002/TINF21C_AAS_Management/blob/f3731e21aa8a461c80e4b65cc678c0b49c23abc3/SOURCE/Server/readme.md) and the [Frontend](https://github.com/JoTec2002/TINF21C_AAS_Management/blob/main/SOURCE/frontend/README.md).
