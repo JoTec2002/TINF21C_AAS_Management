@@ -233,7 +233,7 @@ const AssetDetails = ({data}) => {
                                 <h4>{produktData.idShort}</h4>
                             </Col>
                             <Col>
-                                {getCookie("user")?.email ? (
+                                {(getCookie("user")?.role === "isAuthenticatedSecurityUser") ? (
                                     <Button style={{float: "right"}} href={'#/deleteAsset?aasId=' + produktData.id}
                                             variant="danger">
                                         Delete Asset
