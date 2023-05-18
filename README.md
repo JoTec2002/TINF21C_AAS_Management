@@ -17,11 +17,14 @@ For further information on this Project please examine the [Github wiki](https:/
 + Test the functionality of the project.
 + Create an online user documentation.
 + Publish the results as an open-source project of the IDTA.
-## Rollen
-| Rolle               | Name           |
+## Roles
+| Role               | Name           |
 |---------------------|----------------|
-| Projektleiter       | Mohaddeseh Tibashi|
-| Produktmanager      | Luka Pavic     |
-| Testmanager         | Selvana Ayunda |
-| Systemarchitekt     | Jonas Graubner |
-| Tech. Dokumentation | Paul Brenner   |
+| Project Manager       | Mohaddeseh Tibashi|
+| Product Manager      | Luka Pavic     |
+| Test Manager         | Selvana Ayunda |
+| System Architect     | Jonas Graubner |
+| Technical documentation | Paul Brenner   |
+
+_Demonstration wanted?_ 
+Preview: https://jotec2002.github.io/TINF21C_AAS_Management/
