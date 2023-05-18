@@ -36,6 +36,7 @@ using Opc.Ua;
 using System.Text.Json.Nodes;
 using Namotion.Reflection;
 using MongoDB.Bson;
+using Amazon.Runtime.Internal.Endpoints.StandardLibrary;
 
 /* Copyright (c) 2018-2019 Festo AG & Co. KG <https://www.festo.com/net/de_de/Forms/web/contact_international>, author: Michael Hoffmeister
 
@@ -4365,284 +4366,267 @@ namespace AasxRestServerLibrary
 
             int aascount = AasxServer.Program.env.Length;
 
-            for (int i = 0; i < aascount; i++)
+            //get security Asset from mongoDB
+            var aas = mongoDBInterface.readDBShells(new BsonDocument("IdShort", new Regex("Security"))).First<AssetAdministrationShell>();
+            var filename = mongoDBInterface.readDBFilenameGetFile(aas.Id);
+            var env = new AdminShellPackageEnv(filename, true);
+
+
+            foreach (var smr in aas.Submodels)
             {
-                var env = AasxServer.Program.env[i];
-                if (env != null)
+                var sm = mongoDBInterface.readDBSubmodels(new BsonDocument("_id", smr.Keys.First().Value)).First<Submodel>();
+                if (sm != null && sm.IdShort != null)
                 {
-                    var aas = env.AasEnv.AssetAdministrationShells[0];
-                    if (aas.Submodels != null && aas.Submodels.Count > 0)
+                    if (sm.IdShort == "SecuritySettingsForServer")
                     {
-                        foreach (var smr in aas.Submodels)
+                        int countSme = sm.SubmodelElements.Count;
+                        for (int iSme = 0; iSme < countSme; iSme++)
                         {
-                            var sm = env.AasEnv.FindSubmodel(smr);
-                            if (sm != null && sm.IdShort != null)
+                            var sme = sm.SubmodelElements[iSme];
+                            if (sme is Property)
+                                continue;
+                            var smec = sme as SubmodelElementCollection;
+                            int countSmec = smec.Value.Count;
+                            switch (smec.IdShort)
                             {
-                                if (!sm.IdShort.ToLower().Contains("Security"))
-                                {
-                                    sm.SetAllParents();
-                                }
+                                case "authenticationServer":
+                                    for (int iSmec = 0; iSmec < countSmec; iSmec++)
+                                    {
+                                        var sme2 = smec.Value[iSmec];
+                                        switch (sme2.IdShort)
+                                        {
+                                            case "endpoint":
+                                                var p2 = sme2 as Property;
+                                                AasxServer.Program.redirectServer = p2.Value;
+                                                break;
+                                            case "type":
+                                                var p3 = sme2 as Property;
+                                                AasxServer.Program.authType = p3.Value;
+                                                break;
+                                            case "publicCertificate":
+                                                var f = sme2 as AasCore.Aas3_0_RC02.File;
+                                                serverCertfileNames = new string[1];
+                                                serverCerts = new X509Certificate2[1];
+                                                var s = env.GetLocalStreamFromPackage(f.Value);
+                                                if (s != null)
+                                                {
+                                                    using (var m = new MemoryStream())
+                                                    {
+                                                        s.CopyTo(m);
+                                                        var b = m.GetBuffer();
+                                                        serverCerts[0] = new X509Certificate2(b);
+                                                        string[] split = f.Value.Split('/');
+                                                        serverCertfileNames[0] = split[3];
+                                                        Console.WriteLine("Loaded auth server certifcate: " + serverCertfileNames[0]);
+                                                    }
+                                                }
+                                                break;
+                                        }
+                                    }
+                                    break;
+                                case "roleMapping":
+                                    securityRights = new List<securityRightsClass>();
+
+                                    for (int iSmec = 0; iSmec < countSmec; iSmec++)
+                                    {
+                                        var smec2 = smec.Value[iSmec] as SubmodelElementCollection;
+                                        int countSmec2 = smec2.Value.Count;
+                                        List<string> subjects = new List<string>();
+
+                                        for (int iSmec2 = 0; iSmec2 < countSmec2; iSmec2++)
+                                        {
+                                            var smec3 = smec2.Value[iSmec2] as SubmodelElementCollection;
+                                            int countSmec3 = smec3.Value.Count;
+
+                                            switch (smec3.IdShort)
+                                            {
+                                                case "subjects":
+                                                    for (int iSmec3 = 0; iSmec3 < countSmec3; iSmec3++)
+                                                    {
+                                                        var p = smec3.Value[iSmec3] as Property;
+                                                        switch (p.IdShort)
+                                                        {
+                                                            case "emailDomain":
+                                                            case "email":
+                                                                subjects.Add(p.Value);
+                                                                break;
+                                                            default:
+                                                                subjects.Add(p.IdShort);
+                                                                break;
+
+                                                        }
+                                                    }
+                                                    break;
+                                                case "roles":
+                                                    for (int iSmec3 = 0; iSmec3 < countSmec3; iSmec3++)
+                                                    {
+                                                        var p = smec3.Value[iSmec3] as Property;
+                                                        foreach (var s in subjects)
+                                                        {
+                                                            securityRightsClass sr = new securityRightsClass();
+                                                            sr.name = s;
+                                                            sr.role = p.IdShort;
+                                                            securityRights.Add(sr);
+                                                        }
+                                                    }
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                    break;
+                                case "basicAuth":
+                                    for (int iSmec = 0; iSmec < countSmec; iSmec++)
+                                    {
+                                        if (smec.Value[iSmec] is Property p)
+                                        {
+                                            securityUserName.Add(p.IdShort);
+                                            securityUserPassword.Add(p.Value);
+                                        }
+                                    }
+                                    break;
                             }
                         }
+                    }
+                    if (sm.IdShort == "SecurityMetaModelForServer" || sm.IdShort == "SecurityMetaModelForAAS")
+                    {
+                        //var smc1 = sm.SubmodelElements.FindFirstIdShortAs<SubmodelElementCollection>("accessControlPolicyPoints");
+                        var smc1 = sm.FindFirstIdShortAs<SubmodelElementCollection>("accessControlPolicyPoints");
+                        var smc2 = smc1?.FindFirstIdShortAs<SubmodelElementCollection>("policyAdministrationPoint");
+                        var smc3 = smc2?.FindFirstIdShortAs<SubmodelElementCollection>("localAccessControl");
+                        var smc4 = smc3?.FindFirstIdShortAs<SubmodelElementCollection>("accessPermissionRules");
+                        if (smc4 == null) continue;
 
-                        foreach (var smr in aas.Submodels)
+                        int countSme = smc4.Value.Count;
+                        for (int iSme = 0; iSme < countSme; iSme++)
                         {
-                            var sm = env.AasEnv.FindSubmodel(smr);
-                            if (sm != null && sm.IdShort != null)
+                            var sme = smc4.Value[iSme]; // actual rule
+                            var smc5 = sme as SubmodelElementCollection;
+                            var smc6 = smc5?.FindFirstIdShortAs<SubmodelElementCollection>("targetSubjectAttributes");
+                            List<Property> role = new List<Property>();
+                            int iRole = 0;
+                            while (smc6?.Value.Count > iRole)
                             {
-                                if (sm.IdShort == "SecuritySettingsForServer")
+                                if (smc6?.Value[iRole] is Property rp)
                                 {
-                                    int countSme = sm.SubmodelElements.Count;
-                                    for (int iSme = 0; iSme < countSme; iSme++)
+                                    role.Add(rp);
+                                }
+                                iRole++;
+                            }
+                            smc6 = smc5?.FindFirstIdShortAs<SubmodelElementCollection>("permissionsPerObject");
+                            //added support for multiple permissionsPerObject
+                            for (int smcC = 0; smcC < smc6?.Value.Count; smcC++)
+                            {
+                                var smc7 = smc6?.Value[smcC] as SubmodelElementCollection;
+                                var objProp = smc7?.FindFirstIdShortAs<Property>("object");
+                                var objRef = smc7?.FindFirstIdShortAs<ReferenceElement>("object");
+                                object aasObject = null;
+                                if (objRef != null)
+                                {
+                                    aasObject = env.AasEnv.FindReferableByReference(objRef.Value);
+                                }
+                                var smc8 = smc7?.FindFirstIdShortAs<SubmodelElementCollection>("permission");
+                                var smc9 = smc7?.FindFirstIdShortAs<SubmodelElementCollection>("usage");
+
+                                int countSmc8 = smc8.Value.Count;
+                                List<string> listPermission = new List<string>();
+                                Property kind = null;
+                                for (int iSmc8 = 0; iSmc8 < countSmc8; iSmc8++)
+                                {
+                                    var sme9 = smc8.Value[iSmc8];
+                                    if (sme9 is Property)
+                                        kind = sme9 as Property;
+                                    if (sme9 is ReferenceElement)
                                     {
-                                        var sme = sm.SubmodelElements[iSme];
-                                        if (sme is Property)
+                                        var refer = sme9 as ReferenceElement;
+                                        var permission = env.AasEnv.FindReferableByReference(refer.Value);
+                                        if (!(permission is Property))
                                             continue;
-                                        var smec = sme as SubmodelElementCollection;
-                                        int countSmec = smec.Value.Count;
-                                        switch (smec.IdShort)
-                                        {
-                                            case "authenticationServer":
-                                                for (int iSmec = 0; iSmec < countSmec; iSmec++)
-                                                {
-                                                    var sme2 = smec.Value[iSmec];
-                                                    switch (sme2.IdShort)
-                                                    {
-                                                        case "endpoint":
-                                                            var p2 = sme2 as Property;
-                                                            AasxServer.Program.redirectServer = p2.Value;
-                                                            break;
-                                                        case "type":
-                                                            var p3 = sme2 as Property;
-                                                            AasxServer.Program.authType = p3.Value;
-                                                            break;
-                                                        case "publicCertificate":
-                                                            var f = sme2 as AasCore.Aas3_0_RC02.File;
-                                                            serverCertfileNames = new string[1];
-                                                            serverCerts = new X509Certificate2[1];
-                                                            var s = Program.env[i].GetLocalStreamFromPackage(f.Value);
-                                                            if (s != null)
-                                                            {
-                                                                using (var m = new MemoryStream())
-                                                                {
-                                                                    s.CopyTo(m);
-                                                                    var b = m.GetBuffer();
-                                                                    serverCerts[0] = new X509Certificate2(b);
-                                                                    string[] split = f.Value.Split('/');
-                                                                    serverCertfileNames[0] = split[3];
-                                                                    Console.WriteLine("Loaded auth server certifcate: " + serverCertfileNames[0]);
-                                                                }
-                                                            }
-                                                            break;
-                                                    }
-                                                }
-                                                break;
-                                            case "roleMapping":
-                                                securityRights = new List<securityRightsClass>();
-
-                                                for (int iSmec = 0; iSmec < countSmec; iSmec++)
-                                                {
-                                                    var smec2 = smec.Value[iSmec] as SubmodelElementCollection;
-                                                    int countSmec2 = smec2.Value.Count;
-                                                    List<string> subjects = new List<string>();
-
-                                                    for (int iSmec2 = 0; iSmec2 < countSmec2; iSmec2++)
-                                                    {
-                                                        var smec3 = smec2.Value[iSmec2] as SubmodelElementCollection;
-                                                        int countSmec3 = smec3.Value.Count;
-
-                                                        switch (smec3.IdShort)
-                                                        {
-                                                            case "subjects":
-                                                                for (int iSmec3 = 0; iSmec3 < countSmec3; iSmec3++)
-                                                                {
-                                                                    var p = smec3.Value[iSmec3] as Property;
-                                                                    switch (p.IdShort)
-                                                                    {
-                                                                        case "emailDomain":
-                                                                        case "email":
-                                                                            subjects.Add(p.Value);
-                                                                            break;
-                                                                        default:
-                                                                            subjects.Add(p.IdShort);
-                                                                            break;
-
-                                                                    }
-                                                                }
-                                                                break;
-                                                            case "roles":
-                                                                for (int iSmec3 = 0; iSmec3 < countSmec3; iSmec3++)
-                                                                {
-                                                                    var p = smec3.Value[iSmec3] as Property;
-                                                                    foreach (var s in subjects)
-                                                                    {
-                                                                        securityRightsClass sr = new securityRightsClass();
-                                                                        sr.name = s;
-                                                                        sr.role = p.IdShort;
-                                                                        securityRights.Add(sr);
-                                                                    }
-                                                                }
-                                                                break;
-                                                        }
-                                                    }
-                                                }
-                                                break;
-                                            case "basicAuth":
-                                                for (int iSmec = 0; iSmec < countSmec; iSmec++)
-                                                {
-                                                    if (smec.Value[iSmec] is Property p)
-                                                    {
-                                                        securityUserName.Add(p.IdShort);
-                                                        securityUserPassword.Add(p.Value);
-                                                    }
-                                                }
-                                                break;
-                                        }
+                                        var p = permission as Property;
+                                        listPermission.Add(p.IdShort);
                                     }
                                 }
-                                if (sm.IdShort == "SecurityMetaModelForServer" || sm.IdShort == "SecurityMetaModelForAAS")
+
+                                string[] split = null;
+                                foreach (var l in listPermission)
                                 {
-                                    //var smc1 = sm.SubmodelElements.FindFirstIdShortAs<SubmodelElementCollection>("accessControlPolicyPoints");
-                                    var smc1 = sm.FindFirstIdShortAs<SubmodelElementCollection>("accessControlPolicyPoints");
-                                    var smc2 = smc1?.FindFirstIdShortAs<SubmodelElementCollection>("policyAdministrationPoint");
-                                    var smc3 = smc2?.FindFirstIdShortAs<SubmodelElementCollection>("localAccessControl");
-                                    var smc4 = smc3?.FindFirstIdShortAs<SubmodelElementCollection>("accessPermissionRules");
-                                    if (smc4 == null) continue;
-
-                                    int countSme = smc4.Value.Count;
-                                    for (int iSme = 0; iSme < countSme; iSme++)
+                                    foreach (var r in role)
                                     {
-                                        var sme = smc4.Value[iSme]; // actual rule
-                                        var smc5 = sme as SubmodelElementCollection;
-                                        var smc6 = smc5?.FindFirstIdShortAs<SubmodelElementCollection>("targetSubjectAttributes");
-                                        List<Property> role = new List<Property>();
-                                        int iRole = 0;
-                                        while (smc6?.Value.Count > iRole)
+                                        securityRoleClass src = new securityRoleClass();
+                                        if (smc9 != null)
+                                            src.usage = smc9;
+                                        if (r.IdShort.Contains(":"))
                                         {
-                                            if (smc6?.Value[iRole] is Property rp)
-                                            {
-                                                role.Add(rp);
-                                            }
-                                            iRole++;
+                                            split = r.IdShort.Split(':');
+                                            src.condition = split[0].ToLower();
+                                            src.name = split[1];
                                         }
-                                        smc6 = smc5?.FindFirstIdShortAs<SubmodelElementCollection>("permissionsPerObject");
-                                        //added support for multiple permissionsPerObject
-                                        for (int smcC = 0; smcC < smc6?.Value.Count; smcC++)
+                                        else
                                         {
-                                            var smc7 = smc6?.Value[smcC] as SubmodelElementCollection;
-                                            var objProp = smc7?.FindFirstIdShortAs<Property>("object");
-                                            var objRef = smc7?.FindFirstIdShortAs<ReferenceElement>("object");
-                                            object aasObject = null;
-                                            if (objRef != null)
+                                            src.condition = "";
+                                            src.name = r.IdShort;
+                                        }
+                                        if (objProp != null)
+                                        {
+                                            string value = objProp.Value.ToLower();
+                                            src.objType = value;
+                                            if (value.Contains("api"))
                                             {
-                                                aasObject = env.AasEnv.FindReferableByReference(objRef.Value);
-                                            }
-                                            var smc8 = smc7?.FindFirstIdShortAs<SubmodelElementCollection>("permission");
-                                            var smc9 = smc7?.FindFirstIdShortAs<SubmodelElementCollection>("usage");
-
-                                            int countSmc8 = smc8.Value.Count;
-                                            List<string> listPermission = new List<string>();
-                                            Property kind = null;
-                                            for (int iSmc8 = 0; iSmc8 < countSmc8; iSmc8++)
-                                            {
-                                                var sme9 = smc8.Value[iSmc8];
-                                                if (sme9 is Property)
-                                                    kind = sme9 as Property;
-                                                if (sme9 is ReferenceElement)
+                                                split = value.Split(':');
+                                                if (split[0] == "api")
                                                 {
-                                                    var refer = sme9 as ReferenceElement;
-                                                    var permission = env.AasEnv.FindReferableByReference(refer.Value);
-                                                    if (!(permission is Property))
-                                                        continue;
-                                                    var p = permission as Property;
-                                                    listPermission.Add(p.IdShort);
+                                                    src.objType = split[0];
+                                                    src.apiOperation = split[1];
                                                 }
                                             }
-
-                                            string[] split = null;
-                                            foreach (var l in listPermission)
+                                            if (value.Contains("semanticid"))
                                             {
-                                                foreach (var r in role)
+                                                split = value.Split(':');
+                                                if (split[0] == "semanticid")
                                                 {
-                                                    securityRoleClass src = new securityRoleClass();
-                                                    if (smc9 != null)
-                                                        src.usage = smc9;
-                                                    if (r.IdShort.Contains(":"))
-                                                    {
-                                                        split = r.IdShort.Split(':');
-                                                        src.condition = split[0].ToLower();
-                                                        src.name = split[1];
-                                                    }
-                                                    else
-                                                    {
-                                                        src.condition = "";
-                                                        src.name = r.IdShort;
-                                                    }
-                                                    if (objProp != null)
-                                                    {
-                                                        string value = objProp.Value.ToLower();
-                                                        src.objType = value;
-                                                        if (value.Contains("api"))
-                                                        {
-                                                            split = value.Split(':');
-                                                            if (split[0] == "api")
-                                                            {
-                                                                src.objType = split[0];
-                                                                src.apiOperation = split[1];
-                                                            }
-                                                        }
-                                                        if (value.Contains("semanticid"))
-                                                        {
-                                                            split = value.Split(':');
-                                                            if (split[0] == "semanticid")
-                                                            {
-                                                                src.objType = split[0];
-                                                                src.semanticId = split[1];
-                                                                for (int j = 2; j < split.Length; j++)
-                                                                    src.semanticId += ":" + split[j];
-                                                            }
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        if (aasObject != null)
-                                                        {
-                                                            src.objReference = aasObject;
-                                                            if (aasObject is AssetAdministrationShell)
-                                                                src.objType = "aas";
-                                                            if (aasObject is Submodel)
-                                                            {
-                                                                src.objType = "sm";
-                                                                src.submodel = aasObject as Submodel;
-                                                                src.objPath = src.submodel.IdShort;
-                                                            }
-                                                            if (aasObject is ISubmodelElement smep)
-                                                            {
-                                                                IReferable rp = smep;
-                                                                src.objType = "submodelElement";
-                                                                string path = rp.IdShort;
-                                                                while (rp.Parent != null)
-                                                                {
-                                                                    rp = (IReferable)rp.Parent;
-                                                                    path = rp.IdShort + "." + path;
-                                                                }
-                                                                src.submodel = rp as Submodel;
-                                                                src.objPath = path;
-                                                            }
-                                                        }
-                                                    }
-                                                    src.permission = l.ToUpper();
-                                                    if (kind != null)
-                                                        src.kind = kind.Value.ToLower();
-                                                    src.rulePath = aas.IdShort + "." + sm.IdShort + "..." + smc4.IdShort + "." + sme.IdShort;
-                                                    securityRole.Add(src);
+                                                    src.objType = split[0];
+                                                    src.semanticId = split[1];
+                                                    for (int j = 2; j < split.Length; j++)
+                                                        src.semanticId += ":" + split[j];
                                                 }
                                             }
-                                            continue;
-                                            //dd
                                         }
+                                        else
+                                        {
+                                            if (aasObject != null)
+                                            {
+                                                src.objReference = aasObject;
+                                                if (aasObject is AssetAdministrationShell)
+                                                    src.objType = "aas";
+                                                if (aasObject is Submodel)
+                                                {
+                                                    src.objType = "sm";
+                                                    src.submodel = aasObject as Submodel;
+                                                    src.objPath = src.submodel.IdShort;
+                                                }
+                                                if (aasObject is ISubmodelElement smep)
+                                                {
+                                                    IReferable rp = smep;
+                                                    src.objType = "submodelElement";
+                                                    string path = rp.IdShort;
+                                                    while (rp.Parent != null)
+                                                    {
+                                                        rp = (IReferable)rp.Parent;
+                                                        path = rp.IdShort + "." + path;
+                                                    }
+                                                    src.submodel = rp as Submodel;
+                                                    src.objPath = path;
+                                                }
+                                            }
+                                        }
+                                        src.permission = l.ToUpper();
+                                        if (kind != null)
+                                            src.kind = kind.Value.ToLower();
+                                        src.rulePath = aas.IdShort + "." + sm.IdShort + "..." + smc4.IdShort + "." + sme.IdShort;
+                                        securityRole.Add(src);
                                     }
                                 }
+                                continue;
+                                //dd
                             }
                         }
                     }

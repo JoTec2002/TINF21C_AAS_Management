@@ -555,9 +555,6 @@ namespace AasxServer
                 }
             }
 
-            AasxHttpContextHelper.securityInit(); // read users and access rights form AASX Security
-            AasxHttpContextHelper.serverCertsInit(); // load certificates of auth servers
-
             Console.WriteLine();
             Console.WriteLine("Please wait for the servers to start...");
 
@@ -569,6 +566,9 @@ namespace AasxServer
 
                 Console.WriteLine("REST Server started.");
             }
+
+            AasxHttpContextHelper.securityInit(); // read users and access rights form AASX Security
+            AasxHttpContextHelper.serverCertsInit(); // load certificates of auth servers
 
             //i40LanguageRuntime.initialize();
 

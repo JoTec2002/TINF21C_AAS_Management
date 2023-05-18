@@ -741,8 +741,8 @@ namespace IO.Swagger.V1RC03.Services
                         AasxHttpContextHelper.mongoDBInterface.updateDBSubmodels(submodelIdentifier, submodelRoot);
                 //}
 
-
-                AasxServer.Program.signalNewData(1);
+                AasxHttpContextHelper.securityInit();
+                AasxServer.Program.signalNewData(2);
             //}
         }
 
