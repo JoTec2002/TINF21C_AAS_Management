@@ -52,6 +52,7 @@ const AddAsset =()=>{
                     console.log(res);
                     if(res.status === 204){
                         alert("File deleted successfully");
+                        goBack();
                     }
                 })
                 .catch((error) => {
